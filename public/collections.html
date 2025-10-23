@@ -1,1 +1,53 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"/><title>Collections</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>body{font-family:system-ui;margin:20px}input,textarea{display:block;margin:6px 0;padding:6px;width:320px}</style>
+</head>
+<body>
+  <h1>Collections</h1>
+  <div>
+    <h3>Create Collection Request</h3>
+    <form id="create">
+      <input name="temp_collection_no" placeholder="temp collection no" />
+      <input name="requestor" placeholder="requestor (e.g. FedEx)" />
+      <input name="client" placeholder="client name" />
+      <input name="address" placeholder="address" />
+      <input name="contact_person" placeholder="contact person" />
+      <input name="assigned_driver_id" placeholder="driver id (optional)" />
+      <button>Create</button>
+    </form>
+  </div>
+  <div id="list"></div>
 
+<script>
+const user = JSON.parse(localStorage.getItem('mm_user')||'null');
+if(!user || user.role!=='admin') location.href='/index.html';
+
+document.getElementById('create').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const body = Object.fromEntries(form.entries());
+  const res = await fetch('/api/collections/create',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  if(res.ok){ alert('Created'); loadList(); }
+  else alert('Error creating');
+});
+
+async function loadList(){
+  const res = await fetch('/api/collections/driver/'); // not ideal - list all via /api/collections optionally add endpoint
+  // fall back: fetch all via supabase later - for now call driver list per driver
+  // quick method: fetch drivers then call per id
+  const driversRes = await fetch('/api/drivers');
+  const drivers = await driversRes.json();
+  const listEl = document.getElementById('list');
+  listEl.innerHTML = '<h3>Collections by driver</h3>';
+  for(const d of drivers.drivers || []){
+    const r = await fetch(`/api/collections/driver/${d.id}`);
+    const js = await r.json();
+    listEl.innerHTML += `<h4>${d.name} (${d.id})</h4>` + (js.collections.map(c=>`<div>${c.temp_collection_no||''} → ${c.waybill_no||''} - ${c.status}</div>`).join('') || '<div>No collections</div>');
+  }
+}
+loadList();
+</script>
+</body>
+</html>
