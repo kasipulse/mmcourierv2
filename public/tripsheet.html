@@ -1,5 +1,8 @@
 <!doctype html>
-<html><head><meta charset="utf-8"/><title>Tripsheet</title></head><body>
+<html><head><meta charset="utf-8"/><title>Tripsheet</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>body{font-family:system-ui;margin:20px}input{margin:4px}</style>
+</head><body>
 <h1>Driver Tripsheet</h1>
 <div id="collections"></div>
 <script>
@@ -10,11 +13,12 @@ async function loadCollections(){
   const res = await fetch(`/api/collections/driver/${user.id}`);
   const js = await res.json();
   const el = document.getElementById('collections');
+  if(!js.collections || js.collections.length===0){ el.innerHTML='<p>No collections assigned.</p>'; return; }
   el.innerHTML = js.collections.map(c=>`
-    <div>
-      <strong>${c.temp_collection_no || ''}</strong> - ${c.client || c.requestor} - ${c.address}
-      <form data-id="${c.id}" style="display:inline">
-        <input name="waybill" placeholder="Enter waybill"/>
+    <div style="border:1px solid #ddd;padding:8px;margin:8px 0">
+      <strong>${c.temp_collection_no || ''}</strong> - ${c.client || c.requestor} - ${c.address || ''}<br/>
+      <form data-id="${c.id}" style="display:flex;gap:8px;align-items:center">
+        <input name="waybill" placeholder="Enter waybill" style="padding:6px"/>
         <input name="photo" type="file" />
         <button>Induct</button>
       </form>
@@ -33,7 +37,7 @@ document.addEventListener('submit', async e=>{
     if(file) form.append('photo', file);
     const res = await fetch(`/api/collections/induct/${id}`, { method:'POST', body: form });
     if(res.ok) { alert('Inducted'); loadCollections(); }
-    else alert('Error');
+    else { const txt = await res.text(); alert('Error: '+txt); }
   }
 });
 loadCollections();
