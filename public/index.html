@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MM Courier | Smart Delivery & Logistics System</title>
-  <meta name="description" content="MM Courier — a modern logistics management system built for speed, accuracy, and transparency. Handle scans, PODs, billing, and driver performance in one place.">
+  <title>MM Courier | Smart Delivery & Logistics Platform</title>
+  <meta name="description" content="MM Courier — A modern logistics and order fulfilment platform. Handle parcel scanning, PODs, API integrations, e-commerce fulfilment, and mailroom automation all in one place.">
   <style>
     body {
       margin: 0;
@@ -23,11 +23,14 @@
       font-size: 28px;
       letter-spacing: 1px;
     }
-    section.hero {
+    section {
+      padding: 60px 20px;
       text-align: center;
-      padding: 80px 20px;
+    }
+    section.hero {
       background: linear-gradient(to right, #0a2b52, #409dbc);
       color: white;
+      padding: 80px 20px;
     }
     .hero h2 {
       font-size: 36px;
@@ -53,21 +56,14 @@
     .btn:hover {
       background-color: #cebd80;
     }
-    section.features {
-      padding: 60px 20px;
-      text-align: center;
+    .features, .integration, .pricing, .contact {
       background-color: #f7f7f7;
-    }
-    .features h3 {
-      margin-bottom: 30px;
-      font-size: 26px;
-      color: #0a2b52;
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
     }
     .card {
@@ -87,11 +83,25 @@
       color: white;
       font-size: 14px;
     }
-    footer p {
-      margin: 4px 0;
+    input, textarea {
+      width: 90%;
+      max-width: 400px;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-    a {
-      color: inherit;
+    button {
+      background-color: #deb657;
+      color: #0a2b52;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #cebd80;
     }
   </style>
 </head>
@@ -102,37 +112,89 @@
   </header>
 
   <section class="hero">
-    <h2>Smart Courier Management System</h2>
-    <p>MM Courier simplifies daily logistics with barcode scanning, POD uploads, driver tracking, billing, and reporting — all in one powerful dashboard.</p>
+    <h2>Smart Courier & Fulfilment Management System</h2>
+    <p>MM Courier streamlines logistics, e-commerce fulfilment, parcel tracking, and mailroom operations with advanced automation, accuracy, and transparency — all in one dashboard.</p>
     <a href="/admin/index.html" class="btn">Login to Dashboard</a>
   </section>
 
   <section class="features">
-    <h3>Built for Speed and Accuracy</h3>
+    <h3>We Specialize In</h3>
     <div class="grid">
       <div class="card">
-        <h4>📦 Parcel Scanning</h4>
-        <p>Scan in, scan out, and track shipments in real-time using barcode-based operations.</p>
+        <h4>📦 Order Fulfilment Platforms</h4>
+        <p>Built for businesses managing daily parcel movements, deliveries, and client notifications.</p>
       </div>
       <div class="card">
-        <h4>📷 POD Uploads</h4>
-        <p>Upload and manage Proof of Delivery images securely via cloud storage.</p>
+        <h4>🛒 E-Commerce Platforms</h4>
+        <p>Integrate and manage orders from Shopify, WooCommerce, or custom online stores seamlessly.</p>
       </div>
       <div class="card">
-        <h4>🚚 Driver & Vehicle Management</h4>
-        <p>Assign routes, manage vehicles, and monitor performance through the admin dashboard.</p>
+        <h4>🔗 API Integrations</h4>
+        <p>Connect systems and automate data sharing across courier, ERP, and warehouse applications.</p>
       </div>
       <div class="card">
-        <h4>📊 Reports & Analytics</h4>
-        <p>Instantly generate Age Analysis, Billing, and Performance reports with export options.</p>
+        <h4>🏢 Mailroom Applications</h4>
+        <p>Digitize your corporate mailroom for faster, error-free parcel handling and internal deliveries.</p>
       </div>
     </div>
   </section>
 
+  <section class="integration">
+    <h3>Powerful Carrier Integration</h3>
+    <p>Seamlessly connect with over 40 global, regional, and local carriers, automating booking & tracking, dramatically reducing manual double entry and errors.</p>
+    <div class="grid">
+      <div class="card">
+        <h4>⚙️ Connect to Delivery Partners</h4>
+        <p>Easily connect to your chosen local and international delivery partners with minimal setup.</p>
+      </div>
+      <div class="card">
+        <h4>📦 Automated Booking & Tracking</h4>
+        <p>Bookings and tracking updates are synchronized automatically — no manual uploads needed.</p>
+      </div>
+      <div class="card">
+        <h4>✅ Eliminate Double Entry</h4>
+        <p>Say goodbye to duplicate data entry and reduce operational errors across platforms.</p>
+      </div>
+      <div class="card">
+        <h4>🚀 Save Time & Improve Efficiency</h4>
+        <p>Reduce processing time by over 50% through intelligent automation and streamlined workflows.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing">
+    <h3>Simple, Transparent Pricing</h3>
+    <div class="grid">
+      <div class="card">
+        <h4>Small Business Plan</h4>
+        <p><strong>R499 / month</strong></p>
+        <p>Includes up to 3 users, parcel scanning, POD uploads, and reporting features.</p>
+      </div>
+      <div class="card">
+        <h4>Growing Business</h4>
+        <p><strong>R899 / month</strong></p>
+        <p>Up to 10 users, driver & vehicle management, custom reporting, and integrations.</p>
+      </div>
+      <div class="card">
+        <h4>Enterprise / Custom</h4>
+        <p><strong>Custom Quote</strong></p>
+        <p>Includes API access, dedicated support, and unlimited users — tailored for large operations.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact">
+    <h3>Request a Demo or Contact Us</h3>
+    <p>We’ll be in touch to show you how MM Courier can simplify your logistics operations.</p>
+    <form action="mailto:ops1@pakisalogistics.co.za" method="post" enctype="text/plain">
+      <input type="text" name="name" placeholder="Your Name" required><br>
+      <input type="email" name="email" placeholder="Your Email" required><br>
+      <textarea name="message" rows="4" placeholder="Tell us a bit about your business..."></textarea><br>
+      <button type="submit">Send Message</button>
+    </form>
+  </section>
+
   <footer>
-    <p><strong>Pakisa Express Logistics</strong></p>
-    <p>10 Burry Koean Street, Jet Park, Boksburg, 1469</p>
-    <p>Tel: 011 397 1151 | Email: <a href="mailto:ops1@pakisalogistics.co.za">ops1@pakisalogistics.co.za</a></p>
     <p>&copy; <span id="year"></span> MM Courier. All rights reserved.</p>
   </footer>
 
