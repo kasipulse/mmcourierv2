@@ -1,1 +1,4 @@
+User-agent: *
+Allow: /
 
+Sitemap: https://www.mmcourier.co.za/sitemap.xml
