@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Waybill Management | MM Courier</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Waybill Management</h2>
+  <form id="createForm">
+    <input type="text" name="waybill_number" placeholder="Waybill Number" required>
+    <input type="text" name="client_name" placeholder="Client Name">
+    <input type="text" name="sender_name" placeholder="Sender">
+    <input type="text" name="sender_address" placeholder="Sender Address">
+    <input type="text" name="receiver_name" placeholder="Receiver">
+    <input type="text" name="receiver_address" placeholder="Receiver Address">
+    <input type="text" name="receiver_phone" placeholder="Receiver Phone">
+    <input type="number" name="parcel_count" placeholder="Parcel Count">
+    <input type="number" name="weight" placeholder="Weight (kg)">
+    <button type="submit">Create Waybill</button>
+  </form>
+
+  <hr>
+  <h3>Existing Waybills</h3>
+  <table border="1" id="waybillsTable">
+    <thead>
+      <tr>
+        <th>Waybill #</th>
+        <th>Client</th>
+        <th>Receiver</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadWaybills() {
+      const res = await fetch("/api/waybills");
+      const data = await res.json();
+      const tbody = document.querySelector("#waybillsTable tbody");
+      tbody.innerHTML = data.map(w => `
+        <tr>
+          <td>${w.waybill_number}</td>
+          <td>${w.client_name || ''}</td>
+          <td>${w.receiver_name || ''}</td>
+          <td>${w.status}</td>
+          <td>${new Date(w.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById("createForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+      const res = await fetch("/api/waybills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert("Waybill created!");
+        form.reset();
+        loadWaybills();
+      } else {
+        const err = await res.json();
+        alert("Error: " + err.error);
+      }
+    });
+
+    loadWaybills();
+  </script>
+</body>
+</html>
