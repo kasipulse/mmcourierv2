@@ -1,6 +1,6 @@
 // Initialize Supabase
-const SUPABASE_URL = "https://lavqgvnjdjfywcjztame.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhdnFndm5qZGpmeXdjanp0YW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjk0ODYsImV4cCI6MjA3NjgwNTQ4Nn0.kpguG-8Ap_icuh1FtF6c4k032qwIvoW6-KC_tX57644";
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const userEmailEl = document.getElementById("user-email");
@@ -50,6 +50,9 @@ async function loadParcels(userId) {
       <td class="px-6 py-4 whitespace-nowrap">
         <input type="file" id="pod-${parcel.id}" accept="image/*" />
         <button onclick="uploadPOD(${parcel.id})" class="bg-yellow-400 text-[#0a2b52] px-3 py-1 rounded mt-1">Upload</button>
+        <div id="pod-preview-${parcel.id}" class="mt-2">
+          ${parcel.pod_url ? `<a href="${parcel.pod_url}" target="_blank"><img src="${parcel.pod_url}" class="h-16 rounded" /></a>` : ""}
+        </div>
       </td>
     `;
     parcelBody.appendChild(row);
@@ -74,27 +77,45 @@ async function scanOut(parcelId) {
   document.getElementById(`status-${parcelId}`).textContent = "Scanned Out";
 }
 
-// Upload POD
+// Upload POD to Cloudinary
 async function uploadPOD(parcelId) {
   const fileInput = document.getElementById(`pod-${parcelId}`);
   const file = fileInput.files[0];
   if (!file) return alert("Please select a file first.");
 
-  // Upload to Supabase Storage (or Cloudinary)
-  const { data, error } = await supabase.storage
-    .from("pod-images")
-    .upload(`${parcelId}/${file.name}`, file, { upsert: true });
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "YOUR_CLOUDINARY_UPLOAD_PRESET"); // Replace with your preset
+  formData.append("folder", `pods/${parcelId}`); // optional folder structure
 
-  if (error) return console.error(error);
-  
-  // Update waybill record with POD URL
-  const url = supabase.storage.from("pod-images").getPublicUrl(data.path).data.publicUrl;
-  await supabase
-    .from("waybills")
-    .update({ pod_url: url })
-    .eq("id", parcelId);
+  try {
+    const response = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUDINARY_CLOUD_NAME/image/upload", {
+      method: "POST",
+      body: formData,
+    });
 
-  alert("POD uploaded successfully!");
+    const data = await response.json();
+    if (data.secure_url) {
+      // Update waybill record in Supabase with POD URL
+      const { error } = await supabase
+        .from("waybills")
+        .update({ pod_url: data.secure_url })
+        .eq("id", parcelId);
+
+      if (error) return console.error(error);
+
+      // Update preview
+      const previewEl = document.getElementById(`pod-preview-${parcelId}`);
+      previewEl.innerHTML = `<a href="${data.secure_url}" target="_blank"><img src="${data.secure_url}" class="h-16 rounded" /></a>`;
+
+      alert("POD uploaded successfully!");
+    } else {
+      console.error("Cloudinary upload failed", data);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("POD upload failed.");
+  }
 }
 
 checkAuth();
