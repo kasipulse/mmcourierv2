@@ -1,5 +1,5 @@
 const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
-const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhdnFndm5qZGpmeXdjanp0YW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjk0ODYsImV4cCI6MjA3NjgwNTQ4Nn0.kpguG-8Ap_icuh1FtF6c4k032qwIvoW6-KC_tX57644";
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 const importBtn = document.getElementById("importBtn");
