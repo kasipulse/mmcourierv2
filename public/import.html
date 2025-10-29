@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Import Data | MM Courier</title>
+  <title>MM Courier | Import Data</title>
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body class="flex bg-gray-100 min-h-screen">
 
@@ -19,10 +18,10 @@
 
     <nav class="flex-1 p-4 space-y-2">
       <a href="dashboard.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Dashboard</a>
-      <a href="#" class="block py-2 px-3 rounded bg-[#409dbc]">Import Data</a>
-      <a href="tripsheets.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Tripsheets</a>
-      <a href="floorcheck.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Floor Check</a>
-      <a href="reports.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Reports</a>
+      <a href="import.html" class="block py-2 px-3 rounded bg-[#409dbc]">Import Data</a>
+      <a href="#" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Tripsheets</a>
+      <a href="#" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Floor Check</a>
+      <a href="#" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Reports</a>
     </nav>
 
     <div class="p-4 border-t border-gray-700">
@@ -34,99 +33,33 @@
 
   <!-- Main content -->
   <main class="flex-1 p-8">
-    <h1 class="text-3xl font-semibold text-[#0a2b52] mb-4">System Data Import (3-File Mode)</h1>
-    <p class="text-gray-700 mb-6">
-      Upload your <strong>Waybill</strong>, <strong>Content</strong>, and <strong>Track</strong> CSV files.  
-      The system will automatically link them by <strong>Tracking Number</strong> and import into Supabase.
-    </p>
+    <h1 class="text-3xl font-semibold text-[#0a2b52] mb-4">Import CSV Data</h1>
+    <p class="text-gray-700 mb-6">Upload your 3 CSV files (Waybill, Content, Tracking).</p>
 
-    <div class="bg-white p-6 rounded-2xl shadow-md mb-6">
-      <div class="mb-4">
-        <label class="block mb-2 text-[#0a2b52] font-medium">Waybill File:</label>
-        <input type="file" id="waybillFile" accept=".csv" class="border border-gray-300 p-2 rounded-md w-full" />
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div class="p-6 bg-white rounded-2xl shadow-md">
+        <h3 class="text-lg font-semibold text-[#0a2b52] mb-2">Waybill File</h3>
+        <input type="file" id="waybillFile" accept=".csv" class="block w-full text-sm text-gray-700 mb-4" />
       </div>
 
-      <div class="mb-4">
-        <label class="block mb-2 text-[#0a2b52] font-medium">Content File:</label>
-        <input type="file" id="contentFile" accept=".csv" class="border border-gray-300 p-2 rounded-md w-full" />
+      <div class="p-6 bg-white rounded-2xl shadow-md">
+        <h3 class="text-lg font-semibold text-[#0a2b52] mb-2">Content File</h3>
+        <input type="file" id="contentFile" accept=".csv" class="block w-full text-sm text-gray-700 mb-4" />
       </div>
 
-      <div class="mb-4">
-        <label class="block mb-2 text-[#0a2b52] font-medium">Track File:</label>
-        <input type="file" id="trackFile" accept=".csv" class="border border-gray-300 p-2 rounded-md w-full" />
+      <div class="p-6 bg-white rounded-2xl shadow-md">
+        <h3 class="text-lg font-semibold text-[#0a2b52] mb-2">Tracking File</h3>
+        <input type="file" id="trackingFile" accept=".csv" class="block w-full text-sm text-gray-700 mb-4" />
       </div>
-
-      <button id="importBtn" class="bg-[#409dbc] hover:bg-[#0a2b52] text-white px-4 py-2 rounded-md font-medium">
-        Import All Files
-      </button>
-
-      <div id="log" class="mt-4 text-sm text-gray-700 bg-gray-50 p-3 rounded-md overflow-y-auto max-h-64"></div>
     </div>
+
+    <button id="importBtn" class="bg-[#0a2b52] text-white px-6 py-3 rounded-md font-semibold hover:bg-[#409dbc]">
+      Import All Files
+    </button>
+
+    <div id="importStatus" class="mt-6 text-sm text-gray-700"></div>
   </main>
 
-  <script>
-    const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
-    const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-    async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) window.location.href = "login.html";
-    }
-    checkSession();
-
-    document.getElementById("logout").addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "login.html";
-    });
-
-    document.getElementById("importBtn").addEventListener("click", async () => {
-      const waybillFile = document.getElementById("waybillFile").files[0];
-      const contentFile = document.getElementById("contentFile").files[0];
-      const trackFile = document.getElementById("trackFile").files[0];
-      const log = document.getElementById("log");
-
-      if (!waybillFile || !contentFile || !trackFile) {
-        log.textContent = "⚠️ Please upload all 3 CSV files.";
-        return;
-      }
-
-      log.textContent = "⏳ Parsing and importing data...";
-
-      const user = (await supabase.auth.getUser()).data.user;
-      const timestamp = new Date().toISOString();
-
-      // Helper function for parsing + inserting
-      async function parseAndInsert(file, tableName) {
-        return new Promise((resolve, reject) => {
-          Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-              const enriched = results.data.map(row => ({
-                ...row,
-                imported_by: user.email,
-                imported_at: timestamp
-              }));
-
-              const { error } = await supabase.from(tableName).insert(enriched);
-              if (error) reject(error);
-              else resolve(enriched.length);
-            }
-          });
-        });
-      }
-
-      try {
-        const waybillCount = await parseAndInsert(waybillFile, "parcels");
-        const contentCount = await parseAndInsert(contentFile, "parcel_contents");
-        const trackCount = await parseAndInsert(trackFile, "parcel_tracking");
-
-        log.textContent = `✅ Imported successfully:\n• ${waybillCount} waybills\n• ${contentCount} contents\n• ${trackCount} tracking events`;
-      } catch (err) {
-        log.textContent = "❌ Import failed: " + err.message;
-      }
-    });
-  </script>
+  <script src="js/import.js"></script>
 </body>
 </html>
