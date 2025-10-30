@@ -1,191 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Floor Check</title>
-  <style>
-    /* ===== Windows 95/98 Style ===== */
-    body {
-      font-family: 'Tahoma', 'Verdana', sans-serif;
-      font-size: 12px;
-      margin: 0;
-      padding: 0;
-      background-color: #c0c0c0; /* Window background */
-      color: #000000;
-    }
+<div class="panel">
+  <h1>Floor Check</h1>
+  <p>Scan parcels currently on the floor.</p>
+  <input type="text" id="scanInput" placeholder="Scan Waybill #" />
+  <button onclick="scanParcel()">Scan</button>
+  <ul id="floorList"></ul>
+</div>
 
-    /* ===== Toolbar ===== */
-    .toolbar {
-      display: flex;
-      gap: 2px;
-      background-color: #000080; /* Classic dark blue title bar */
-      padding: 2px;
-    }
-
-    .menu-btn {
-      font-size: 12px;
-      padding: 2px 6px;
-      background-color: #d4d0c8; /* Button face */
-      border: 2px outset #ffffff;
-      cursor: pointer;
-      color: #000;
-    }
-
-    .menu-btn.active {
-      background-color: #000080;
-      color: #ffffff;
-      border: 2px inset #cebd80; /* MM Courier accent */
-    }
-
-    .menu-btn.logout {
-      margin-left: auto;
-    }
-
-    .menu-btn:hover {
-      background-color: #b0b0b0; /* Slightly darker hover */
-    }
-
-    /* ===== Main container ===== */
-    .container {
-      padding: 10px;
-    }
-
-    h1 {
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    p {
-      margin: 4px 0 8px 0;
-    }
-
-    /* ===== Form box ===== */
-    .form-box {
-      background-color: #d4d0c8; /* Panel background */
-      border: 2px outset #ffffff; /* Bevel effect */
-      padding: 8px;
-      margin-bottom: 10px;
-      width: fit-content;
-    }
-
-    label {
-      display: block;
-      margin-top: 4px;
-    }
-
-    input[type="text"],
-    select {
-      font-size: 12px;
-      padding: 2px;
-      margin-top: 2px;
-      margin-bottom: 4px;
-      border: 2px inset #ffffff; /* Bevel input */
-      background-color: #d4d0c8;
-      width: 200px;
-    }
-
-    button {
-      font-size: 12px;
-      padding: 2px 6px;
-      border: 2px outset #ffffff;
-      background-color: #d4d0c8;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-
-    button:hover {
-      background-color: #b0b0b0;
-    }
-
-    /* ===== Table ===== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      background-color: #ffffff;
-      border: 2px inset #ffffff;
-    }
-
-    th {
-      background-color: #c0c0c0;
-      border: 1px solid #000000;
-      padding: 2px 4px;
-      text-align: left;
-    }
-
-    td {
-      border: 1px solid #000000;
-      padding: 2px 4px;
-    }
-
-    /* ===== Footer ===== */
-    .footer {
-      background-color: #c0c0c0;
-      text-align: center;
-      padding: 4px;
-      font-size: 10px;
-      border-top: 2px outset #ffffff;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="toolbar">
-    <button class="menu-btn" onclick="location.href='dashboard.html'">Dashboard</button>
-    <button class="menu-btn active" onclick="location.href='floorcheck.html'">Floor Check</button>
-    <button class="menu-btn" onclick="location.href='tripsheet.html'">Tripsheets</button>
-    <button class="menu-btn" onclick="location.href='reports.html'">Reports</button>
-    <button class="menu-btn logout" onclick="location.href='login.html'">Logout</button>
-  </div>
-
-  <div class="container">
-    <h1>Floor Check</h1>
-    <p>Select customer and enter a waybill number for each parcel. Mark a reason for any problem parcel.</p>
-
-    <div class="form-box">
-      <label for="customer">Customer:</label>
-      <select id="customer">
-        <option value="">Select...</option>
-        <!-- Customers dynamically populated by each client -->
-      </select>
-
-      <label for="waybill">Waybill No:</label>
-      <input type="text" id="waybill" placeholder="Enter or scan waybill" />
-
-      <label for="reason">Reason (if problem):</label>
-      <select id="reason">
-        <option value="">—</option>
-        <option>Misroute</option>
-        <option>Incorrect delivery address</option>
-        <option>Nobody home</option>
-        <option>Refused shipment</option>
-        <option>Customer requested future delivery</option>
-        <option>Rejected</option>
-        <option>No paperwork</option>
-      </select>
-
-      <button id="add-scan">Add Scan</button>
-    </div>
-
-    <table id="scans-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Customer</th>
-          <th>Waybill</th>
-          <th>Reason</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div class="footer">
-    © 2025 MM Courier Systems. All rights reserved.
-  </div>
-
-  <script src="js/floorcheck.js"></script>
-</body>
-</html>
+<script>
+function initPanel() {
+  async function loadFloor() {
+    const { data } = await supabase.from('parcels').select('*').eq('status','Pending');
+    const ul = document.getElementById('floorList');
+    ul.innerHTML='';
+    data.forEach(p=>{
+      const li=document.createElement('li');
+      li.textContent=`${p.tracking_number} - ${p.receiver}`;
+      ul.appendChild(li);
+    });
+  }
+  async function scanParcel() {
+    const code=document.getElementById('scanInput').value.trim();
+    if(!code) return alert('Scan a waybill');
+    await supabase.from('parcels').update({status:'Scanned'}).eq('tracking_number',code);
+    document.getElementById('scanInput').value='';
+    loadFloor();
+  }
+  window.scanParcel=scanParcel;
+  loadFloor();
+}
+</script>
