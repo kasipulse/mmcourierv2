@@ -1,0 +1,25 @@
+<div class="panel">
+  <h1>Scan Exceptions</h1>
+  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+    <thead>
+      <tr><th>Waybill</th><th>Issue</th><th>Date</th></tr>
+    </thead>
+    <tbody id="exceptionsBody"></tbody>
+  </table>
+</div>
+
+<script>
+function initPanel() {
+  async function loadExceptions() {
+    const { data } = await supabase.from('parcels').select('*').eq('status','Exception');
+    const tbody=document.getElementById('exceptionsBody');
+    tbody.innerHTML='';
+    data.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${p.tracking_number}</td><td>${p.exception || 'Unknown'}</td><td>${new Date(p.updated_at).toLocaleString()}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  loadExceptions();
+}
+</script>
