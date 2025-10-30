@@ -1,29 +1,30 @@
-<div class="panel" style="max-width:300px; margin:auto;">
+<div class="panel">
   <h1>Driver Login</h1>
-
-  <label for="driverName" style="font-size:12px;">Driver Name:</label>
-  <input type="text" id="driverName" style="width:100%; font-size:12px; padding:2px; margin-bottom:6px;">
-
-  <label for="driverPin" style="font-size:12px;">PIN:</label>
-  <input type="password" id="driverPin" style="width:100%; font-size:12px; padding:2px; margin-bottom:6px;">
-
-  <button id="driverLoginBtn" style="background:#d4d0c8; border:2px outset #fff; padding:4px 8px; font-size:12px; cursor:pointer;">Login</button>
-
-  <div id="driverStatus" style="margin-top:6px; font-size:12px;"></div>
+  <p>Add or manage drivers</p>
+  <input type="text" id="driverName" placeholder="Driver Name" />
+  <button onclick="addDriver()">Add Driver</button>
+  <ul id="driverList"></ul>
 </div>
 
 <script>
-document.getElementById('driverLoginBtn').addEventListener('click', () => {
-  const name = document.getElementById('driverName').value;
-  const pin = document.getElementById('driverPin').value;
-  const status = document.getElementById('driverStatus');
-
-  if(name && pin){
-    status.textContent = `Driver ${name} logged in (simulation).`;
-    status.style.color = "green";
-  } else {
-    status.textContent = "Please enter both name and PIN.";
-    status.style.color = "red";
+function initPanel() {
+  async function loadDrivers() {
+    const { data } = await supabase.from('drivers').select('*');
+    const ul = document.getElementById('driverList');
+    ul.innerHTML='';
+    data.forEach(d=>{ 
+      const li=document.createElement('li'); 
+      li.textContent=d.name; ul.appendChild(li);
+    });
   }
-});
+  async function addDriver() {
+    const name=document.getElementById('driverName').value.trim();
+    if(!name) return alert('Enter driver name');
+    await supabase.from('drivers').insert([{name}]);
+    document.getElementById('driverName').value='';
+    loadDrivers();
+  }
+  window.addDriver=addDriver;
+  loadDrivers();
+}
 </script>
