@@ -1,115 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MM Courier | Dashboard</title>
-<style>
-  body {
-    background: #c0c0c0;
-    font-family: Tahoma, Verdana, sans-serif;
-    font-size: 12px;
-    margin: 0;
-    color: #000;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MM Courier | Dashboard</title>
+  <style>
+    /* Global Styles */
+    body {
+      margin: 0;
+      font-family: Tahoma, Verdana, sans-serif;
+      background-color: #c0c0c0;
+      color: #000;
+      font-size: 12px;
+    }
 
-  /* ===== Toolbar ===== */
-  .toolbar {
-    background: #d4d0c8;
-    border-bottom: 2px solid #fff;
-    padding: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      background-color: #d4d0c8;
+      padding: 4px 8px;
+      border-bottom: 2px solid #fff;
+      user-select: none;
+    }
 
-  .menu-btn {
-    background: #d4d0c8;
-    border: 2px outset #fff;
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: pointer;
-  }
+    .menu {
+      position: relative;
+      margin-right: 10px;
+    }
 
-  .menu-btn:active {
-    border: 2px inset #fff;
-    background: #b0b0b0;
-  }
+    .menu-btn {
+      background: #e0e0e0;
+      border: 2px outset #fff;
+      padding: 2px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
 
-  .menu-btn.active {
-    background: #cebd80;
-    border: 2px inset #fff;
-    color: #0a2b52;
-    font-weight: bold;
-  }
+    .menu-btn:active {
+      border: 2px inset #fff;
+      background: #d0d0d0;
+    }
 
-  .menu-btn.logout {
-    margin-left: auto;
-    background: #cebd80;
-  }
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #d4d0c8;
+      border: 2px solid #808080;
+      min-width: 160px;
+      z-index: 10;
+    }
 
-  /* ===== Container ===== */
-  .container {
-    padding: 12px;
-  }
+    .dropdown a {
+      display: block;
+      padding: 4px 8px;
+      text-decoration: none;
+      color: #000;
+      font-size: 12px;
+    }
 
-  h1 {
-    font-size: 14px;
-    margin-bottom: 6px;
-    border-bottom: 2px solid #cebd80;
-    padding-bottom: 2px;
-  }
+    .dropdown a:hover {
+      background-color: #cebd80;
+      color: #0a2b52;
+    }
 
-  p {
-    margin: 4px 0;
-  }
+    .menu:hover .dropdown {
+      display: block;
+    }
 
-  /* ===== Panel ===== */
-  .panel {
-    background: #d4d0c8;
-    border: 2px outset #fff;
-    padding: 10px;
-    margin-bottom: 12px;
-    box-shadow: inset 1px 1px #fff;
-  }
+    .logout {
+      margin-left: auto;
+      background-color: #f2e5b8;
+    }
 
-  /* ===== Footer ===== */
-  .footer {
-    text-align: center;
-    font-size: 11px;
-    color: #333;
-    border-top: 2px solid #fff;
-    padding: 6px;
-    background: #d4d0c8;
-  }
-</style>
+    /* Content Area */
+    .container {
+      padding: 12px;
+    }
+
+    .panel {
+      background: #d4d0c8;
+      border: 2px outset #fff;
+      padding: 12px;
+      margin-bottom: 12px;
+      min-height: 150px;
+    }
+
+    .panel h1 {
+      font-size: 14px;
+      margin-top: 0;
+      border-bottom: 1px solid #fff;
+      padding-bottom: 2px;
+    }
+
+    /* Mini Stats */
+    .stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stat-box {
+      background: #d4d0c8;
+      border: 2px outset #fff;
+      padding: 6px 12px;
+      text-align: center;
+      width: 120px;
+    }
+
+    .stat-box h2 {
+      margin: 0;
+      font-size: 16px;
+      color: #0a2b52;
+    }
+
+    .stat-box p {
+      margin: 0;
+      font-size: 11px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      padding: 6px;
+      border-top: 2px solid #fff;
+      background: #d4d0c8;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    /* Panel Container for dynamic content */
+    #content-panel {
+      background: #c0c0c0;
+      border: 2px inset #fff;
+      padding: 8px;
+      min-height: 300px;
+    }
+  </style>
 </head>
 <body>
+
+  <!-- Toolbar -->
   <div class="toolbar">
-    <button class="menu-btn active">Dashboard</button>
-    <button class="menu-btn" onclick="location.href='import.html'">Import Data</button>
-    <button class="menu-btn" onclick="location.href='tripsheet.html'">Tripsheets</button>
-    <button class="menu-btn" onclick="location.href='floorcheck.html'">Floor Check</button>
-    <button class="menu-btn" onclick="location.href='reports.html'">Reports</button>
+    <div class="menu">
+      <button class="menu-btn">File</button>
+      <div class="dropdown">
+        <a href="#" onclick="showPanel('import')">Import CSV</a>
+        <a href="#" onclick="showPanel('export')">Export CSV/PDF</a>
+        <a href="login.html">Logout</a>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-btn">Tripsheets</button>
+      <div class="dropdown">
+        <a href="#" onclick="showPanel('tripsheets')">View Tripsheets</a>
+        <a href="#" onclick="showPanel('driver-logs')">Driver Logs</a>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-btn">Parcels</button>
+      <div class="dropdown">
+        <a href="#" onclick="showPanel('floorcheck')">Floor Check</a>
+        <a href="#" onclick="showPanel('track')">Track Parcels</a>
+        <a href="#" onclick="showPanel('exceptions')">Scan Exceptions</a>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-btn">Reports</button>
+      <div class="dropdown">
+        <a href="#" onclick="showPanel('daily')">Daily Deliveries</a>
+        <a href="#" onclick="showPanel('age')">Age Analysis</a>
+        <a href="#" onclick="showPanel('pod')">POD Compliance</a>
+        <a href="#" onclick="showPanel('billing')">Billing Summary</a>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-btn">Help</button>
+      <div class="dropdown">
+        <a href="#" onclick="alert('MM Courier ERP v1.0')">About</a>
+        <a href="#" onclick="alert('Contact support@mmcourier.co.za')">Support</a>
+      </div>
+    </div>
     <button class="menu-btn logout" onclick="location.href='login.html'">Logout</button>
   </div>
 
+  <!-- Stats -->
   <div class="container">
-    <div class="panel">
-      <h1>Welcome to MM Courier</h1>
-      <p>This ERP platform helps you manage parcel imports, tripsheets, and logistics operations efficiently.</p>
+    <div class="stats">
+      <div class="stat-box">
+        <h2 id="deliveredCount">0</h2>
+        <p>Delivered</p>
+      </div>
+      <div class="stat-box">
+        <h2 id="pendingCount">0</h2>
+        <p>Pending</p>
+      </div>
+      <div class="stat-box">
+        <h2 id="exceptionCount">0</h2>
+        <p>Exceptions</p>
+      </div>
     </div>
 
-    <div class="panel">
-      <h1>System Overview</h1>
-      <p><strong>Import Data:</strong> Upload and process CSV files (Waybill, Content, Track) to create or update parcel data.</p>
-      <p><strong>Tripsheets:</strong> Assign, view, and debrief driver delivery routes.</p>
-      <p><strong>Reports:</strong> Monitor performance, POD compliance, and billing summaries.</p>
+    <!-- Content Panel -->
+    <div id="content-panel">
+      <div id="welcome-panel">
+        <h1>Welcome to MM Courier</h1>
+        <p>Select a menu option above to manage imports, tripsheets, parcels, or reports.</p>
+      </div>
     </div>
   </div>
 
+  <!-- Footer -->
   <div class="footer">
     © 2025 MM Courier Systems. All rights reserved.
   </div>
+
+  <script>
+    const contentPanel = document.getElementById('content-panel');
+
+    function showPanel(panel) {
+      let html = '';
+      switch(panel) {
+        case 'import':
+          html = '<h1>Import CSV</h1><p>Use the Import Data panel to upload Waybill, Content, and Track CSV files.</p>';
+          break;
+        case 'export':
+          html = '<h1>Export CSV/PDF</h1><p>Export parcel data, tripsheets, or reports as CSV or PDF.</p>';
+          break;
+        case 'tripsheets':
+          html = '<h1>Tripsheets</h1><p>View and manage driver delivery routes here.</p>';
+          break;
+        case 'driver-logs':
+          html = '<h1>Driver Logs</h1><p>Check driver activity and debriefs.</p>';
+          break;
+        case 'floorcheck':
+          html = '<h1>Floor Check</h1><p>Scan and update parcels that have delivery issues.</p>';
+          break;
+        case 'track':
+          html = '<h1>Track Parcels</h1><p>Search and track parcels by waybill number.</p>';
+          break;
+        case 'exceptions':
+          html = '<h1>Scan Exceptions</h1><p>View exceptions and problem parcels.</p>';
+          break;
+        case 'daily':
+          html = '<h1>Daily Deliveries</h1><p>View daily delivery performance reports.</p>';
+          break;
+        case 'age':
+          html = '<h1>Age Analysis</h1><p>View aged parcels and reports.</p>';
+          break;
+        case 'pod':
+          html = '<h1>POD Compliance</h1><p>Check proof-of-delivery compliance.</p>';
+          break;
+        case 'billing':
+          html = '<h1>Billing Summary</h1><p>View billing data for customers and tripsheets.</p>';
+          break;
+        default:
+          html = '<h1>Welcome to MM Courier</h1><p>Select a menu option above to manage imports, tripsheets, parcels, or reports.</p>';
+      }
+      contentPanel.innerHTML = html;
+    }
+
+    // Simulate stats (replace with actual Supabase data later)
+    document.getElementById('deliveredCount').textContent = 120;
+    document.getElementById('pendingCount').textContent = 5;
+    document.getElementById('exceptionCount').textContent = 2;
+  </script>
+
 </body>
 </html>
