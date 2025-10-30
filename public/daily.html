@@ -1,0 +1,27 @@
+<div class="panel">
+  <h1>Daily Deliveries</h1>
+  <input type="date" id="dailyDate" />
+  <button onclick="loadDaily()">Load</button>
+  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+    <thead><tr><th>Waybill</th><th>Recipient</th><th>Status</th></tr></thead>
+    <tbody id="dailyBody"></tbody>
+  </table>
+</div>
+
+<script>
+function initPanel() {
+  async function loadDaily() {
+    const date=document.getElementById('dailyDate').value;
+    if(!date) return alert('Select date');
+    const { data } = await supabase.from('parcels').select('*').eq('date',date);
+    const tbody=document.getElementById('dailyBody');
+    tbody.innerHTML='';
+    data.forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${p.tracking_number}</td><td>${p.receiver}</td><td>${p.status}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  window.loadDaily=loadDaily;
+}
+</script>
