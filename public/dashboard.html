@@ -6,113 +6,102 @@
   <title>MM Courier | Dashboard</title>
   <style>
     body {
-      font-family: "Courier New", monospace;
-      background-color: #f9f9f9;
+      background: #c0c0c0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
       margin: 0;
-      color: #0a2b52;
+      color: #000;
     }
 
-    /* Top bar */
-    .topbar {
-      background-color: #0a2b52;
-      padding: 8px 16px;
+    /* Toolbar (like old Windows 98 menu bar) */
+    .toolbar {
+      background: #d4d0c8;
+      border-bottom: 2px solid #fff;
+      padding: 6px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 6px;
     }
 
-    .logo {
-      font-size: 20px;
-      color: #cebd80;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-
-    .nav {
-      display: flex;
-      gap: 8px;
-    }
-
-    .nav a {
-      color: white;
-      text-decoration: none;
-      background-color: #409dbc;
-      padding: 6px 12px;
-      border: 1px solid #cebd80;
-      border-radius: 3px;
-      font-size: 13px;
-    }
-
-    .nav a:hover {
-      background-color: #cebd80;
-      color: #0a2b52;
-    }
-
-    /* Page layout */
-    .content {
-      padding: 24px;
-    }
-
-    .card {
-      border: 1px solid #0a2b52;
-      background-color: white;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
-    }
-
-    h1 {
-      font-size: 22px;
-      color: #0a2b52;
-      border-bottom: 2px solid #cebd80;
-      padding-bottom: 5px;
-      margin-bottom: 15px;
-    }
-
-    p {
+    .menu-btn {
+      background: #e0e0e0;
+      border: 2px outset #fff;
+      padding: 4px 12px;
       font-size: 14px;
-      color: #333;
+      cursor: pointer;
+    }
+
+    .menu-btn:active {
+      border: 2px inset #fff;
+      background: #d0d0d0;
+    }
+
+    .menu-btn.active {
+      background: #d0d0d0;
+      border: 2px inset #fff;
     }
 
     .logout {
-      color: #cebd80;
-      font-size: 13px;
-      text-decoration: underline;
-      cursor: pointer;
+      margin-left: auto;
+      background: #f2e5b8;
+    }
+
+    /* Content Area */
+    .container {
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 18px;
+      color: #000;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #fff;
+      padding-bottom: 4px;
+    }
+
+    p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #111;
+    }
+
+    .panel {
+      background: #d4d0c8;
+      border: 2px outset #fff;
+      padding: 12px;
+      margin-bottom: 16px;
+      box-shadow: inset 1px 1px #fff;
     }
 
     .footer {
       text-align: center;
-      padding: 12px;
-      border-top: 1px solid #cebd80;
-      color: #666;
       font-size: 12px;
+      color: #333;
+      border-top: 2px solid #fff;
+      padding: 8px;
+      background: #d4d0c8;
     }
   </style>
 </head>
-<body>
 
-  <div class="topbar">
-    <div class="logo">MM Courier ERP</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="import.html">Import Data</a>
-      <a href="tripsheet.html">Tripsheets</a>
-      <a href="floorcheck.html">Floor Check</a>
-      <a href="reports.html">Reports</a>
-      <a href="login.html" class="logout">Logout</a>
-    </div>
+<body>
+  <div class="toolbar">
+    <button class="menu-btn active">Dashboard</button>
+    <button class="menu-btn" onclick="location.href='import.html'">Import Data</button>
+    <button class="menu-btn" onclick="location.href='tripsheet.html'">Tripsheets</button>
+    <button class="menu-btn" onclick="location.href='floorcheck.html'">Floor Check</button>
+    <button class="menu-btn" onclick="location.href='reports.html'">Reports</button>
+    <button class="menu-btn logout" onclick="location.href='login.html'">Logout</button>
   </div>
 
-  <div class="content">
-    <div class="card">
+  <div class="container">
+    <div class="panel">
       <h1>Welcome to MM Courier</h1>
-      <p>This ERP platform allows you to manage parcel imports, tripsheets, and logistics operations efficiently.</p>
+      <p>This ERP platform helps you manage parcel imports, tripsheets, and logistics operations efficiently.</p>
     </div>
 
-    <div class="card">
+    <div class="panel">
       <h1>System Overview</h1>
-      <p><strong>Import Data:</strong> Upload and process CSV files (Waybill, Content, Track) to create and update parcel data.</p>
+      <p><strong>Import Data:</strong> Upload and process CSV files (Waybill, Content, Track) to create or update parcel data.</p>
       <p><strong>Tripsheets:</strong> Assign, view, and debrief driver delivery routes.</p>
       <p><strong>Reports:</strong> Monitor performance, POD compliance, and billing summaries.</p>
     </div>
@@ -121,6 +110,5 @@
   <div class="footer">
     © 2025 MM Courier Systems. All rights reserved.
   </div>
-
 </body>
 </html>
