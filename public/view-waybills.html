@@ -1,144 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>View Waybills | MM Courier</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>View Waybills | MM Courier</title>
+<style>
+  body {
+    font-family: Tahoma, Verdana, sans-serif;
+    font-size: 12px;
+    margin: 0;
+    background-color: #c0c0c0;
+    color: #000;
+  }
+
+  /* ===== Sidebar ===== */
+  aside {
+    width: 220px;
+    background-color: #0a2b52;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px inset #ffffff;
+    height: 100vh;
+  }
+
+  aside h2 {
+    font-size: 14px;
+    margin: 4px 0;
+  }
+
+  aside p {
+    font-size: 10px;
+    margin: 0 0 4px 0;
+  }
+
+  aside nav a {
+    display: block;
+    padding: 2px 6px;
+    margin: 2px 0;
+    font-size: 12px;
+    color: #000;
+    background-color: #d4d0c8;
+    border: 2px outset #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  aside nav a:hover {
+    background-color: #b0b0b0;
+  }
+
+  aside nav a.active {
+    background-color: #d4d0c8;
+    border: 2px inset #cebd80;
+  }
+
+  aside button {
+    font-size: 12px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 2px outset #ffffff;
+    background-color: #cebd80;
+    cursor: pointer;
+  }
+
+  aside button:hover {
+    background-color: #409dbc;
+    color: #fff;
+  }
+
+  /* ===== Main Content ===== */
+  main {
+    flex: 1;
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 14px;
+    border-bottom: 2px solid #cebd80;
+    padding-bottom: 2px;
+    margin-bottom: 6px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  input, select {
+    font-size: 12px;
+    padding: 2px;
+    border: 2px inset #ffffff;
+    background-color: #d4d0c8;
+    margin-bottom: 4px;
+  }
+
+  button {
+    font-size: 12px;
+    padding: 2px 6px;
+    border: 2px outset #ffffff;
+    background-color: #d4d0c8;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #b0b0b0;
+  }
+
+  /* ===== Table ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    font-size: 12px;
+    border: 2px inset #ffffff;
+  }
+
+  th {
+    background-color: #c0c0c0;
+    border: 1px solid #000;
+    padding: 2px 4px;
+    text-align: left;
+  }
+
+  td {
+    border: 1px solid #000;
+    padding: 2px 4px;
+  }
+
+  tr:hover {
+    background-color: #b0c4de;
+  }
+
+  /* ===== Flex Layout ===== */
+  .container {
+    display: flex;
+    height: 100vh;
+  }
+
+  .content {
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  /* ===== Filters / Search Panel ===== */
+  .panel {
+    background-color: #d4d0c8;
+    padding: 4px;
+    margin-bottom: 6px;
+    border: 2px outset #ffffff;
+  }
+
+  .panel input, .panel select {
+    margin-right: 4px;
+  }
+
+</style>
 </head>
+<body>
 
-<body class="flex bg-gray-100 min-h-screen">
-
-  <!-- Sidebar -->
-  <aside class="w-64 bg-[#0a2b52] text-white flex flex-col">
-    <div class="p-4 border-b border-gray-700">
-      <h2 class="text-xl font-bold">MM Courier</h2>
-      <p class="text-xs">ERP Platform</p>
+<div class="container">
+  <aside>
+    <div style="padding:4px; border-bottom:2px inset #ffffff;">
+      <h2>MM Courier</h2>
+      <p>ERP Platform</p>
     </div>
-
-    <nav class="flex-1 p-4 space-y-2">
-      <a href="dashboard.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Dashboard</a>
-      <a href="import.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Import Data</a>
-      <a href="tripsheets.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Tripsheets</a>
-      <a href="view-waybills.html" class="block py-2 px-3 rounded bg-[#409dbc]">View Waybills</a>
-      <a href="reports.html" class="block py-2 px-3 rounded hover:bg-[#409dbc]">Reports</a>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="import.html">Import Data</a>
+      <a href="tripsheets.html">Tripsheets</a>
+      <a href="view-waybills.html" class="active">View Waybills</a>
+      <a href="reports.html">Reports</a>
     </nav>
-
-    <div class="p-4 border-t border-gray-700">
-      <button id="logout" class="bg-[#cebd80] w-full py-2 text-[#0a2b52] rounded-md font-medium">
-        Logout
-      </button>
+    <div style="padding:4px; border-top:2px inset #ffffff;">
+      <button id="logout">Logout</button>
     </div>
   </aside>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-8">
-    <h1 class="text-3xl font-semibold text-[#0a2b52] mb-4">View Imported Waybills</h1>
+  <main class="content">
+    <h1>View Imported Waybills</h1>
 
-    <!-- Filters -->
-    <div class="bg-white p-4 rounded-2xl shadow mb-4 flex flex-wrap gap-4 items-end">
-      <div>
-        <label class="block text-[#0a2b52] font-medium mb-1">Date From</label>
-        <input type="date" id="dateFrom" class="border p-2 rounded-md">
-      </div>
-      <div>
-        <label class="block text-[#0a2b52] font-medium mb-1">Date To</label>
-        <input type="date" id="dateTo" class="border p-2 rounded-md">
-      </div>
-      <div>
-        <label class="block text-[#0a2b52] font-medium mb-1">Customer</label>
-        <input type="text" id="customerFilter" placeholder="Customer name" class="border p-2 rounded-md">
-      </div>
-      <div>
-        <label class="block text-[#0a2b52] font-medium mb-1">Status</label>
-        <select id="statusFilter" class="border p-2 rounded-md">
-          <option value="">All</option>
-          <option value="Delivered">Delivered</option>
-          <option value="In Transit">In Transit</option>
-          <option value="Pending">Pending</option>
-          <option value="Returned">Returned</option>
-        </select>
-      </div>
-      <div class="flex gap-2">
-        <button id="filterBtn" class="bg-[#409dbc] text-white px-4 py-2 rounded-md">Apply Filters</button>
-        <button id="resetBtn" class="bg-gray-300 px-4 py-2 rounded-md">Reset</button>
-      </div>
+    <div class="panel">
+      <label for="dateFrom">Date From</label>
+      <input type="date" id="dateFrom">
+
+      <label for="dateTo">Date To</label>
+      <input type="date" id="dateTo">
+
+      <label for="customerFilter">Customer</label>
+      <input type="text" id="customerFilter" placeholder="Customer name">
+
+      <label for="statusFilter">Status</label>
+      <select id="statusFilter">
+        <option value="">All</option>
+        <option value="Delivered">Delivered</option>
+        <option value="In Transit">In Transit</option>
+        <option value="Pending">Pending</option>
+        <option value="Returned">Returned</option>
+      </select>
+
+      <button id="filterBtn">Apply Filters</button>
+      <button id="resetBtn">Reset</button>
     </div>
 
-    <!-- Search and Export -->
-    <div class="flex justify-between items-center mb-4">
-      <input type="text" id="searchBox" placeholder="Search by tracking or recipient..." class="border p-2 rounded-md w-1/3">
-      <div class="space-x-2">
-        <button id="exportCSV" class="bg-[#cebd80] px-4 py-2 rounded-md text-[#0a2b52] font-medium">Export CSV</button>
-        <button id="exportPDF" class="bg-[#0a2b52] px-4 py-2 rounded-md text-white font-medium">Export PDF</button>
-      </div>
+    <div class="panel" style="margin-bottom:6px;">
+      <input type="text" id="searchBox" placeholder="Search by tracking or recipient...">
+      <button id="exportCSV">Export CSV</button>
+      <button id="exportPDF">Export PDF</button>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white p-4 rounded-2xl shadow overflow-x-auto">
-      <table id="waybillTable" class="min-w-full text-sm text-left">
-        <thead class="bg-[#0a2b52] text-white">
+    <div class="panel" style="overflow-x:auto;">
+      <table id="waybillTable">
+        <thead>
           <tr>
-            <th class="py-2 px-3">Tracking #</th>
-            <th class="py-2 px-3">Sender</th>
-            <th class="py-2 px-3">Recipient</th>
-            <th class="py-2 px-3">Address</th>
-            <th class="py-2 px-3">Customer</th>
-            <th class="py-2 px-3">Status</th>
-            <th class="py-2 px-3">Imported</th>
+            <th>Tracking #</th>
+            <th>Sender</th>
+            <th>Recipient</th>
+            <th>Address</th>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Imported</th>
           </tr>
         </thead>
-        <tbody id="waybillBody" class="divide-y divide-gray-200"></tbody>
+        <tbody id="waybillBody"></tbody>
       </table>
     </div>
   </main>
+</div>
 
-  <script>
-    const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
-    const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+<script>
+  // Your Supabase init and logout
+  const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
+  const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) window.location.href = "login.html";
-    }
-    checkSession();
+  async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) window.location.href = "login.html";
+  }
+  checkSession();
 
-    document.getElementById("logout").addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "login.html";
+  document.getElementById("logout").addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    window.location.href = "login.html";
+  });
+
+  let allWaybills = [];
+
+  async function loadWaybills() {
+    const { data, error } = await supabase
+      .from("parcels")
+      .select("*")
+      .order("imported_at", { ascending: false });
+    if (error) { alert("Error loading waybills: "+error.message); return; }
+    allWaybills = data;
+    renderTable(data);
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById("waybillBody");
+    tbody.innerHTML = "";
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.tracking_number || ""}</td>
+        <td>${r.sender || ""}</td>
+        <td>${r.receiver || ""}</td>
+        <td>${r.address || ""}</td>
+        <td>${r.customer || ""}</td>
+        <td>${r.status || ""}</td>
+        <td>${r.imported_at ? new Date(r.imported_at).toLocaleString() : ""}</td>
+      `;
+      tbody.appendChild(tr);
     });
+  }
 
-    let allWaybills = [];
+  // Initial load
+  loadWaybills();
+</script>
 
-    async function loadWaybills() {
-      const { data, error } = await supabase
-        .from("parcels")
-        .select("*")
-        .order("imported_at", { ascending: false });
-      if (error) {
-        alert("Error loading waybills: " + error.message);
-        return;
-      }
-      allWaybills = data;
-      renderTable(data);
-    }
-
-    function renderTable(rows) {
-      const tbody = document.getElementById("waybillBody");
-      tbody.innerHTML = "";
-      rows.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="py-2 px-3">${r.tracking_number || ""}</td>
-          <td class="py-2 px-3">${r.sender || ""}</td>
-          <td class="py-2 px-3">${r.receiver || ""}</td>
-          <td class="py-2 px-3">${r.address || ""}</td>
-          <td class="py-2 px-3">${r.customer || ""}</td>
-          <td class="py-2 px-3">${r.status || ""}</td>
-          <td class="py-2 px-3">${r.imported_at ? new Date(r.imported_at).toLocaleString() : ""}</td>
-        `;
-        tbody.appendChild(tr);
+</body>
+</html>
