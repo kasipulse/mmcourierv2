@@ -1,31 +1,95 @@
 <div class="panel">
   <h1>Floor Check</h1>
-  <p>Scan parcels currently on the floor.</p>
-  <input type="text" id="scanInput" placeholder="Scan Waybill #" />
-  <button onclick="scanParcel()">Scan</button>
-  <ul id="floorList"></ul>
+  <p>Scan parcels currently on the floor below. Each successful scan will automatically update the parcel status to <b>Scanned</b> and refresh the list.</p>
+
+  <div style="margin: 8px 0; display: flex; gap: 6px; align-items: center;">
+    <input
+      type="text"
+      id="scanInput"
+      placeholder="Scan Waybill #"
+      style="padding: 4px; border: 2px inset #fff; background: #fff; width: 220px; font-family: Tahoma; font-size: 13px;"
+    />
+    <button
+      onclick="scanParcel()"
+      style="background: #e0e0e0; border: 2px outset #fff; padding: 3px 10px; font-size: 13px; cursor: pointer;"
+      onmousedown="this.style.border='2px inset #fff'"
+      onmouseup="this.style.border='2px outset #fff'"
+    >
+      Scan
+    </button>
+    <select
+      id="reasonSelect"
+      style="padding: 3px; border: 2px inset #fff; background: #fff; font-size: 13px;"
+    >
+      <option value="">Select Reason (if applicable)</option>
+      <option>Misroute</option>
+      <option>Incorrect delivery address</option>
+      <option>Nobody home</option>
+      <option>Refused shipment</option>
+      <option>Customer requested future delivery</option>
+      <option>Rejected</option>
+      <option>No paperwork</option>
+    </select>
+  </div>
+
+  <div
+    style="background: #fff; border: 2px inset #fff; height: 300px; overflow-y: auto; padding: 6px; font-family: Tahoma;"
+  >
+    <ul id="floorList" style="margin: 0; padding-left: 18px;"></ul>
+  </div>
 </div>
 
 <script>
 function initPanel() {
   async function loadFloor() {
-    const { data } = await supabase.from('parcels').select('*').eq('status','Pending');
-    const ul = document.getElementById('floorList');
-    ul.innerHTML='';
-    data.forEach(p=>{
-      const li=document.createElement('li');
-      li.textContent=`${p.tracking_number} - ${p.receiver}`;
+    const { data, error } = await supabase
+      .from("parcels")
+      .select("*")
+      .eq("status", "Pending");
+    if (error) {
+      console.error(error);
+      return;
+    }
+    const ul = document.getElementById("floorList");
+    ul.innerHTML = "";
+    if (!data || data.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "No pending parcels found.";
+      ul.appendChild(li);
+      return;
+    }
+    data.forEach((p) => {
+      const li = document.createElement("li");
+      li.textContent = `${p.tracking_number} – ${p.receiver}`;
       ul.appendChild(li);
     });
   }
+
   async function scanParcel() {
-    const code=document.getElementById('scanInput').value.trim();
-    if(!code) return alert('Scan a waybill');
-    await supabase.from('parcels').update({status:'Scanned'}).eq('tracking_number',code);
-    document.getElementById('scanInput').value='';
-    loadFloor();
+    const code = document.getElementById("scanInput").value.trim();
+    const reason = document.getElementById("reasonSelect").value;
+    if (!code) return alert("Please scan a waybill.");
+
+    const updateObj = { status: "Scanned" };
+    if (reason) updateObj.reason = reason;
+
+    const { error } = await supabase
+      .from("parcels")
+      .update(updateObj)
+      .eq("tracking_number", code);
+    if (error) {
+      alert("Error updating parcel: " + error.message);
+      return;
+    }
+
+    document.getElementById("scanInput").value = "";
+    document.getElementById("reasonSelect").value = "";
+    await loadFloor();
+    document.getElementById("scanInput").focus();
   }
-  window.scanParcel=scanParcel;
+
+  window.scanParcel = scanParcel;
   loadFloor();
+  document.getElementById("scanInput").focus();
 }
 </script>
