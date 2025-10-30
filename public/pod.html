@@ -1,0 +1,54 @@
+<div class="panel">
+  <h1>POD Compliance</h1>
+  <label>Date From: <input type="date" id="podFrom"></label>
+  <label>Date To: <input type="date" id="podTo"></label>
+  <button onclick="loadPOD()">Load</button>
+  <button onclick="exportCSV('pod')">Export CSV</button>
+
+  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+    <thead>
+      <tr><th>Waybill</th><th>Recipient</th><th>Status</th><th>POD Uploaded</th></tr>
+    </thead>
+    <tbody id="podBody"></tbody>
+  </table>
+</div>
+
+<script>
+function initPanel() {
+  async function loadPOD() {
+    const from = document.getElementById('podFrom').value;
+    const to = document.getElementById('podTo').value;
+    if(!from || !to) return alert('Select both dates');
+
+    const { data } = await supabase.from('parcels')
+      .select('*')
+      .gte('imported_at', from)
+      .lte('imported_at', to);
+
+    const tbody = document.getElementById('podBody');
+    tbody.innerHTML='';
+    data.forEach(p=>{
+      const pod = p.pod_url ? 'Yes' : 'No';
+      const tr = document.createElement('tr');
+      tr.innerHTML=`<td>${p.tracking_number}</td><td>${p.receiver}</td><td>${p.status}</td><td>${pod}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function exportCSV(type){
+    const rows = [];
+    document.querySelectorAll(`#${type}Body tr`).forEach(tr=>{
+      const row = Array.from(tr.children).map(td=>td.textContent);
+      rows.push(row.join(','));
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `${type}-report.csv`);
+    link.click();
+  }
+
+  window.loadPOD = loadPOD;
+  window.exportCSV = exportCSV;
+}
+</script>
