@@ -1,16 +1,52 @@
-<div class="panel">
-  <h1>Driver Tripsheets</h1>
-  <select id="driverSelect">
-    <option value="">--Select Driver--</option>
-  </select>
-  <button onclick="loadTripsheet()">Load</button>
-  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MM Courier | Tripsheets</title>
+<style>
+  body { font-family:"Tahoma","Segoe UI",sans-serif; background:#c0c0c0; margin:0; font-size:13px; }
+  .toolbar { background:#d4d0c8; border-bottom:2px solid #fff; padding:4px; display:flex; gap:6px; }
+  .menu-btn { background:#e0e0e0; border:2px outset #fff; padding:2px 10px; cursor:pointer; }
+  .menu-btn:active { border:2px inset #fff; background:#d0d0d0; }
+  .logout { margin-left:auto; background:#f2e5b8; }
+  #content-panel { padding:12px; }
+  .panel { background:#d4d0c8; border:2px outset #fff; padding:12px; margin-bottom:12px; box-shadow: inset 1px 1px #fff; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; }
+  th, td { border:1px solid #000; padding:4px; text-align:left; font-size:12px; }
+  th { background:#d4d0c8; }
+  .blue { background:#b0d0ff; }
+  .orange { background:#ffc880; }
+  .red { background:#ff8080; }
+  button.print { margin-top:8px; padding:4px 10px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="menu-btn" onclick="location.href='dashboard.html'">Dashboard</button>
+  <button class="menu-btn logout" onclick="logout()">Logout</button>
+</div>
+
+<div id="content-panel" class="panel">
+  <h1>Tripsheets - Today</h1>
+  <button class="print" onclick="printTripsheet()">Print Tripsheet</button>
+  <table>
     <thead>
       <tr>
-        <th>Waybill</th>
-        <th>Recipient</th>
-        <th>Address</th>
         <th>Status</th>
+        <th>Tripsheet #</th>
+        <th>Date</th>
+        <th>Driver</th>
+        <th>Origin Hub</th>
+        <th># Waybills</th>
+        <th>PODs</th>
+        <th>Returns</th>
+        <th>Pieces</th>
+        <th>Tracking</th>
+        <th>Delivery</th>
+        <th>Charge Mass</th>
       </tr>
     </thead>
     <tbody id="tripsheetBody"></tbody>
@@ -18,25 +54,66 @@
 </div>
 
 <script>
-function initPanel() {
-  async function loadDrivers() {
-    const { data, error } = await supabase.from('drivers').select('*');
-    const select = document.getElementById('driverSelect');
-    data.forEach(d=>{ const opt=document.createElement('option'); opt.value=d.id; opt.text=d.name; select.add(opt); });
-  }
-  loadDrivers();
+const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
+const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  window.loadTripsheet = async function() {
-    const driverId=document.getElementById('driverSelect').value;
-    if(!driverId) return alert('Select a driver');
-    const { data, error } = await supabase.from('parcels').select('*').eq('driver_id', driverId);
-    const tbody=document.getElementById('tripsheetBody');
-    tbody.innerHTML='';
-    data.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${r.tracking_number}</td><td>${r.receiver}</td><td>${r.address}</td><td>${r.status}</td>`;
-      tbody.appendChild(tr);
-    });
-  }
+async function logout() { window.location.href='login.html'; }
+
+async function loadTripsheets() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabase.from('tripsheets')
+    .select('*, parcels(*)')
+    .eq('date', today)
+    .order('tripsheet_number', { ascending:true });
+
+  if(error) return alert(error.message);
+
+  const tbody = document.getElementById('tripsheetBody');
+  tbody.innerHTML='';
+
+  data.forEach(trip=>{
+    const waybills = trip.parcels.length;
+    const pods = trip.parcels.filter(p=>p.pod_url).length;
+    const returns = trip.parcels.filter(p=>p.status==='Returned').length;
+    const pieces = trip.parcels.reduce((acc,p)=>acc + (p.pieces||0),0);
+    const delivery = trip.parcels.filter(p=>p.status==='Delivered').length;
+    const chargeMass = trip.parcels.reduce((acc,p)=>acc + (p.charge_mass||0),0);
+
+    let cls='';
+    if(pods===waybills && returns===waybills) cls='blue';
+    else if(pods>0 && returns===0) cls='orange';
+    else if(waybills!==pieces) cls='red';
+
+    const tr = document.createElement('tr');
+    tr.className = cls;
+    tr.innerHTML=`
+      <td>${cls.toUpperCase()}</td>
+      <td>${trip.tripsheet_number}</td>
+      <td>${trip.date}</td>
+      <td>${trip.driver_name}</td>
+      <td>JHB</td>
+      <td>${waybills}</td>
+      <td>${pods}</td>
+      <td>${returns}</td>
+      <td>${pieces}</td>
+      <td>${trip.parcels.map(p=>p.tracking_number).join(', ')}</td>
+      <td>${delivery}</td>
+      <td>${chargeMass}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
+
+function printTripsheet(){
+  window.print();
+  alert("Tripsheet printed - closing window");
+  window.close();
+}
+
+// Load tripsheets on page load
+loadTripsheets();
 </script>
+
+</body>
+</html>
