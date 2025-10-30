@@ -5,40 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MM Courier | Dashboard</title>
   <style>
-    /* Global Styles */
+    /* Overall body and font */
     body {
+      background: #c0c0c0;
+      font-family: "Tahoma", "Segoe UI", sans-serif;
       margin: 0;
-      font-family: Tahoma, Verdana, sans-serif;
-      background-color: #c0c0c0;
       color: #000;
-      font-size: 12px;
+      font-size: 13px;
     }
 
-    /* Toolbar */
+    /* Toolbar like Windows 98 menu bar */
     .toolbar {
-      display: flex;
-      background-color: #d4d0c8;
-      padding: 4px 8px;
+      background: #d4d0c8;
       border-bottom: 2px solid #fff;
-      user-select: none;
-    }
-
-    .menu {
-      position: relative;
-      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      gap: 6px;
     }
 
     .menu-btn {
       background: #e0e0e0;
       border: 2px outset #fff;
       padding: 2px 10px;
+      font-size: 13px;
       cursor: pointer;
-      font-size: 12px;
     }
 
     .menu-btn:active {
       border: 2px inset #fff;
       background: #d0d0d0;
+    }
+
+    .menu-group {
+      position: relative;
+    }
+
+    .menu-group:hover .dropdown {
+      display: block;
     }
 
     .dropdown {
@@ -47,35 +51,33 @@
       top: 100%;
       left: 0;
       background: #d4d0c8;
-      border: 2px solid #808080;
-      min-width: 160px;
-      z-index: 10;
+      border: 2px outset #fff;
+      z-index: 1000;
+      min-width: 150px;
     }
 
-    .dropdown a {
-      display: block;
+    .dropdown button {
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-bottom: 1px solid #808080;
+      background: #d4d0c8;
       padding: 4px 8px;
-      text-decoration: none;
-      color: #000;
       font-size: 12px;
+      cursor: pointer;
     }
 
-    .dropdown a:hover {
-      background-color: #cebd80;
-      color: #0a2b52;
-    }
-
-    .menu:hover .dropdown {
-      display: block;
+    .dropdown button:hover {
+      background: #b0b0b0;
     }
 
     .logout {
       margin-left: auto;
-      background-color: #f2e5b8;
+      background: #f2e5b8;
     }
 
-    /* Content Area */
-    .container {
+    /* Content panel */
+    #content-panel {
       padding: 12px;
     }
 
@@ -84,132 +86,72 @@
       border: 2px outset #fff;
       padding: 12px;
       margin-bottom: 12px;
-      min-height: 150px;
+      box-shadow: inset 1px 1px #fff;
     }
 
-    .panel h1 {
-      font-size: 14px;
-      margin-top: 0;
-      border-bottom: 1px solid #fff;
-      padding-bottom: 2px;
-    }
-
-    /* Mini Stats */
-    .stats {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .stat-box {
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      padding: 6px 12px;
-      text-align: center;
-      width: 120px;
-    }
-
-    .stat-box h2 {
-      margin: 0;
-      font-size: 16px;
-      color: #0a2b52;
-    }
-
-    .stat-box p {
-      margin: 0;
-      font-size: 11px;
+    h1, h2, h3 {
+      margin: 4px 0;
     }
 
     /* Footer */
     .footer {
       text-align: center;
       font-size: 11px;
-      padding: 6px;
+      color: #333;
       border-top: 2px solid #fff;
+      padding: 6px;
       background: #d4d0c8;
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-    }
-
-    /* Panel Container for dynamic content */
-    #content-panel {
-      background: #c0c0c0;
-      border: 2px inset #fff;
-      padding: 8px;
-      min-height: 300px;
     }
   </style>
 </head>
+
 <body>
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="menu">
-      <button class="menu-btn">File</button>
+    <div class="menu-group">
+      <button class="menu-btn">Data</button>
       <div class="dropdown">
-        <a href="#" onclick="showPanel('import')">Import CSV</a>
-        <a href="#" onclick="showPanel('export')">Export CSV/PDF</a>
-        <a href="login.html">Logout</a>
+        <button onclick="showPanel('import')">Import Data</button>
+        <button onclick="showPanel('view-waybills')">View Waybills</button>
       </div>
     </div>
-    <div class="menu">
+
+    <div class="menu-group">
       <button class="menu-btn">Tripsheets</button>
       <div class="dropdown">
-        <a href="#" onclick="showPanel('tripsheets')">View Tripsheets</a>
-        <a href="#" onclick="showPanel('driver-logs')">Driver Logs</a>
+        <button onclick="showPanel('tripsheets')">Driver Tripsheets</button>
+        <button onclick="showPanel('driver-logs')">Driver Login</button>
       </div>
     </div>
-    <div class="menu">
-      <button class="menu-btn">Parcels</button>
+
+    <div class="menu-group">
+      <button class="menu-btn">Operations</button>
       <div class="dropdown">
-        <a href="#" onclick="showPanel('floorcheck')">Floor Check</a>
-        <a href="#" onclick="showPanel('track')">Track Parcels</a>
-        <a href="#" onclick="showPanel('exceptions')">Scan Exceptions</a>
+        <button onclick="showPanel('floorcheck')">Floor Check</button>
+        <button onclick="showPanel('track')">Track Parcels</button>
+        <button onclick="showPanel('exceptions')">Scan Exceptions</button>
       </div>
     </div>
-    <div class="menu">
+
+    <div class="menu-group">
       <button class="menu-btn">Reports</button>
       <div class="dropdown">
-        <a href="#" onclick="showPanel('daily')">Daily Deliveries</a>
-        <a href="#" onclick="showPanel('age')">Age Analysis</a>
-        <a href="#" onclick="showPanel('pod')">POD Compliance</a>
-        <a href="#" onclick="showPanel('billing')">Billing Summary</a>
+        <button onclick="showPanel('daily')">Daily Deliveries</button>
+        <button onclick="showPanel('age')">Age Analysis</button>
+        <button onclick="showPanel('pod')">POD Compliance</button>
+        <button onclick="showPanel('billing')">Billing Summary</button>
       </div>
     </div>
-    <div class="menu">
-      <button class="menu-btn">Help</button>
-      <div class="dropdown">
-        <a href="#" onclick="alert('MM Courier ERP v1.0')">About</a>
-        <a href="#" onclick="alert('Contact support@mmcourier.co.za')">Support</a>
-      </div>
-    </div>
-    <button class="menu-btn logout" onclick="location.href='login.html'">Logout</button>
+
+    <button class="menu-btn logout" onclick="logout()">Logout</button>
   </div>
 
-  <!-- Stats -->
-  <div class="container">
-    <div class="stats">
-      <div class="stat-box">
-        <h2 id="deliveredCount">0</h2>
-        <p>Delivered</p>
-      </div>
-      <div class="stat-box">
-        <h2 id="pendingCount">0</h2>
-        <p>Pending</p>
-      </div>
-      <div class="stat-box">
-        <h2 id="exceptionCount">0</h2>
-        <p>Exceptions</p>
-      </div>
-    </div>
-
-    <!-- Content Panel -->
-    <div id="content-panel">
-      <div id="welcome-panel">
-        <h1>Welcome to MM Courier</h1>
-        <p>Select a menu option above to manage imports, tripsheets, parcels, or reports.</p>
-      </div>
+  <!-- Content Panel -->
+  <div id="content-panel">
+    <div class="panel">
+      <h1>Welcome to MM Courier</h1>
+      <p>Select a menu option above to manage imports, tripsheets, parcels, or reports.</p>
     </div>
   </div>
 
@@ -218,56 +160,46 @@
     © 2025 MM Courier Systems. All rights reserved.
   </div>
 
+  <!-- JS for dynamic panel loading -->
   <script>
     const contentPanel = document.getElementById('content-panel');
 
-    function showPanel(panel) {
-      let html = '';
+    async function showPanel(panel) {
+      let url = '';
+
       switch(panel) {
-        case 'import':
-          html = '<h1>Import CSV</h1><p>Use the Import Data panel to upload Waybill, Content, and Track CSV files.</p>';
-          break;
-        case 'export':
-          html = '<h1>Export CSV/PDF</h1><p>Export parcel data, tripsheets, or reports as CSV or PDF.</p>';
-          break;
-        case 'tripsheets':
-          html = '<h1>Tripsheets</h1><p>View and manage driver delivery routes here.</p>';
-          break;
-        case 'driver-logs':
-          html = '<h1>Driver Logs</h1><p>Check driver activity and debriefs.</p>';
-          break;
-        case 'floorcheck':
-          html = '<h1>Floor Check</h1><p>Scan and update parcels that have delivery issues.</p>';
-          break;
-        case 'track':
-          html = '<h1>Track Parcels</h1><p>Search and track parcels by waybill number.</p>';
-          break;
-        case 'exceptions':
-          html = '<h1>Scan Exceptions</h1><p>View exceptions and problem parcels.</p>';
-          break;
-        case 'daily':
-          html = '<h1>Daily Deliveries</h1><p>View daily delivery performance reports.</p>';
-          break;
-        case 'age':
-          html = '<h1>Age Analysis</h1><p>View aged parcels and reports.</p>';
-          break;
-        case 'pod':
-          html = '<h1>POD Compliance</h1><p>Check proof-of-delivery compliance.</p>';
-          break;
-        case 'billing':
-          html = '<h1>Billing Summary</h1><p>View billing data for customers and tripsheets.</p>';
-          break;
+        case 'import': url = 'import.html'; break;
+        case 'tripsheets': url = 'tripsheet.html'; break;
+        case 'floorcheck': url = 'floorcheck.html'; break;
+        case 'view-waybills': url = 'view-waybills.html'; break;
+        case 'reports': url = 'reports.html'; break;
         default:
-          html = '<h1>Welcome to MM Courier</h1><p>Select a menu option above to manage imports, tripsheets, parcels, or reports.</p>';
+          contentPanel.innerHTML = `<div class="panel"><h1>Welcome to MM Courier</h1><p>Select a menu option above.</p></div>`;
+          return;
       }
-      contentPanel.innerHTML = html;
+
+      try {
+        const res = await fetch(url);
+        let html = await res.text();
+
+        // Remove <html>, <head>, <body> tags
+        html = html.replace(/<!DOCTYPE html.*?>/i, '')
+                   .replace(/<html.*?>/i, '')
+                   .replace(/<\/html>/i, '')
+                   .replace(/<head.*?>.*<\/head>/is, '')
+                   .replace(/<body.*?>/i, '')
+                   .replace(/<\/body>/i, '');
+
+        contentPanel.innerHTML = html;
+
+      } catch(err) {
+        contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
+      }
     }
 
-    // Simulate stats (replace with actual Supabase data later)
-    document.getElementById('deliveredCount').textContent = 120;
-    document.getElementById('pendingCount').textContent = 5;
-    document.getElementById('exceptionCount').textContent = 2;
+    function logout() {
+      window.location.href = 'login.html';
+    }
   </script>
-
 </body>
 </html>
