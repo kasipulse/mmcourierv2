@@ -9,26 +9,26 @@
 
 <body>
   <div class="toolbar">
-    <button class="menu-btn">Dashboard</button>
-    <button class="menu-btn active">Floor Check</button>
-    <button class="menu-btn">Tripsheets</button>
-    <button class="menu-btn">Reports</button>
-    <button class="menu-btn logout">Logout</button>
+    <button class="menu-btn" onclick="location.href='dashboard.html'">Dashboard</button>
+    <button class="menu-btn active" onclick="location.href='floorcheck.html'">Floor Check</button>
+    <button class="menu-btn" onclick="location.href='tripsheet.html'">Tripsheets</button>
+    <button class="menu-btn" onclick="location.href='reports.html'">Reports</button>
+    <button class="menu-btn logout" onclick="location.href='login.html'">Logout</button>
   </div>
 
   <div class="container">
     <h1>Floor Check</h1>
-    <p>Select customer and enter waybill number for each parcel. Mark reasons for exceptions.</p>
+    <p>Select customer and enter a waybill number for each parcel. Mark a reason for any problem parcel.</p>
 
     <div class="form-box">
       <label for="customer">Customer:</label>
       <select id="customer">
         <option value="">Select...</option>
-        <option value="FedEx Express">FedEx Express</option>
-        <option value="Seabourne Logistics">Seabourne Logistics</option>
-        <option value="Brima Logistics">Brima Logistics</option>
-        <option value="First Freight Couriers">First Freight Couriers</option>
-        <option value="AJM">AJM</option>
+        <option>FedEx Express</option>
+        <option>Seabourne Logistics</option>
+        <option>Brima Logistics</option>
+        <option>First Freight Couriers</option>
+        <option>AJM</option>
       </select>
 
       <label for="waybill">Waybill No:</label>
@@ -61,6 +61,10 @@
       </thead>
       <tbody></tbody>
     </table>
+  </div>
+
+  <div class="footer">
+    © 2025 MM Courier Systems. All rights reserved.
   </div>
 
   <script src="js/floorcheck.js"></script>
