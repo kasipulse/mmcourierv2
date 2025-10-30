@@ -1,25 +1,29 @@
-<!doctype html>
-<html>
-<head><meta charset="utf-8"/><title>Driver Login</title></head>
-<body>
+<div class="panel" style="max-width:300px; margin:auto;">
   <h1>Driver Login</h1>
-  <form id="dlogin">
-    <input id="email" placeholder="email"/>
-    <input id="password" placeholder="password" type="password"/>
-    <button type="submit">Login</button>
-  </form>
+
+  <label for="driverName" style="font-size:12px;">Driver Name:</label>
+  <input type="text" id="driverName" style="width:100%; font-size:12px; padding:2px; margin-bottom:6px;">
+
+  <label for="driverPin" style="font-size:12px;">PIN:</label>
+  <input type="password" id="driverPin" style="width:100%; font-size:12px; padding:2px; margin-bottom:6px;">
+
+  <button id="driverLoginBtn" style="background:#d4d0c8; border:2px outset #fff; padding:4px 8px; font-size:12px; cursor:pointer;">Login</button>
+
+  <div id="driverStatus" style="margin-top:6px; font-size:12px;"></div>
+</div>
+
 <script>
-document.getElementById('dlogin').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const email=document.getElementById('email').value;
-  const password=document.getElementById('password').value;
-  const res=await fetch('/api/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
-  const json=await res.json();
-  if(json.user && json.user.role==='driver'){
-    localStorage.setItem('mm_user', JSON.stringify(json.user));
-    window.location.href = '/tripsheet.html';
-  } else { alert('Login failed'); }
+document.getElementById('driverLoginBtn').addEventListener('click', () => {
+  const name = document.getElementById('driverName').value;
+  const pin = document.getElementById('driverPin').value;
+  const status = document.getElementById('driverStatus');
+
+  if(name && pin){
+    status.textContent = `Driver ${name} logged in (simulation).`;
+    status.style.color = "green";
+  } else {
+    status.textContent = "Please enter both name and PIN.";
+    status.style.color = "red";
+  }
 });
 </script>
-</body>
-</html>
