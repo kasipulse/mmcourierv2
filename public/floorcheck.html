@@ -5,6 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MM Courier | Floor Check</title>
   <link rel="stylesheet" href="css/floorcheck.css" />
+  <style>
+    /* Windows 95/98 style basics */
+    body {
+      font-family: 'Tahoma', 'Verdana', sans-serif;
+      font-size: 12px; /* small font */
+      background-color: #c0c0c0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .toolbar {
+      background-color: #000080;
+      padding: 4px;
+      display: flex;
+      gap: 2px;
+    }
+
+    .menu-btn {
+      font-size: 12px;
+      padding: 2px 6px;
+      background-color: #c0c0c0;
+      border: 2px outset #fff;
+      cursor: pointer;
+    }
+
+    .menu-btn.active {
+      background-color: #000080;
+      color: #fff;
+      border: 2px inset #fff;
+    }
+
+    .menu-btn.logout {
+      margin-left: auto;
+    }
+
+    .container {
+      padding: 10px;
+    }
+
+    h1 {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .form-box {
+      background-color: #fff;
+      border: 2px outset #fff;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin-top: 4px;
+    }
+
+    input[type="text"],
+    select {
+      width: 200px;
+      font-size: 12px;
+      padding: 2px;
+      margin-top: 2px;
+      margin-bottom: 4px;
+      border: 2px inset #fff;
+      background-color: #c0c0c0;
+    }
+
+    button {
+      font-size: 12px;
+      padding: 2px 6px;
+      border: 2px outset #fff;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background-color: #fff;
+      border: 2px inset #fff;
+    }
+
+    th, td {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      text-align: left;
+    }
+
+    .footer {
+      background-color: #c0c0c0;
+      text-align: center;
+      padding: 4px;
+      font-size: 10px;
+      border-top: 2px outset #fff;
+    }
+  </style>
 </head>
 
 <body>
@@ -24,11 +121,7 @@
       <label for="customer">Customer:</label>
       <select id="customer">
         <option value="">Select...</option>
-        <option>FedEx Express</option>
-        <option>Seabourne Logistics</option>
-        <option>Brima Logistics</option>
-        <option>First Freight Couriers</option>
-        <option>AJM</option>
+        <!-- Customers will be dynamically loaded by each client -->
       </select>
 
       <label for="waybill">Waybill No:</label>
