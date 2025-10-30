@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan Out | MM Courier</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="panel">
+  <h2>Scan Out Parcels</h2>
+  <label>Scan Tracking #:</label>
+  <input type="text" id="trackingInput" placeholder="Scan or enter tracking number" autofocus>
+  <select id="driverSelect">
+    <option value="">Select Driver</option>
+    <option value="1">Driver 1 - John</option>
+    <option value="2">Driver 2 - Peter</option>
+    <option value="3">Driver 3 - Sam</option>
+  </select>
+  <button id="scanBtn">Scan Out</button>
+
+  <div id="warningPanel" style="display:none; margin-top:10px; color:red;">
+    <p id="warningText"></p>
+    <label>Reason:</label>
+    <select id="reasonSelect">
+      <option value="">Select reason</option>
+      <option value="Incorrectly Scanned">Incorrectly Scanned</option>
+      <option value="Different Driver">Scanning to a different driver</option>
+      <option value="Returning to Depot">Returning to Depot</option>
+    </select>
+    <button id="confirmBtn">Confirm</button>
+  </div>
+</div>
+
+<script>
+const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
+const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+const scanBtn = document.getElementById('scanBtn');
+const confirmBtn = document.getElementById('confirmBtn');
+const warningPanel = document.getElementById('warningPanel');
+const warningText = document.getElementById('warningText');
+const reasonSelect = document.getElementById('reasonSelect');
+let currentParcel;
+
+scanBtn.addEventListener('click', async () => {
+  const tracking = document.getElementById('trackingInput').value.trim();
+  const driverId = document.getElementById('driverSelect').value;
+
+  if(!tracking || !driverId) return alert('Enter tracking number and select driver');
+
+  const { data: parcel } = await supabase
+    .from('parcels')
+    .select('*')
+    .eq('tracking_number', tracking)
+    .single();
+
+  if(!parcel) return alert('Parcel not found');
+  currentParcel = parcel;
+
+  if(parcel.tripsheet_id && parcel.tripsheet_id != driverId) {
+    warningText.innerText = `Parcel already assigned to Tripsheet ${parcel.tripsheet_id}`;
+    warningPanel.style.display = 'block';
+  } else {
+    await supabase.from('parcels').update({
+      status: 'Out for Delivery',
+      tripsheet_id: driverId,
+      scanned_out_at: new Date()
+    }).eq('tracking_number', tracking);
+
+    alert('Parcel scanned out successfully');
+    document.getElementById('trackingInput').value = '';
+  }
+});
+
+confirmBtn.addEventListener('click', async () => {
+  const reason = reasonSelect.value;
+  if(!reason) return alert('Select a reason');
+
+  const driverId = document.getElementById('driverSelect').value;
+  await supabase.from('parcels').update({
+    status: reason === 'Returning to Depot' ? 'Returned to Depot' : 'Out for Delivery',
+    tripsheet_id: reason === 'Different Driver' ? driverId : currentParcel.tripsheet_id,
+    reason: reason,
+    scanned_out_at: new Date()
+  }).eq('tracking_number', currentParcel.tracking_number);
+
+  alert('Parcel updated with reason');
+  warningPanel.style.display = 'none';
+  document.getElementById('trackingInput').value = '';
+});
+</script>
+</body>
+</html>
