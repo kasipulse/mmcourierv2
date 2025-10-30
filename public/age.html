@@ -1,0 +1,54 @@
+<div class="panel">
+  <h1>Age Analysis</h1>
+  <label>Date From: <input type="date" id="ageFrom"></label>
+  <label>Date To: <input type="date" id="ageTo"></label>
+  <button onclick="loadAge()">Load</button>
+  <button onclick="exportCSV('age')">Export CSV</button>
+
+  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+    <thead>
+      <tr><th>Waybill</th><th>Recipient</th><th>Status</th><th>Days Pending</th></tr>
+    </thead>
+    <tbody id="ageBody"></tbody>
+  </table>
+</div>
+
+<script>
+function initPanel() {
+  async function loadAge() {
+    const from = document.getElementById('ageFrom').value;
+    const to = document.getElementById('ageTo').value;
+    if(!from || !to) return alert('Select both dates');
+
+    const { data } = await supabase.from('parcels')
+      .select('*')
+      .gte('imported_at', from)
+      .lte('imported_at', to);
+
+    const tbody = document.getElementById('ageBody');
+    tbody.innerHTML='';
+    data.forEach(p=>{
+      const days = Math.floor((new Date() - new Date(p.imported_at))/(1000*60*60*24));
+      const tr = document.createElement('tr');
+      tr.innerHTML=`<td>${p.tracking_number}</td><td>${p.receiver}</td><td>${p.status}</td><td>${days}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function exportCSV(type){
+    const rows = [];
+    document.querySelectorAll(`#${type}Body tr`).forEach(tr=>{
+      const row = Array.from(tr.children).map(td=>td.textContent);
+      rows.push(row.join(','));
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `${type}-report.csv`);
+    link.click();
+  }
+
+  window.loadAge = loadAge;
+  window.exportCSV = exportCSV;
+}
+</script>
