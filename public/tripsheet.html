@@ -1,46 +1,42 @@
 <div class="panel">
   <h1>Driver Tripsheets</h1>
-
-  <label for="driverSelect">Select Driver:</label>
-  <select id="driverSelect" style="font-size:12px; padding:2px; margin-bottom:8px;">
-    <option value="">-- Select Driver --</option>
-    <option value="1">Driver 1 - John</option>
-    <option value="2">Driver 2 - Peter</option>
-    <option value="3">Driver 3 - Sam</option>
+  <select id="driverSelect">
+    <option value="">--Select Driver--</option>
   </select>
-  <button id="loadTripsheet" style="background:#d4d0c8; border:2px outset #fff; padding:2px 8px; font-size:12px; cursor:pointer;">Load Tripsheet</button>
-
-  <div id="tripsheetSection" style="margin-top:10px; display:none;">
-    <table style="width:100%; border:1px solid #808080; border-collapse:collapse; font-size:12px;">
-      <thead style="background:#c0c0c0;">
-        <tr>
-          <th style="border:1px solid #808080; padding:2px;">Waybill</th>
-          <th style="border:1px solid #808080; padding:2px;">Recipient</th>
-          <th style="border:1px solid #808080; padding:2px;">Address</th>
-          <th style="border:1px solid #808080; padding:2px;">Status</th>
-          <th style="border:1px solid #808080; padding:2px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tripsheetTableBody"></tbody>
-    </table>
-  </div>
+  <button onclick="loadTripsheet()">Load</button>
+  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+    <thead>
+      <tr>
+        <th>Waybill</th>
+        <th>Recipient</th>
+        <th>Address</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tripsheetBody"></tbody>
+  </table>
 </div>
 
 <script>
-const loadBtn = document.getElementById('loadTripsheet');
-const tripsheetSection = document.getElementById('tripsheetSection');
-const tableBody = document.getElementById('tripsheetTableBody');
+function initPanel() {
+  async function loadDrivers() {
+    const { data, error } = await supabase.from('drivers').select('*');
+    const select = document.getElementById('driverSelect');
+    data.forEach(d=>{ const opt=document.createElement('option'); opt.value=d.id; opt.text=d.name; select.add(opt); });
+  }
+  loadDrivers();
 
-loadBtn.addEventListener('click', () => {
-  tripsheetSection.style.display = 'block';
-  tableBody.innerHTML = `
-    <tr>
-      <td style="border:1px solid #808080; padding:2px;">483675802831</td>
-      <td style="border:1px solid #808080; padding:2px;">John Doe</td>
-      <td style="border:1px solid #808080; padding:2px;">123 Main St</td>
-      <td style="border:1px solid #808080; padding:2px;">Pending</td>
-      <td style="border:1px solid #808080; padding:2px;"><button style="font-size:12px;">Upload POD</button></td>
-    </tr>
-  `;
-});
+  window.loadTripsheet = async function() {
+    const driverId=document.getElementById('driverSelect').value;
+    if(!driverId) return alert('Select a driver');
+    const { data, error } = await supabase.from('parcels').select('*').eq('driver_id', driverId);
+    const tbody=document.getElementById('tripsheetBody');
+    tbody.innerHTML='';
+    data.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.tracking_number}</td><td>${r.receiver}</td><td>${r.address}</td><td>${r.status}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
 </script>
