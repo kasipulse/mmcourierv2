@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -173,6 +173,7 @@
         case 'floorcheck': url = 'floorcheck.html'; break;
         case 'view-waybills': url = 'view-waybills.html'; break;
         case 'reports': url = 'reports.html'; break;
+        case 'driver-logs': url = 'driver-login.html'; break;
         default:
           contentPanel.innerHTML = `<div class="panel"><h1>Welcome to MM Courier</h1><p>Select a menu option above.</p></div>`;
           return;
@@ -182,7 +183,7 @@
         const res = await fetch(url);
         let html = await res.text();
 
-        // Remove <html>, <head>, <body> tags
+        // Strip <html>, <head>, <body> tags
         html = html.replace(/<!DOCTYPE html.*?>/i, '')
                    .replace(/<html.*?>/i, '')
                    .replace(/<\/html>/i, '')
@@ -191,6 +192,9 @@
                    .replace(/<\/body>/i, '');
 
         contentPanel.innerHTML = html;
+
+        // Optionally: call init functions inside loaded fragments
+        if(window.initPanel) initPanel();
 
       } catch(err) {
         contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
