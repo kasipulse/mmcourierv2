@@ -2,200 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MM Courier | Floor Check</title>
-  <style>
-    body {
-      font-family: "Tahoma", "Segoe UI", sans-serif;
-      background-color: #c0c0c0;
-      margin: 0;
-      color: black;
-    }
-    header {
-      background-color: #d4d0c8;
-      border-bottom: 2px solid #808080;
-      padding: 4px 10px;
-      font-size: 14px;
-    }
-    .menubar {
-      background-color: #d4d0c8;
-      padding: 2px 8px;
-      border-bottom: 2px solid #808080;
-    }
-    .menubar span {
-      margin-right: 20px;
-      cursor: pointer;
-    }
-    .toolbar {
-      background-color: #d4d0c8;
-      border-bottom: 2px solid #808080;
-      padding: 6px;
-      display: flex;
-      gap: 8px;
-    }
-    .toolbar button {
-      background-color: #e0e0e0;
-      border: 2px solid #fff;
-      border-bottom-color: #808080;
-      border-right-color: #808080;
-      padding: 4px 12px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .toolbar button:active {
-      border: 2px solid #808080;
-      border-bottom-color: #fff;
-      border-right-color: #fff;
-    }
-    .window {
-      background-color: #ece9d8;
-      border: 2px solid #808080;
-      margin: 12px;
-      padding: 12px;
-    }
-    h2 {
-      margin: 0 0 10px 0;
-      font-size: 16px;
-      border-bottom: 1px solid #808080;
-      padding-bottom: 4px;
-    }
-    input[type="text"], select {
-      border: 2px inset #808080;
-      padding: 4px;
-      font-size: 13px;
-      background-color: white;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      background-color: white;
-      border: 2px inset #808080;
-    }
-    th, td {
-      border: 1px solid #808080;
-      padding: 6px;
-      font-size: 13px;
-      text-align: left;
-    }
-    th {
-      background-color: #d4d0c8;
-    }
-    .btn-save {
-      background-color: #e0e0e0;
-      border: 2px solid #fff;
-      border-bottom-color: #808080;
-      border-right-color: #808080;
-      padding: 6px 16px;
-      margin-top: 12px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .btn-save:active {
-      border: 2px solid #808080;
-      border-bottom-color: #fff;
-      border-right-color: #fff;
-    }
-  </style>
+  <link rel="stylesheet" href="css/floorcheck.css" />
 </head>
+
 <body>
-  <header>
-    <strong>MM Courier ERP System</strong> — Floor Check Module
-  </header>
-
-  <div class="menubar">
-    <span>File</span>
-    <span>Edit</span>
-    <span>View</span>
-    <span>Tools</span>
-    <span>Help</span>
-  </div>
-
   <div class="toolbar">
-    <button onclick="window.location='dashboard.html'">🏠 Dashboard</button>
-    <button onclick="window.location='import.html'">⬆️ Import Data</button>
-    <button onclick="window.location='tripsheet.html'">🧾 Tripsheets</button>
-    <button onclick="window.location='floorcheck.html'">📦 Floor Check</button>
-    <button onclick="window.location='reports.html'">📊 Reports</button>
+    <button class="menu-btn">Dashboard</button>
+    <button class="menu-btn active">Floor Check</button>
+    <button class="menu-btn">Tripsheets</button>
+    <button class="menu-btn">Reports</button>
+    <button class="menu-btn logout">Logout</button>
   </div>
 
-  <div class="window">
-    <h2>Floor Check Scanner</h2>
+  <div class="container">
+    <h1>Floor Check</h1>
+    <p>Select customer and enter waybill number for each parcel. Mark reasons for exceptions.</p>
 
-    <label for="waybill">Scan / Enter Waybill Number:</label><br>
-    <input type="text" id="waybill" placeholder="Enter waybill number" onkeypress="handleScan(event)">
-    <br><br>
+    <div class="form-box">
+      <label for="customer">Customer:</label>
+      <select id="customer">
+        <option value="">Select...</option>
+        <option value="FedEx Express">FedEx Express</option>
+        <option value="Seabourne Logistics">Seabourne Logistics</option>
+        <option value="Brima Logistics">Brima Logistics</option>
+        <option value="First Freight Couriers">First Freight Couriers</option>
+        <option value="AJM">AJM</option>
+      </select>
 
-    <label for="reason">Select Reason (if applicable):</label><br>
-    <select id="reason">
-      <option value="">— None —</option>
-      <option value="Misroute">Misroute</option>
-      <option value="Incorrect delivery address">Incorrect delivery address</option>
-      <option value="Nobody home">Nobody home</option>
-      <option value="Refused shipment">Refused shipment</option>
-      <option value="Customer requested future delivery">Customer requested future delivery</option>
-      <option value="Rejected">Rejected</option>
-      <option value="No paper work">No paper work</option>
-    </select>
+      <label for="waybill">Waybill No:</label>
+      <input type="text" id="waybill" placeholder="Enter or scan waybill" />
 
-    <table id="floorTable">
+      <label for="reason">Reason (if problem):</label>
+      <select id="reason">
+        <option value="">—</option>
+        <option>Misroute</option>
+        <option>Incorrect delivery address</option>
+        <option>Nobody home</option>
+        <option>Refused shipment</option>
+        <option>Customer requested future delivery</option>
+        <option>Rejected</option>
+        <option>No paperwork</option>
+      </select>
+
+      <button id="add-scan">Add Scan</button>
+    </div>
+
+    <table id="scans-table">
       <thead>
         <tr>
           <th>#</th>
+          <th>Customer</th>
           <th>Waybill</th>
           <th>Reason</th>
-          <th>Time Scanned</th>
+          <th>Timestamp</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
-
-    <button class="btn-save" onclick="saveFloorCheck()">💾 Save Floor Check</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-    const SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const tableBody = document.querySelector("#floorTable tbody");
-    const entries = [];
-
-    function handleScan(event) {
-      if (event.key === "Enter") {
-        const waybill = event.target.value.trim();
-        const reason = document.getElementById("reason").value;
-        if (waybill) {
-          const now = new Date().toLocaleString();
-          entries.push({ waybill, reason, scanned_at: now });
-          tableBody.innerHTML += `
-            <tr>
-              <td>${entries.length}</td>
-              <td>${waybill}</td>
-              <td>${reason || "-"}</td>
-              <td>${now}</td>
-            </tr>`;
-          event.target.value = "";
-        }
-      }
-    }
-
-    async function saveFloorCheck() {
-      if (entries.length === 0) return alert("No scans to save.");
-
-      const { data, error } = await supabase
-        .from("floor_checks")
-        .insert(entries);
-
-      if (error) {
-        alert("Error saving data: " + error.message);
-      } else {
-        alert("Floor check saved successfully!");
-        entries.length = 0;
-        tableBody.innerHTML = "";
-      }
-    }
-  </script>
+  <script src="js/floorcheck.js"></script>
 </body>
 </html>
