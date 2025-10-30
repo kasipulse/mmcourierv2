@@ -2,249 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MM Courier | Floor Check</title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-family: "Tahoma", "Segoe UI", sans-serif;
+      background-color: #c0c0c0;
       margin: 0;
-      background-color: #f5f5f5;
-      color: #0a2b52;
+      color: black;
     }
-
     header {
-      background-color: #0a2b52;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background-color: #d4d0c8;
+      border-bottom: 2px solid #808080;
+      padding: 4px 10px;
+      font-size: 14px;
     }
-
-    header h1 {
-      font-size: 20px;
-      margin: 0;
+    .menubar {
+      background-color: #d4d0c8;
+      padding: 2px 8px;
+      border-bottom: 2px solid #808080;
     }
-
-    nav {
+    .menubar span {
+      margin-right: 20px;
+      cursor: pointer;
+    }
+    .toolbar {
+      background-color: #d4d0c8;
+      border-bottom: 2px solid #808080;
+      padding: 6px;
       display: flex;
       gap: 8px;
     }
-
-    nav a {
-      background-color: #cebd80;
-      color: #0a2b52;
-      text-decoration: none;
-      padding: 6px 14px;
-      border-radius: 4px;
-      font-weight: 600;
-      transition: background 0.3s;
-    }
-
-    nav a:hover {
-      background-color: #409dbc;
-      color: white;
-    }
-
-    main {
-      padding: 20px;
-    }
-
-    h2 {
-      color: #0a2b52;
-      font-size: 22px;
-      border-bottom: 2px solid #cebd80;
-      padding-bottom: 6px;
-      margin-bottom: 20px;
-    }
-
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    input[type="text"], select {
-      padding: 6px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 200px;
-    }
-
-    button {
-      background-color: #0a2b52;
-      color: white;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 4px;
+    .toolbar button {
+      background-color: #e0e0e0;
+      border: 2px solid #fff;
+      border-bottom-color: #808080;
+      border-right-color: #808080;
+      padding: 4px 12px;
+      font-size: 13px;
       cursor: pointer;
-      font-weight: 600;
     }
-
-    button:hover {
-      background-color: #409dbc;
+    .toolbar button:active {
+      border: 2px solid #808080;
+      border-bottom-color: #fff;
+      border-right-color: #fff;
     }
-
+    .window {
+      background-color: #ece9d8;
+      border: 2px solid #808080;
+      margin: 12px;
+      padding: 12px;
+    }
+    h2 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      border-bottom: 1px solid #808080;
+      padding-bottom: 4px;
+    }
+    input[type="text"], select {
+      border: 2px inset #808080;
+      padding: 4px;
+      font-size: 13px;
+      background-color: white;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      border-radius: 4px;
-      overflow: hidden;
+      margin-top: 10px;
+      background-color: white;
+      border: 2px inset #808080;
     }
-
     th, td {
-      padding: 10px;
-      border-bottom: 1px solid #e0e0e0;
+      border: 1px solid #808080;
+      padding: 6px;
+      font-size: 13px;
       text-align: left;
-      vertical-align: middle;
     }
-
     th {
-      background-color: #0a2b52;
-      color: white;
+      background-color: #d4d0c8;
     }
-
-    tr:hover {
-      background-color: #f0f8ff;
+    .btn-save {
+      background-color: #e0e0e0;
+      border: 2px solid #fff;
+      border-bottom-color: #808080;
+      border-right-color: #808080;
+      padding: 6px 16px;
+      margin-top: 12px;
+      font-weight: bold;
+      cursor: pointer;
     }
-
-    select.reason {
-      width: 220px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 10px;
-      background-color: #0a2b52;
-      color: white;
-      font-size: 12px;
-      margin-top: 30px;
+    .btn-save:active {
+      border: 2px solid #808080;
+      border-bottom-color: #fff;
+      border-right-color: #fff;
     }
   </style>
 </head>
 <body>
-
   <header>
-    <h1>MM Courier | Floor Check</h1>
-    <nav>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="import.html">Import Data</a>
-      <a href="tripsheet.html">Tripsheets</a>
-      <a href="floorcheck.html">Floor Check</a>
-      <a href="reports.html">Reports</a>
-    </nav>
+    <strong>MM Courier ERP System</strong> — Floor Check Module
   </header>
 
-  <main>
-    <h2>Warehouse Floor Check</h2>
+  <div class="menubar">
+    <span>File</span>
+    <span>Edit</span>
+    <span>View</span>
+    <span>Tools</span>
+    <span>Help</span>
+  </div>
 
-    <div class="filters">
-      <input type="text" id="searchTracking" placeholder="Enter Tracking Number">
-      <select id="filterCustomer">
-        <option value="">All Customers</option>
-        <option value="FedEx">FedEx</option>
-        <option value="Seabourne">Seabourne</option>
-        <option value="Brima">Brima</option>
-      </select>
-      <button id="searchBtn">Search</button>
-    </div>
+  <div class="toolbar">
+    <button onclick="window.location='dashboard.html'">🏠 Dashboard</button>
+    <button onclick="window.location='import.html'">⬆️ Import Data</button>
+    <button onclick="window.location='tripsheet.html'">🧾 Tripsheets</button>
+    <button onclick="window.location='floorcheck.html'">📦 Floor Check</button>
+    <button onclick="window.location='reports.html'">📊 Reports</button>
+  </div>
+
+  <div class="window">
+    <h2>Floor Check Scanner</h2>
+
+    <label for="waybill">Scan / Enter Waybill Number:</label><br>
+    <input type="text" id="waybill" placeholder="Enter waybill number" onkeypress="handleScan(event)">
+    <br><br>
+
+    <label for="reason">Select Reason (if applicable):</label><br>
+    <select id="reason">
+      <option value="">— None —</option>
+      <option value="Misroute">Misroute</option>
+      <option value="Incorrect delivery address">Incorrect delivery address</option>
+      <option value="Nobody home">Nobody home</option>
+      <option value="Refused shipment">Refused shipment</option>
+      <option value="Customer requested future delivery">Customer requested future delivery</option>
+      <option value="Rejected">Rejected</option>
+      <option value="No paper work">No paper work</option>
+    </select>
 
     <table id="floorTable">
       <thead>
         <tr>
-          <th>Tracking #</th>
-          <th>Customer</th>
-          <th>Status</th>
-          <th>Scan Time</th>
+          <th>#</th>
+          <th>Waybill</th>
           <th>Reason</th>
-          <th>Action</th>
+          <th>Time Scanned</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Data inserted via JS -->
-      </tbody>
+      <tbody></tbody>
     </table>
-  </main>
 
-  <footer>
-    © 2025 Pakisa Express Logistics. All rights reserved.
-  </footer>
+    <button class="btn-save" onclick="saveFloorCheck()">💾 Save Floor Check</button>
+  </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const supabase = window.supabase.createClient(
-      "https://your-project.supabase.co",
-      "public-anon-key"
-    );
+    const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+    const SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function loadFloorData() {
+    const tableBody = document.querySelector("#floorTable tbody");
+    const entries = [];
+
+    function handleScan(event) {
+      if (event.key === "Enter") {
+        const waybill = event.target.value.trim();
+        const reason = document.getElementById("reason").value;
+        if (waybill) {
+          const now = new Date().toLocaleString();
+          entries.push({ waybill, reason, scanned_at: now });
+          tableBody.innerHTML += `
+            <tr>
+              <td>${entries.length}</td>
+              <td>${waybill}</td>
+              <td>${reason || "-"}</td>
+              <td>${now}</td>
+            </tr>`;
+          event.target.value = "";
+        }
+      }
+    }
+
+    async function saveFloorCheck() {
+      if (entries.length === 0) return alert("No scans to save.");
+
       const { data, error } = await supabase
-        .from("floor_scans")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from("floor_checks")
+        .insert(entries);
 
       if (error) {
-        console.error(error);
-        return;
-      }
-
-      const tbody = document.querySelector("#floorTable tbody");
-      tbody.innerHTML = "";
-
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${row.tracking_number}</td>
-          <td>${row.customer}</td>
-          <td>${row.status}</td>
-          <td>${new Date(row.created_at).toLocaleString()}</td>
-          <td>
-            <select class="reason" id="reason-${row.id}">
-              <option value="">Select reason</option>
-              <option>Misroute</option>
-              <option>Incorrect delivery address</option>
-              <option>Nobody home</option>
-              <option>Refused shipment</option>
-              <option>Customer requested future delivery</option>
-              <option>Rejected</option>
-              <option>No paperwork</option>
-            </select>
-          </td>
-          <td><button onclick="markChecked(${row.id})">Mark as Checked</button></td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function markChecked(id) {
-      const reason = document.getElementById(`reason-${id}`).value;
-      if (!reason) {
-        alert("Please select a reason before marking as checked.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("floor_scans")
-        .update({ reason: reason, status: "Checked" })
-        .eq("id", id);
-
-      if (error) {
-        alert("Error updating record.");
-        console.error(error);
+        alert("Error saving data: " + error.message);
       } else {
-        alert("Marked as checked!");
-        loadFloorData();
+        alert("Floor check saved successfully!");
+        entries.length = 0;
+        tableBody.innerHTML = "";
       }
     }
-
-    document.getElementById("searchBtn").addEventListener("click", loadFloorData);
-
-    loadFloorData();
   </script>
 </body>
 </html>
