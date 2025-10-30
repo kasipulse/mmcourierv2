@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scan In | MM Courier</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="panel">
+  <h2>Scan In Parcels</h2>
+  <label>Scan Tracking #:</label>
+  <input type="text" id="trackingInput" placeholder="Scan or enter tracking number" autofocus>
+  <button id="scanBtn">Scan In</button>
+</div>
+
+<script>
+const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
+const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+const scanBtn = document.getElementById('scanBtn');
+
+scanBtn.addEventListener('click', async () => {
+  const tracking = document.getElementById('trackingInput').value.trim();
+  if(!tracking) return alert('Enter a tracking number');
+
+  // Check parcel exists
+  const { data: parcel, error } = await supabase
+    .from('parcels')
+    .select('*')
+    .eq('tracking_number', tracking)
+    .single();
+
+  if(error) return alert('Parcel not found');
+
+  if(parcel.status === 'In Depot') return alert('Parcel already scanned in');
+
+  await supabase.from('parcels').update({
+    status: 'In Depot',
+    scanned_in_at: new Date()
+  }).eq('tracking_number', tracking);
+
+  alert('Parcel scanned into depot successfully');
+  document.getElementById('trackingInput').value = '';
+});
+</script>
+</body>
+</html>
