@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MM Courier — Floor Check</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Industrial ERP style */
+    :root{
+      --nav:#0a2b52;
+      --accent:#409dbc;
+      --gold:#cebd80;
+      --white:#ffffff;
+      --muted:#f3f3f3;
+      --text:#0a2b52;
+      --danger:#b91c1c;
+      --ok:#0b8a3e;
+    }
+    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:#fff}
+    header{background:var(--nav);color:var(--white);padding:10px 16px;border-bottom:4px solid var(--gold);display:flex;align-items:center;justify-content:space-between}
+    header .brand{font-weight:700;letter-spacing:1px}
+    header nav a{color:white;text-decoration:none;background:var(--accent);padding:6px 10px;margin-right:6px;border:1px solid var(--gold);display:inline-block;font-size:13px}
+    header nav a.inactive{background:#e6eef1;color:var(--nav);border:1px solid #d9d9d9}
+    main{padding:18px}
+    h1{margin:0 0 8px 0;font-size:20px}
+    .toolbar{display:flex;gap:12px;align-items:center;margin:12px 0 18px 0}
+    .box{border:1px solid #d1d5db;background:var(--muted);padding:12px}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input[type="text"]{padding:10px;border:1px solid #cfcfcf;width:360px;font-size:16px}
+    button{background:var(--nav);color:var(--white);border:0;padding:8px 12px;cursor:pointer;font-weight:600}
+    button.secondary{background:#e5e7eb;color:var(--text);border:1px solid #cfcfcf}
+    button.warn{background:var(--gold);color:var(--nav);border:1px solid #bfa86a}
+    .small{font-size:13px;padding:6px 8px}
+    .layout{display:flex;gap:18px}
+    .left{flex:0 0 480px}
+    .right{flex:1;min-width:300px}
+    table{width:100%;border-collapse:collapse;background:white}
+    th,td{border:1px solid #e6e6e6;padding:8px;text-align:left;font-size:13px}
+    th{background:#f8fafc;color:var(--text)}
+    tbody tr.missing td{background:#fff6f6}
+    tbody tr.found td{background:#f6fffb}
+    .status-pill{display:inline-block;padding:4px 8px;border-radius:3px;font-size:12px}
+    .status-found{background:#e6ffef;color:var(--ok);border:1px solid #b7f0ce}
+    .status-missing{background:#fff0f0;color:var(--danger);border:1px solid #f6c2c2}
+    .status-misroute{background:#fff7e6;color:#b35d00;border:1px solid #f0d0a9}
+    .notes{width:100%;padding:6px;border:1px solid #ccc;margin-top:6px}
+    .footer{margin-top:12px;color:#666;font-size:13px}
+    @media(max-width:900px){.layout{flex-direction:column}.left{flex:1;width:100%}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">MM Courier ERP — Floor Check</div>
+    <nav>
+      <a href="dashboard.html" class="inactive">Dashboard</a>
+      <a href="import.html" class="inactive">Import Data</a>
+      <a href="tripsheets.html" class="inactive">Tripsheets</a>
+      <a href="floorcheck.html" style="background:var(--accent)">Floor Check</a>
+      <a href="reports.html" class="inactive">Reports</a>
+      <a id="logoutLink" href="#" class="inactive" style="margin-left:12px">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Floor Check — Scan & Verify Parcels</h1>
+    <p style="margin:6px 0 14px 0;color:#555;font-size:13px">Scan or type a waybill number in the box and press Enter (or click Add). MM Courier will check the waybill against the system and mark it Found or Missing. You can mark Misroute and add a note.</p>
+
+    <div class="layout">
+      <div class="left box">
+        <label for="scanInput">Scan / Enter Waybill number</label>
+        <input id="scanInput" type="text" autocomplete="off" placeholder="Scan barcode or type waybill..." />
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <button id="addBtn" class="small">Add</button>
+          <button id="quickMissing" class="small secondary">Mark Missing Manually</button>
+          <button id="exportBtn" class="small warn">Export CSV</button>
+          <button id="clearBtn" class="small secondary">Clear</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <label>Scan Notes (optional)</label>
+          <textarea id="scanNotes" class="notes" rows="3" placeholder="Add a short note that will be saved with the scanned row (e.g. 'wet label', 'recipient moved')"></textarea>
+        </div>
+
+        <div class="footer">
+          <div>Session: <span id="userEmail">—</span></div>
+          <div id="statusMsg" style="margin-top:8px;color:#666;font-size:13px"></div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="box">
+          <h3 style="margin:0 0 10px 0">Live Scan Results</h3>
+          <div style="overflow:auto;max-height:480px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Waybill</th>
+                  <th>Recipient</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                  <th>Time</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="scanTableBody">
+                <!-- rows appear here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  (function(){
+    // ---------- CONFIG ----------
+    const SUPABASE_URL = "https://lavqgvnjdjfywcjztame.supabase.co"; // keep your actual one
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhdnFndm5qZGpmeXdjanp0YW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjk0ODYsImV4cCI6MjA3NjgwNTQ4Nn0.kpguG-8Ap_icuh1FtF6c4k032qwIvoW6-KC_tX57644"; // REPLACE with your anon key
+    // ---------- END CONFIG ----------
+
+    if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("YOUR_PUBLIC")) {
+      console.warn("Replace SUPABASE_ANON_KEY with your actual anon key in floorcheck.html");
+    }
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // UI elements
+    const scanInput = document.getElementById('scanInput');
+    const addBtn = document.getElementById('addBtn');
+    const quickMissing = document.getElementById('quickMissing');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const scanNotes = document.getElementById('scanNotes');
+    const scanTableBody = document.getElementById('scanTableBody');
+    const statusMsg = document.getElementById('statusMsg');
+    const userEmailEl = document.getElementById('userEmail');
+    const logoutLink = document.getElementById('logoutLink');
+
+    // store in-memory list for page (and optionally save back to Supabase in future)
+    const scannedRows = [];
+
+    // helper to format time
+    function nowIso(){ return new Date().toISOString(); }
+    function prettyDate(ts){ const d = new Date(ts); return d.toLocaleString(); }
+
+    // check session and populate user
+    async function checkSession(){
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
+        if (!session) {
+          window.location.href = "login.html";
+          return;
+        }
+        userEmailEl.textContent = session.user.email;
+      } catch (err) {
+        console.error("session error", err);
+        window.location.href = "login.html";
+      }
+    }
+    checkSession();
+
+    // logout
+    logoutLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await supabase.auth.signOut();
+      window.location.href = "login.html";
+    });
+
+    // render table row
+    function renderTable(){
+      scanTableBody.innerHTML = "";
+      for (const r of scannedRows) {
+        const tr = document.createElement('tr');
+        tr.className = r.status === 'Missing' ? 'missing' : (r.status === 'Found' ? 'found' : '');
+        tr.innerHTML = `
+          <td>${r.waybill}</td>
+          <td>${r.receiver || ''}</td>
+          <td>${r.customer || ''}</td>
+          <td><span class="status-pill ${r.statusClass}">${r.status}</span></td>
+          <td>${(r.notes||'').replace(/</g,'&lt;')}</td>
+          <td>${prettyDate(r.scanned_at)}</td>
+          <td>
+            <button class="small" data-action="mark-misroute" data-waybill="${r.waybill}">Mark Misroute</button>
+            <button class="small" data-action="delete" data-waybill="${r.waybill}">Delete</button>
+          </td>
+        `;
+        scanTableBody.appendChild(tr);
+      }
+    }
+
+    // find waybill in Supabase
+    async function lookupWaybill(waybill) {
+      // sanitize
+      const wb = String(waybill).trim();
+      if (!wb) return null;
+      try {
+        const { data, error } = await supabase
+          .from('waybills')
+          .select('waybill_number, receiver_name, receiver_address, receiver_city, receiver_phone, parcel_status, created_at')
+          .eq('waybill_number', wb)
+          .limit(1)
+          .maybeSingle();
+        if (error) {
+          console.error('Supabase lookup error', error);
+          return { error };
+        }
+        return data || null;
+      } catch (err) {
+        console.error('Lookup exception', err);
+        return { error: err };
+      }
+    }
+
+    // process a scanned input
+    async function processScan(waybillRaw, manualStatus=null){
+      const waybill = String(waybillRaw).trim();
+      if (!waybill) return;
+
+      // prevent duplicate scans in the same session
+      if (scannedRows.find(r=>r.waybill === waybill)) {
+        statusMsg.textContent = "Parcel already scanned in this session.";
+        setTimeout(()=> statusMsg.textContent = "", 2500);
+        scanInput.value = '';
+        scanInput.focus();
+        return;
+      }
+
+      statusMsg.textContent = "Checking system...";
+      const lookup = await lookupWaybill(waybill);
+
+      const notes = scanNotes.value.trim();
+      const scanned_at = new Date().toISOString();
+
+      let row = {
+        waybill,
+        receiver: null,
+        customer: null,
+        status: 'Missing',
+        statusClass: 'status-missing',
+        notes,
+        scanned_at
+      };
+
+      if (lookup && !lookup.error && lookup.waybill_number) {
+        // found in system
+        row.receiver = lookup.receiver_name || '';
+        row.customer = ''; // if you have a customer field, populate it
+        row.status = 'Found';
+        row.statusClass = 'status-found';
+      } else if (manualStatus === 'missing') {
+        row.status = 'Missing';
+        row.statusClass = 'status-missing';
+      } else {
+        // not found
+        row.status = 'Missing';
+        row.statusClass = 'status-missing';
+      }
+
+      scannedRows.unshift(row); // add to top
+      renderTable();
+
+      statusMsg.textContent = `${row.status} — ${waybill}`;
+      setTimeout(()=> statusMsg.textContent = "", 3000);
+
+      // reset input
+      scanInput.value = '';
+      scanNotes.value = '';
+      scanInput.focus();
+
+      // (Optional) insert tracking_event or log import into Supabase
+      // You can implement saving scannedRows to a "floor_checks" table later.
+    }
+
+    // Add button and Enter key handler
+    addBtn.addEventListener('click', async () => {
+      await processScan(scanInput.value);
+    });
+    scanInput.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        await processScan(scanInput.value);
+      }
+    });
+
+    // Quick manual missing
+    quickMissing.addEventListener('click', async () => {
+      const val = scanInput.value.trim();
+      if (!val) { statusMsg.textContent = "Type or scan a waybill first."; setTimeout(()=>statusMsg.textContent='',2000); return; }
+      await processScan(val, 'missing');
+    });
+
+    // table actions (delegate)
+    scanTableBody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const waybill = btn.dataset.waybill;
+      if (action === 'delete') {
+        const idx = scannedRows.findIndex(r=>r.waybill===waybill);
+        if (idx >= 0) scannedRows.splice(idx,1);
+        renderTable();
+      } else if (action === 'mark-misroute') {
+        const r = scannedRows.find(r=>r.waybill===waybill);
+        if (r) { r.status = 'Misroute'; r.statusClass = 'status-misroute'; renderTable(); }
+      }
+    });
+
+    // Clear
+    clearBtn.addEventListener('click', () => {
+      if (!confirm('Clear all scanned items in this session?')) return;
+      scannedRows.length = 0;
+      renderTable();
+      statusMsg.textContent = 'Cleared';
+      setTimeout(()=>statusMsg.textContent='',1600);
+    });
+
+    // Export CSV
+    exportBtn.addEventListener('click', () => {
+      if (!scannedRows.length) { alert('No scanned rows to export'); return; }
+      const headers = ['waybill','receiver','customer','status','notes','scanned_at'];
+      const csv = [headers.join(',')].concat(scannedRows.map(r => {
+        return [
+          `"${(r.waybill||'').replace(/"/g,'""')}"`,
+          `"${(r.receiver||'').replace(/"/g,'""')}"`,
+          `"${(r.customer||'').replace(/"/g,'""')}"`,
+          `"${(r.status||'').replace(/"/g,'""')}"`,
+          `"${(r.notes||'').replace(/"/g,'""')}"`,
+          `"${(r.scanned_at||'')}"`,
+        ].join(',');
+      })).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `floorcheck_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // focus input on load
+    window.addEventListener('load', ()=> {
+      scanInput.focus();
+    });
+
+  })();
+  </script>
+</body>
+</html>
