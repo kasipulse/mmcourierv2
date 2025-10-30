@@ -1,299 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Tripsheets</title>
-  <style>
-    /* ===== Windows 95/98 Base ===== */
-    body {
-      font-family: 'Tahoma', 'Verdana', sans-serif;
-      font-size: 12px;
-      margin: 0;
-      padding: 0;
-      background-color: #c0c0c0;
-      color: #000;
-    }
+<div class="panel">
+  <h1>Driver Tripsheets</h1>
 
-    /* ===== Toolbar ===== */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #000080;
-      padding: 2px 4px;
-      border-bottom: 2px inset #ffffff;
-    }
+  <label for="driverSelect">Select Driver:</label>
+  <select id="driverSelect" style="font-size:12px; padding:2px; margin-bottom:8px;">
+    <option value="">-- Select Driver --</option>
+    <option value="1">Driver 1 - John</option>
+    <option value="2">Driver 2 - Peter</option>
+    <option value="3">Driver 3 - Sam</option>
+  </select>
+  <button id="loadTripsheet" style="background:#d4d0c8; border:2px outset #fff; padding:2px 8px; font-size:12px; cursor:pointer;">Load Tripsheet</button>
 
-    .logo {
-      color: #cebd80;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    nav a {
-      font-size: 12px;
-      text-decoration: none;
-      color: #000;
-      background-color: #d4d0c8;
-      border: 2px outset #ffffff;
-      padding: 2px 6px;
-      margin-left: 2px;
-      cursor: pointer;
-    }
-
-    nav a:hover {
-      background-color: #b0b0b0;
-    }
-
-    nav a.active {
-      border: 2px inset #cebd80;
-      background-color: #d4d0c8;
-    }
-
-    #logout {
-      font-size: 12px;
-      padding: 2px 6px;
-      border: 2px outset #ffffff;
-      background-color: #cebd80;
-      cursor: pointer;
-    }
-
-    #logout:hover {
-      background-color: #409dbc;
-      color: #fff;
-    }
-
-    /* ===== Main Content ===== */
-    main {
-      padding: 10px;
-    }
-
-    h2 {
-      font-size: 14px;
-      margin-bottom: 6px;
-      border-bottom: 2px solid #cebd80;
-      padding-bottom: 2px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 2px;
-    }
-
-    select, input {
-      font-size: 12px;
-      padding: 2px;
-      border: 2px inset #ffffff;
-      background-color: #d4d0c8;
-    }
-
-    button {
-      font-size: 12px;
-      padding: 2px 6px;
-      border: 2px outset #ffffff;
-      background-color: #d4d0c8;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #b0b0b0;
-    }
-
-    /* ===== Tripsheet Table ===== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      background-color: #ffffff;
-      border: 2px inset #ffffff;
-    }
-
-    th {
-      background-color: #c0c0c0;
-      border: 1px solid #000;
-      padding: 2px 4px;
-      text-align: left;
-    }
-
-    td {
-      border: 1px solid #000;
-      padding: 2px 4px;
-    }
-
-    /* ===== Stats Panel ===== */
-    .stats-grid {
-      display: flex;
-      gap: 4px;
-      margin-top: 8px;
-    }
-
-    .stat-box {
-      flex: 1;
-      background-color: #d4d0c8;
-      border: 2px outset #ffffff;
-      text-align: center;
-      padding: 4px;
-    }
-
-    .stat-box p {
-      margin: 0;
-    }
-
-    .stat-count {
-      font-weight: bold;
-      font-size: 14px;
-      color: #0a2b52;
-    }
-
-    /* ===== POD Modal ===== */
-    #podModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background-color: rgba(0,0,0,0.4);
-      justify-content: center;
-      align-items: center;
-      z-index: 50;
-    }
-
-    .modal-content {
-      background-color: #d4d0c8;
-      border: 2px outset #ffffff;
-      padding: 8px;
-      width: 320px;
-    }
-
-    .modal-content input[type="file"] {
-      width: 100%;
-      margin-bottom: 4px;
-    }
-
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 2px;
-    }
-
-  </style>
-</head>
-<body>
-
-<header>
-  <div class="logo">MM Courier ERP</div>
-  <nav>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="import.html">Import Data</a>
-    <a href="tripsheets.html" class="active">Tripsheets</a>
-    <a href="floorcheck.html">Floor Check</a>
-    <a href="reports.html">Reports</a>
-  </nav>
-  <button id="logout">Logout</button>
-</header>
-
-<main>
-  <h2>Driver Tripsheets</h2>
-
-  <!-- Driver Selection -->
-  <div>
-    <label for="driverSelect">Select Driver</label>
-    <select id="driverSelect">
-      <option value="">-- Select Driver --</option>
-      <option value="1">Driver 1 - John</option>
-      <option value="2">Driver 2 - Peter</option>
-      <option value="3">Driver 3 - Sam</option>
-    </select>
-    <button id="loadTripsheet">Load Tripsheet</button>
-  </div>
-
-  <!-- Tripsheet Table -->
-  <div id="tripsheetSection" style="display:none; margin-top:8px;">
-    <button id="exportTripsheet">Export PDF</button>
-    <table>
-      <thead>
+  <div id="tripsheetSection" style="margin-top:10px; display:none;">
+    <table style="width:100%; border:1px solid #808080; border-collapse:collapse; font-size:12px;">
+      <thead style="background:#c0c0c0;">
         <tr>
-          <th>Waybill</th>
-          <th>Recipient</th>
-          <th>Address</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th style="border:1px solid #808080; padding:2px;">Waybill</th>
+          <th style="border:1px solid #808080; padding:2px;">Recipient</th>
+          <th style="border:1px solid #808080; padding:2px;">Address</th>
+          <th style="border:1px solid #808080; padding:2px;">Status</th>
+          <th style="border:1px solid #808080; padding:2px;">Actions</th>
         </tr>
       </thead>
       <tbody id="tripsheetTableBody"></tbody>
     </table>
   </div>
-
-  <!-- POD Modal -->
-  <div id="podModal">
-    <div class="modal-content">
-      <h3>Upload POD</h3>
-      <input type="file" id="podFile" accept="image/*">
-      <div class="modal-buttons">
-        <button id="cancelPod">Cancel</button>
-        <button id="savePod">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scan Summary -->
-  <div id="scanSummary" style="display:none;" class="stats-grid">
-    <div class="stat-box">
-      <p class="stat-count" id="deliveredCount">0</p>
-      <p>Delivered</p>
-    </div>
-    <div class="stat-box">
-      <p class="stat-count" id="pendingCount">0</p>
-      <p>Pending</p>
-    </div>
-    <div class="stat-box">
-      <p class="stat-count" id="exceptionCount">0</p>
-      <p>Exceptions</p>
-    </div>
-  </div>
-</main>
-
-<footer style="text-align:center; font-size:10px; padding:4px; border-top:2px outset #ffffff;">
-  &copy; 2025 MM Courier Systems. All rights reserved.
-</footer>
+</div>
 
 <script>
-  const loadBtn = document.getElementById('loadTripsheet');
-  const tripsheetSection = document.getElementById('tripsheetSection');
-  const tableBody = document.getElementById('tripsheetTableBody');
-  const scanSummary = document.getElementById('scanSummary');
-  const deliveredCount = document.getElementById('deliveredCount');
-  const pendingCount = document.getElementById('pendingCount');
-  const exceptionCount = document.getElementById('exceptionCount');
-  const podModal = document.getElementById('podModal');
-  const cancelPod = document.getElementById('cancelPod');
-  const savePod = document.getElementById('savePod');
+const loadBtn = document.getElementById('loadTripsheet');
+const tripsheetSection = document.getElementById('tripsheetSection');
+const tableBody = document.getElementById('tripsheetTableBody');
 
-  loadBtn.addEventListener('click', () => {
-    tripsheetSection.style.display = 'block';
-    scanSummary.style.display = 'flex';
-    tableBody.innerHTML = `
-      <tr>
-        <td>483675802831</td>
-        <td>John Doe</td>
-        <td>123 Main St, Boksburg</td>
-        <td style="color:orange; font-weight:bold;">Pending</td>
-        <td><button class="uploadPod">Upload POD</button></td>
-      </tr>`;
-    deliveredCount.textContent = 0;
-    pendingCount.textContent = 1;
-    exceptionCount.textContent = 0;
-  });
-
-  document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('uploadPod')) podModal.style.display = 'flex';
-  });
-
-  cancelPod.addEventListener('click', () => podModal.style.display = 'none');
-  savePod.addEventListener('click', () => {
-    podModal.style.display = 'none';
-    alert('POD uploaded successfully (simulation)');
-  });
+loadBtn.addEventListener('click', () => {
+  tripsheetSection.style.display = 'block';
+  tableBody.innerHTML = `
+    <tr>
+      <td style="border:1px solid #808080; padding:2px;">483675802831</td>
+      <td style="border:1px solid #808080; padding:2px;">John Doe</td>
+      <td style="border:1px solid #808080; padding:2px;">123 Main St</td>
+      <td style="border:1px solid #808080; padding:2px;">Pending</td>
+      <td style="border:1px solid #808080; padding:2px;"><button style="font-size:12px;">Upload POD</button></td>
+    </tr>
+  `;
+});
 </script>
-
-</body>
-</html>
