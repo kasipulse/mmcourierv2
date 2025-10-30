@@ -1,0 +1,20 @@
+<div class="panel">
+  <h1>Track Parcels</h1>
+  <input type="text" id="trackInput" placeholder="Enter Waybill #" />
+  <button onclick="trackParcel()">Track</button>
+  <div id="trackResult"></div>
+</div>
+
+<script>
+function initPanel() {
+  async function trackParcel() {
+    const code=document.getElementById('trackInput').value.trim();
+    if(!code) return alert('Enter a waybill number');
+    const { data } = await supabase.from('parcels').select('*').eq('tracking_number',code).single();
+    const div=document.getElementById('trackResult');
+    if(!data) { div.innerHTML='Waybill not found'; return; }
+    div.innerHTML=`<p>${data.tracking_number} - ${data.receiver} - ${data.status}</p>`;
+  }
+  window.trackParcel=trackParcel;
+}
+</script>
