@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Return to Depot | MM Courier</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="panel">
+  <h2>Return Parcels to Depot</h2>
+  <label>Scan Tracking #:</label>
+  <input type="text" id="trackingInput" placeholder="Scan or enter tracking number" autofocus>
+  <label>Reason:</label>
+  <select id="reasonSelect">
+    <option value="">Select reason</option>
+    <option value="Damaged">Damaged</option>
+    <option value="Refused by Customer">Refused by Customer</option>
+    <option value="Wrong Address">Wrong Address</option>
+    <option value="Other">Other</option>
+  </select>
+  <button id="returnBtn">Return to Depot</button>
+</div>
+
+<script>
+const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
+const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+const returnBtn = document.getElementById('returnBtn');
+
+returnBtn.addEventListener('click', async () => {
+  const tracking = document.getElementById('trackingInput').value.trim();
+  const reason = document.getElementById('reasonSelect').value;
+  if(!tracking || !reason) return alert('Enter tracking number and select reason');
+
+  const { data: parcel } = await supabase
+    .from('parcels')
+    .select('*')
+    .eq('tracking_number', tracking)
+    .single();
+
+  if(!parcel) return alert('Parcel not found');
+
+  await supabase.from('parcels').update({
+    status: 'Returned to Depot',
+    reason: reason,
+    returned_at: new Date()
+  }).eq('tracking_number', tracking);
+
+  alert('Parcel returned to depot successfully');
+  document.getElementById('trackingInput').value = '';
+});
+</script>
+</body>
+</html>
