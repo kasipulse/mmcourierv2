@@ -1,88 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Dashboard</title>
-  <style>
-    body {
-      background: #c0c0c0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      margin: 0;
-      color: #000;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MM Courier | Dashboard</title>
+<style>
+  body {
+    background: #c0c0c0;
+    font-family: Tahoma, Verdana, sans-serif;
+    font-size: 12px;
+    margin: 0;
+    color: #000;
+  }
 
-    /* Toolbar (like old Windows 98 menu bar) */
-    .toolbar {
-      background: #d4d0c8;
-      border-bottom: 2px solid #fff;
-      padding: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+  /* ===== Toolbar ===== */
+  .toolbar {
+    background: #d4d0c8;
+    border-bottom: 2px solid #fff;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-    .menu-btn {
-      background: #e0e0e0;
-      border: 2px outset #fff;
-      padding: 4px 12px;
-      font-size: 14px;
-      cursor: pointer;
-    }
+  .menu-btn {
+    background: #d4d0c8;
+    border: 2px outset #fff;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
 
-    .menu-btn:active {
-      border: 2px inset #fff;
-      background: #d0d0d0;
-    }
+  .menu-btn:active {
+    border: 2px inset #fff;
+    background: #b0b0b0;
+  }
 
-    .menu-btn.active {
-      background: #d0d0d0;
-      border: 2px inset #fff;
-    }
+  .menu-btn.active {
+    background: #cebd80;
+    border: 2px inset #fff;
+    color: #0a2b52;
+    font-weight: bold;
+  }
 
-    .logout {
-      margin-left: auto;
-      background: #f2e5b8;
-    }
+  .menu-btn.logout {
+    margin-left: auto;
+    background: #cebd80;
+  }
 
-    /* Content Area */
-    .container {
-      padding: 16px;
-    }
+  /* ===== Container ===== */
+  .container {
+    padding: 12px;
+  }
 
-    h1 {
-      font-size: 18px;
-      color: #000;
-      margin-bottom: 10px;
-      border-bottom: 2px solid #fff;
-      padding-bottom: 4px;
-    }
+  h1 {
+    font-size: 14px;
+    margin-bottom: 6px;
+    border-bottom: 2px solid #cebd80;
+    padding-bottom: 2px;
+  }
 
-    p {
-      margin: 4px 0;
-      font-size: 14px;
-      color: #111;
-    }
+  p {
+    margin: 4px 0;
+  }
 
-    .panel {
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      padding: 12px;
-      margin-bottom: 16px;
-      box-shadow: inset 1px 1px #fff;
-    }
+  /* ===== Panel ===== */
+  .panel {
+    background: #d4d0c8;
+    border: 2px outset #fff;
+    padding: 10px;
+    margin-bottom: 12px;
+    box-shadow: inset 1px 1px #fff;
+  }
 
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      color: #333;
-      border-top: 2px solid #fff;
-      padding: 8px;
-      background: #d4d0c8;
-    }
-  </style>
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    border-top: 2px solid #fff;
+    padding: 6px;
+    background: #d4d0c8;
+  }
+</style>
 </head>
-
 <body>
   <div class="toolbar">
     <button class="menu-btn active">Dashboard</button>
