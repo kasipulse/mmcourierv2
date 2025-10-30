@@ -1,0 +1,54 @@
+<div class="panel">
+  <h1>Billing Summary</h1>
+  <label>Customer: <input type="text" id="billingCustomer"></label>
+  <label>Date From: <input type="date" id="billingFrom"></label>
+  <label>Date To: <input type="date" id="billingTo"></label>
+  <button onclick="loadBilling()">Load</button>
+  <button onclick="exportCSV('billing')">Export CSV</button>
+
+  <table border="1" cellpadding="4" cellspacing="0" width="100%">
+    <thead>
+      <tr><th>Waybill</th><th>Customer</th><th>Amount</th><th>Status</th></tr>
+    </thead>
+    <tbody id="billingBody"></tbody>
+  </table>
+</div>
+
+<script>
+function initPanel() {
+  async function loadBilling() {
+    const from = document.getElementById('billingFrom').value;
+    const to = document.getElementById('billingTo').value;
+    const customer = document.getElementById('billingCustomer').value.trim();
+    if(!from || !to) return alert('Select dates');
+
+    let query = supabase.from('parcels').select('*').gte('imported_at',from).lte('imported_at',to);
+    if(customer) query = query.eq('customer',customer);
+    const { data } = await query;
+
+    const tbody = document.getElementById('billingBody');
+    tbody.innerHTML='';
+    data.forEach(p=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML=`<td>${p.tracking_number}</td><td>${p.customer}</td><td>${p.amount || 0}</td><td>${p.status}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function exportCSV(type){
+    const rows = [];
+    document.querySelectorAll(`#${type}Body tr`).forEach(tr=>{
+      const row = Array.from(tr.children).map(td=>td.textContent);
+      rows.push(row.join(','));
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `${type}-report.csv`);
+    link.click();
+  }
+
+  window.loadBilling = loadBilling;
+  window.exportCSV = exportCSV;
+}
+</script>
