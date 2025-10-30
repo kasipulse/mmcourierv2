@@ -1,283 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>View Waybills | MM Courier</title>
-<style>
-  body {
-    font-family: Tahoma, Verdana, sans-serif;
-    font-size: 12px;
-    margin: 0;
-    background-color: #c0c0c0;
-    color: #000;
-  }
+<div class="panel">
+  <h1>View Imported Waybills</h1>
 
-  /* ===== Sidebar ===== */
-  aside {
-    width: 220px;
-    background-color: #0a2b52;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    border-right: 2px inset #ffffff;
-    height: 100vh;
-  }
+  <!-- Filters -->
+  <div style="margin-bottom:10px; padding:6px; background:#d4d0c8; border:2px outset #fff;">
+    <label for="dateFrom" style="font-size:12px;">Date From:</label>
+    <input type="date" id="dateFrom" style="font-size:12px; padding:2px; margin-right:6px;">
 
-  aside h2 {
-    font-size: 14px;
-    margin: 4px 0;
-  }
+    <label for="dateTo" style="font-size:12px;">Date To:</label>
+    <input type="date" id="dateTo" style="font-size:12px; padding:2px; margin-right:6px;">
 
-  aside p {
-    font-size: 10px;
-    margin: 0 0 4px 0;
-  }
+    <label for="customerFilter" style="font-size:12px;">Customer:</label>
+    <input type="text" id="customerFilter" placeholder="Customer name" style="font-size:12px; padding:2px; margin-right:6px;">
 
-  aside nav a {
-    display: block;
-    padding: 2px 6px;
-    margin: 2px 0;
-    font-size: 12px;
-    color: #000;
-    background-color: #d4d0c8;
-    border: 2px outset #ffffff;
-    text-decoration: none;
-    cursor: pointer;
-  }
+    <label for="statusFilter" style="font-size:12px;">Status:</label>
+    <select id="statusFilter" style="font-size:12px; padding:2px; margin-right:6px;">
+      <option value="">All</option>
+      <option value="Delivered">Delivered</option>
+      <option value="In Transit">In Transit</option>
+      <option value="Pending">Pending</option>
+      <option value="Returned">Returned</option>
+    </select>
 
-  aside nav a:hover {
-    background-color: #b0b0b0;
-  }
+    <button id="filterBtn" style="background:#d4d0c8; border:2px outset #fff; padding:2px 6px; font-size:12px; cursor:pointer;">Apply Filters</button>
+    <button id="resetBtn" style="background:#d4d0c8; border:2px outset #fff; padding:2px 6px; font-size:12px; cursor:pointer;">Reset</button>
+  </div>
 
-  aside nav a.active {
-    background-color: #d4d0c8;
-    border: 2px inset #cebd80;
-  }
-
-  aside button {
-    font-size: 12px;
-    padding: 2px 6px;
-    margin-top: 4px;
-    border: 2px outset #ffffff;
-    background-color: #cebd80;
-    cursor: pointer;
-  }
-
-  aside button:hover {
-    background-color: #409dbc;
-    color: #fff;
-  }
-
-  /* ===== Main Content ===== */
-  main {
-    flex: 1;
-    padding: 10px;
-  }
-
-  h1 {
-    font-size: 14px;
-    border-bottom: 2px solid #cebd80;
-    padding-bottom: 2px;
-    margin-bottom: 6px;
-  }
-
-  label {
-    display: block;
-    margin-bottom: 2px;
-  }
-
-  input, select {
-    font-size: 12px;
-    padding: 2px;
-    border: 2px inset #ffffff;
-    background-color: #d4d0c8;
-    margin-bottom: 4px;
-  }
-
-  button {
-    font-size: 12px;
-    padding: 2px 6px;
-    border: 2px outset #ffffff;
-    background-color: #d4d0c8;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background-color: #b0b0b0;
-  }
-
-  /* ===== Table ===== */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #ffffff;
-    font-size: 12px;
-    border: 2px inset #ffffff;
-  }
-
-  th {
-    background-color: #c0c0c0;
-    border: 1px solid #000;
-    padding: 2px 4px;
-    text-align: left;
-  }
-
-  td {
-    border: 1px solid #000;
-    padding: 2px 4px;
-  }
-
-  tr:hover {
-    background-color: #b0c4de;
-  }
-
-  /* ===== Flex Layout ===== */
-  .container {
-    display: flex;
-    height: 100vh;
-  }
-
-  .content {
-    flex: 1;
-    overflow-x: auto;
-  }
-
-  /* ===== Filters / Search Panel ===== */
-  .panel {
-    background-color: #d4d0c8;
-    padding: 4px;
-    margin-bottom: 6px;
-    border: 2px outset #ffffff;
-  }
-
-  .panel input, .panel select {
-    margin-right: 4px;
-  }
-
-</style>
-</head>
-<body>
-
-<div class="container">
-  <aside>
-    <div style="padding:4px; border-bottom:2px inset #ffffff;">
-      <h2>MM Courier</h2>
-      <p>ERP Platform</p>
-    </div>
-    <nav>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="import.html">Import Data</a>
-      <a href="tripsheets.html">Tripsheets</a>
-      <a href="view-waybills.html" class="active">View Waybills</a>
-      <a href="reports.html">Reports</a>
-    </nav>
-    <div style="padding:4px; border-top:2px inset #ffffff;">
-      <button id="logout">Logout</button>
-    </div>
-  </aside>
-
-  <main class="content">
-    <h1>View Imported Waybills</h1>
-
-    <div class="panel">
-      <label for="dateFrom">Date From</label>
-      <input type="date" id="dateFrom">
-
-      <label for="dateTo">Date To</label>
-      <input type="date" id="dateTo">
-
-      <label for="customerFilter">Customer</label>
-      <input type="text" id="customerFilter" placeholder="Customer name">
-
-      <label for="statusFilter">Status</label>
-      <select id="statusFilter">
-        <option value="">All</option>
-        <option value="Delivered">Delivered</option>
-        <option value="In Transit">In Transit</option>
-        <option value="Pending">Pending</option>
-        <option value="Returned">Returned</option>
-      </select>
-
-      <button id="filterBtn">Apply Filters</button>
-      <button id="resetBtn">Reset</button>
-    </div>
-
-    <div class="panel" style="margin-bottom:6px;">
-      <input type="text" id="searchBox" placeholder="Search by tracking or recipient...">
-      <button id="exportCSV">Export CSV</button>
-      <button id="exportPDF">Export PDF</button>
-    </div>
-
-    <div class="panel" style="overflow-x:auto;">
-      <table id="waybillTable">
-        <thead>
-          <tr>
-            <th>Tracking #</th>
-            <th>Sender</th>
-            <th>Recipient</th>
-            <th>Address</th>
-            <th>Customer</th>
-            <th>Status</th>
-            <th>Imported</th>
-          </tr>
-        </thead>
-        <tbody id="waybillBody"></tbody>
-      </table>
-    </div>
-  </main>
+  <!-- Table -->
+  <div style="overflow-x:auto; border:2px inset #fff; background:#fdfdfd;">
+    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+      <thead style="background:#c0c0c0;">
+        <tr>
+          <th style="border:1px solid #808080; padding:2px;">Tracking #</th>
+          <th style="border:1px solid #808080; padding:2px;">Sender</th>
+          <th style="border:1px solid #808080; padding:2px;">Recipient</th>
+          <th style="border:1px solid #808080; padding:2px;">Address</th>
+          <th style="border:1px solid #808080; padding:2px;">Customer</th>
+          <th style="border:1px solid #808080; padding:2px;">Status</th>
+          <th style="border:1px solid #808080; padding:2px;">Imported</th>
+        </tr>
+      </thead>
+      <tbody id="waybillBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-  // Your Supabase init and logout
-  const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
-  const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-  async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) window.location.href = "login.html";
-  }
-  checkSession();
-
-  document.getElementById("logout").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    window.location.href = "login.html";
-  });
-
-  let allWaybills = [];
-
-  async function loadWaybills() {
-    const { data, error } = await supabase
-      .from("parcels")
-      .select("*")
-      .order("imported_at", { ascending: false });
-    if (error) { alert("Error loading waybills: "+error.message); return; }
-    allWaybills = data;
-    renderTable(data);
-  }
-
-  function renderTable(rows) {
-    const tbody = document.getElementById("waybillBody");
-    tbody.innerHTML = "";
-    rows.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.tracking_number || ""}</td>
-        <td>${r.sender || ""}</td>
-        <td>${r.receiver || ""}</td>
-        <td>${r.address || ""}</td>
-        <td>${r.customer || ""}</td>
-        <td>${r.status || ""}</td>
-        <td>${r.imported_at ? new Date(r.imported_at).toLocaleString() : ""}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Initial load
-  loadWaybills();
+async function loadWaybills() {
+  const tbody = document.getElementById('waybillBody');
+  tbody.innerHTML = `
+    <tr>
+      <td style="border:1px solid #808080; padding:2px;">483675802831</td>
+      <td style="border:1px solid #808080; padding:2px;">John Doe</td>
+      <td style="border:1px solid #808080; padding:2px;">Jane Smith</td>
+      <td style="border:1px solid #808080; padding:2px;">123 Main St</td>
+      <td style="border:1px solid #808080; padding:2px;">Customer A</td>
+      <td style="border:1px solid #808080; padding:2px;">Pending</td>
+      <td style="border:1px solid #808080; padding:2px;">2025-10-30 14:00</td>
+    </tr>
+  `;
+}
+loadWaybills();
 </script>
-
-</body>
-</html>
