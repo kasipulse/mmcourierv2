@@ -1,185 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Import Data</title>
-  <style>
-    /* ===== Windows 95/98 Style ===== */
-    body {
-      font-family: 'Tahoma', 'Verdana', sans-serif;
-      font-size: 12px;
-      margin: 0;
-      padding: 0;
-      background-color: #c0c0c0; /* Window background */
-      color: #000000;
-    }
+<div class="panel">
+  <h1>Import CSV Files</h1>
+  <p>Upload the required CSVs below: Waybill, Content, and Track. The system will automatically process and link them.</p>
 
-    /* ===== Toolbar ===== */
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      background-color: #000080;
-      padding: 2px 4px;
-    }
-
-    .logo {
-      font-weight: bold;
-      color: #cebd80; /* MM Courier accent */
-      font-size: 14px;
-    }
-
-    .nav a {
-      font-size: 12px;
-      text-decoration: none;
-      color: #000;
-      background-color: #d4d0c8; /* Button face */
-      border: 2px outset #ffffff;
-      padding: 2px 6px;
-      margin-left: 2px;
-      cursor: pointer;
-    }
-
-    .nav a:hover {
-      background-color: #b0b0b0; /* Hover effect */
-    }
-
-    .nav a.active {
-      border: 2px inset #cebd80; /* Accent for active page */
-      background-color: #d4d0c8;
-    }
-
-    /* ===== Main content ===== */
-    .content {
-      padding: 10px;
-    }
-
-    h1 {
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    p {
-      margin: 4px 0 8px 0;
-    }
-
-    /* ===== File upload panels ===== */
-    .file-box {
-      background-color: #d4d0c8; /* Panel background */
-      border: 2px outset #ffffff; /* Bevel */
-      padding: 8px;
-      margin-bottom: 8px;
-      width: 300px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 2px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    input[type="file"] {
-      width: 100%;
-      padding: 2px;
-      border: 2px inset #ffffff; /* Beveled input */
-      background-color: #d4d0c8;
-      font-size: 12px;
-    }
-
-    button {
-      font-size: 12px;
-      padding: 2px 6px;
-      border: 2px outset #ffffff;
-      background-color: #d4d0c8;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-
-    button:hover {
-      background-color: #b0b0b0;
-    }
-
-    .status {
-      margin-top: 6px;
-      font-size: 12px;
-    }
-
-    /* ===== Footer ===== */
-    .footer {
-      background-color: #c0c0c0;
-      text-align: center;
-      padding: 4px;
-      font-size: 10px;
-      border-top: 2px outset #ffffff;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="topbar">
-    <div class="logo">MM Courier ERP</div>
-    <div class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="import.html" class="active">Import Data</a>
-      <a href="tripsheet.html">Tripsheets</a>
-      <a href="floorcheck.html">Floor Check</a>
-      <a href="reports.html">Reports</a>
-      <a href="login.html">Logout</a>
-    </div>
+  <div class="file-box" style="border:1px solid #808080; background:#fdfdfd; padding:10px; margin-bottom:8px;">
+    <label for="waybillFile">Waybill File</label>
+    <input type="file" id="waybillFile" accept=".csv" style="width:100%; padding:2px; font-size:12px;">
   </div>
 
-  <div class="content">
-    <h1>Import CSV Files</h1>
-    <p>Upload the required CSVs below: Waybill, Content, and Track. The system will automatically process and link them.</p>
-
-    <div class="file-box">
-      <label for="waybillFile">Waybill File</label>
-      <input type="file" id="waybillFile" accept=".csv" />
-    </div>
-
-    <div class="file-box">
-      <label for="contentFile">Content File</label>
-      <input type="file" id="contentFile" accept=".csv" />
-    </div>
-
-    <div class="file-box">
-      <label for="trackFile">Track File</label>
-      <input type="file" id="trackFile" accept=".csv" />
-    </div>
-
-    <button id="uploadBtn">Upload & Import</button>
-    <div id="status" class="status"></div>
+  <div class="file-box" style="border:1px solid #808080; background:#fdfdfd; padding:10px; margin-bottom:8px;">
+    <label for="contentFile">Content File</label>
+    <input type="file" id="contentFile" accept=".csv" style="width:100%; padding:2px; font-size:12px;">
   </div>
 
-  <div class="footer">
-    © 2025 MM Courier Systems. All rights reserved.
+  <div class="file-box" style="border:1px solid #808080; background:#fdfdfd; padding:10px; margin-bottom:8px;">
+    <label for="trackFile">Track File</label>
+    <input type="file" id="trackFile" accept=".csv" style="width:100%; padding:2px; font-size:12px;">
   </div>
 
-  <script>
-    const uploadBtn = document.getElementById('uploadBtn');
-    const status = document.getElementById('status');
+  <button id="uploadBtn" style="background:#d4d0c8; border:2px outset #fff; padding:4px 12px; font-size:12px; cursor:pointer;">Upload & Import</button>
+  <div id="status" style="margin-top:8px; font-size:12px;"></div>
+</div>
 
-    uploadBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const waybill = document.getElementById('waybillFile').files[0];
-      const content = document.getElementById('contentFile').files[0];
-      const track = document.getElementById('trackFile').files[0];
+<script>
+const uploadBtn = document.getElementById('uploadBtn');
+const status = document.getElementById('status');
 
-      if (!waybill || !content || !track) {
-        status.textContent = "Please select all three CSV files.";
-        status.style.color = "red";
-        return;
-      }
+uploadBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  const waybill = document.getElementById('waybillFile').files[0];
+  const content = document.getElementById('contentFile').files[0];
+  const track = document.getElementById('trackFile').files[0];
 
-      status.textContent = "Processing files...";
-      status.style.color = "#000000";
+  if (!waybill || !content || !track) {
+    status.textContent = "Please select all three CSV files.";
+    status.style.color = "red";
+    return;
+  }
 
-      setTimeout(() => {
-        status.textContent = "Import successful!";
-        status.style.color = "green";
-      }, 2000);
-    });
-  </script>
-</body>
-</html>
+  status.textContent = "Processing files...";
+  status.style.color = "#0a2b52";
+
+  setTimeout(() => {
+    status.textContent = "Import successful!";
+    status.style.color = "green";
+  }, 2000);
+});
+</script>
