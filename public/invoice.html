@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice | Demo MM Logistics</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 40px;
+      background-color: #f8f8f8;
+      color: #000;
+    }
+
+    .invoice-box {
+      background: white;
+      padding: 30px;
+      border: 1px solid #999;
+      box-shadow: 2px 2px 5px #ccc;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #000;
+      padding-bottom: 15px;
+    }
+
+    .header .company-info {
+      width: 50%;
+    }
+
+    .header img {
+      width: 120px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 22px;
+      text-transform: uppercase;
+    }
+
+    .details {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 25px;
+      border-bottom: 1px solid #999;
+      padding-bottom: 10px;
+    }
+
+    .details .invoice-to, .details .invoice-meta {
+      width: 48%;
+    }
+
+    .details h3 {
+      background-color: #e4e4e4;
+      padding: 5px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      border: 1px solid #999;
+    }
+
+    .details p {
+      line-height: 1.4;
+      margin: 2px 0;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid #999;
+      padding: 6px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #e4e4e4;
+      font-weight: 600;
+    }
+
+    .totals {
+      margin-top: 20px;
+      width: 300px;
+      float: right;
+    }
+
+    .totals table {
+      border: 1px solid #999;
+      width: 100%;
+      font-size: 14px;
+    }
+
+    .totals td {
+      padding: 5px;
+    }
+
+    .totals tr:last-child td {
+      background-color: #e4e4e4;
+      font-weight: bold;
+    }
+
+    .footer {
+      clear: both;
+      margin-top: 50px;
+      font-size: 12px;
+      border-top: 1px solid #999;
+      padding-top: 10px;
+      color: #444;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+      .invoice-box {
+        box-shadow: none;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-box">
+    <!-- Header -->
+    <div class="header">
+      <div class="company-info">
+        <img src="https://res.cloudinary.com/demo/logo.png" alt="Company Logo" />
+        <h2>Demo MM Logistics</h2>
+        <p>10 Demo Street, Jet Park, Boksburg, 1459, South Africa</p>
+        <p>Tel: +27 (0)11 555 1234</p>
+        <p>Email: info@demommlogistics.co.za</p>
+        <p>Reg No: 2025/001234/07 | VAT No: 4010256789</p>
+      </div>
+
+      <div class="invoice-meta">
+        <h2>INVOICE</h2>
+        <table style="width:100%; border:1px solid #999;">
+          <tr><td><b>Invoice No:</b></td><td>INV-0001</td></tr>
+          <tr><td><b>Invoice Date:</b></td><td>31 Oct 2025</td></tr>
+          <tr><td><b>Date Range:</b></td><td>01 Oct 2025 - 31 Oct 2025</td></tr>
+          <tr><td><b>No. of Waybills:</b></td><td>3</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Invoice To -->
+    <div class="details">
+      <div class="invoice-to">
+        <h3>INVOICE TO:</h3>
+        <p><strong>ABC Electronics</strong></p>
+        <p>45 Market Street, Sandton, Johannesburg</p>
+        <p>Contact: Lebo Dlamini</p>
+        <p>Email: lebo@abcelectronics.co.za</p>
+        <p>VAT No: 4010256789</p>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Waybill</th>
+          <th>Date</th>
+          <th>Sender</th>
+          <th>Recipient</th>
+          <th>Origin</th>
+          <th>Destination</th>
+          <th>Service</th>
+          <th>Surcharges</th>
+          <th>Pieces</th>
+          <th>Actual Mass</th>
+          <th>Charge Mass</th>
+          <th>Basic</th>
+          <th>Fuel</th>
+          <th>Other</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>885300001001</td>
+          <td>2025-10-05</td>
+          <td>ABC Electronics</td>
+          <td>Neo Mthimkhulu</td>
+          <td>JHB</td>
+          <td>PTA</td>
+          <td>NDX</td>
+          <td>5.00</td>
+          <td>1</td>
+          <td>2.5</td>
+          <td>3.0</td>
+          <td>120.00</td>
+          <td>18.00</td>
+          <td>0.00</td>
+          <td>143.00</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>885300001002</td>
+          <td>2025-10-10</td>
+          <td>ABC Electronics</td>
+          <td>Nandi Radebe</td>
+          <td>JHB</td>
+          <td>DBN</td>
+          <td>NDX</td>
+          <td>10.00</td>
+          <td>2</td>
+          <td>5.0</td>
+          <td>5.5</td>
+          <td>150.00</td>
+          <td>22.50</td>
+          <td>5.00</td>
+          <td>177.50</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>885300001003</td>
+          <td>2025-10-15</td>
+          <td>ABC Electronics</td>
+          <td>Sipho Nkosi</td>
+          <td>JHB</td>
+          <td>CPT</td>
+          <td>NDX</td>
+          <td>20.00</td>
+          <td>1</td>
+          <td>10.0</td>
+          <td>11.0</td>
+          <td>300.00</td>
+          <td>45.00</td>
+          <td>0.00</td>
+          <td>345.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals">
+      <table>
+        <tr><td>Subtotal</td><td>R665.50</td></tr>
+        <tr><td>VAT (15%)</td><td>R99.83</td></tr>
+        <tr><td><strong>Total</strong></td><td><strong>R765.33</strong></td></tr>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p><strong>Banking Details:</strong> Demo MM Logistics | Bank: FNB | Acc: 62012345678 | Branch: 250655</p>
+      <p>Please use your invoice number as reference when making payment.</p>
+      <p><em>This is a computer-generated invoice and requires no signature.</em></p>
+    </div>
+  </div>
+</body>
+</html>
