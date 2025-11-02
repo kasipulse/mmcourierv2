@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Driver — MM Courier</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#111}
+  header{background:#0a2b52;color:#fff;padding:12px;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:16px;margin:0}
+  .small{font-size:12px;color:#ddd}
+  main{padding:12px}
+  .card{background:#fff;border-radius:6px;padding:10px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+  input,select,button,textarea{width:100%;padding:10px;margin-top:6px;border:1px solid #ccd;box-sizing:border-box;border-radius:4px}
+  .list{max-height:55vh;overflow:auto;margin-top:8px}
+  .parcel{padding:8px;border-bottom:1px solid #eee;display:flex;flex-direction:column}
+  .parcel .row{display:flex;justify-content:space-between;align-items:center}
+  .smallbtn{padding:6px 8px;border-radius:4px;border:none;background:#0a2b52;color:#fff;cursor:pointer}
+  .muted{color:#666;font-size:13px}
+  .actions{display:flex;gap:8px;margin-top:8px}
+  .fab{position:fixed;right:14px;bottom:14px;background:#deb657;color:#0a2b52;padding:12px;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,0.2);border:none}
+  @media(min-width:700px){ main{max-width:700px;margin:0 auto} }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Driver App</h1>
+      <div class="small" id="driverName">Not logged in</div>
+    </div>
+    <div><button id="logoutBtn" class="smallbtn" style="background:#a00">Logout</button></div>
+  </header>
+
+  <main>
+    <!-- Login (shown when not logged in) -->
+    <div id="loginPanel" class="card">
+      <label>Driver Email</label>
+      <input id="email" placeholder="email@example.com"/>
+      <label>Password</label>
+      <input id="password" type="password" placeholder="password"/>
+      <button id="loginBtn" class="smallbtn">Login</button>
+      <div class="muted" style="margin-top:8px">Use your driver credentials (or test creds)</div>
+    </div>
+
+    <!-- Driver controls -->
+    <div id="driverPanel" style="display:none">
+      <div class="card">
+        <div style="display:flex;gap:8px">
+          <input id="search" placeholder="Search waybill or recipient"/>
+          <button id="refreshBtn" class="smallbtn">Refresh</button>
+        </div>
+        <div style="margin-top:8px">
+          <label>Tripsheet</label>
+          <select id="tripsheetSelect"></select>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>Parcels</strong>
+        <div class="muted">Tap a parcel to update status</div>
+        <div class="list" id="parcelList"></div>
+      </div>
+
+      <div class="card">
+        <strong>Add Adhoc Parcel</strong>
+        <div class="muted">If you find a parcel that's not assigned, add it here and link to customer</div>
+        <label>Waybill #</label><input id="adhocWaybill" placeholder="Enter waybill number"/>
+        <label>Customer</label><input id="adhocCustomer" placeholder="Customer name or ID"/>
+        <label>Pieces</label><input id="adhocPieces" type="number" value="1"/>
+        <label>Description</label><input id="adhocDesc" placeholder="contents / description"/>
+        <button id="addAdhocBtn" class="smallbtn">Add & Link</button>
+      </div>
+
+      <div class="card">
+        <strong>Collections (Temp COL → Replace with waybill)</strong>
+        <label>Temp Collection Ref</label><input id="colTemp" placeholder="COL-12345"/>
+        <label>Actual Waybill (when collected)</label><input id="colWaybill" placeholder="885300001234"/>
+        <label>Pieces</label><input id="colPieces" type="number" value="1"/>
+        <label>Dimensions</label><input id="colDims" placeholder="L x W x H"/>
+        <button id="recordCollectionBtn" class="smallbtn">Record Collection</button>
+      </div>
+
+      <div class="card">
+        <strong>Combining Parcels</strong>
+        <div class="muted">Select parcels and provide a master reference</div>
+        <label>Master Reference</label><input id="masterRef" placeholder="MASTER-001"/>
+        <button id="combineBtn" class="smallbtn">Combine Selected</button>
+      </div>
+    </div>
+  </main>
+
+  <button class="fab" id="quickRefresh">⟳</button>
+
+<script>
+/* Minimal client logic. Replace endpoints with your API (supabase or server routes). */
+let token = localStorage.getItem('driver_token');
+const driverNameEl = document.getElementById('driverName');
+
+async function login(email, password){
+  // TODO: Replace with real auth call
+  const res = await fetch('/api/driver-login', {
+    method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({email,password})
+  });
+  if(!res.ok) { alert('Login failed'); return; }
+  const json = await res.json();
+  token = json.token;
+  localStorage.setItem('driver_token', token);
+  initDriver();
+}
+
+async function initDriver(){
+  if(!token){ document.getElementById('loginPanel').style.display='block'; return; }
+  document.getElementById('loginPanel').style.display='none';
+  document.getElementById('driverPanel').style.display='block';
+  // load driver details
+  const res = await fetch('/api/driver/me', {headers:{'Authorization':'Bearer '+token}});
+  if(res.ok){
+    const me = await res.json();
+    driverNameEl.textContent = me.name || me.email;
+    populateTripsheets();
+    loadParcels();
+  } else {
+    token=null; localStorage.removeItem('driver_token'); document.getElementById('loginPanel').style.display='block';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', ()=>login(
+  document.getElementById('email').value,
+  document.getElementById('password').value
+));
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  token=null; localStorage.removeItem('driver_token'); location.reload();
+});
+
+document.getElementById('refreshBtn').addEventListener('click', loadParcels);
+document.getElementById('quickRefresh').addEventListener('click', loadParcels);
+
+async function populateTripsheets(){
+  // TODO: GET /api/driver/tripsheets
+  const res = await fetch('/api/driver/tripsheets', {headers:{'Authorization':'Bearer '+token}});
+  const list = await res.json();
+  const sel = document.getElementById('tripsheetSelect');
+  sel.innerHTML = '<option value="">-- select --</option>';
+  list.forEach(t=>{
+    const o = document.createElement('option'); o.value = t.id; o.textContent = t.route_name + ' - ' + t.date; sel.appendChild(o);
+  });
+  sel.addEventListener('change', loadParcels);
+}
+
+async function loadParcels(){
+  const tripsheetId = document.getElementById('tripsheetSelect').value;
+  const q = document.getElementById('search').value;
+  // TODO: replace endpoint (accepts tripsheetId and q)
+  const res = await fetch('/api/driver/parcels?tripsheetId='+encodeURIComponent(tripsheetId||'')+'&q='+encodeURIComponent(q||''), {headers:{'Authorization':'Bearer '+token}});
+  const parcels = res.ok ? await res.json() : [];
+  const list = document.getElementById('parcelList'); list.innerHTML='';
+  parcels.forEach(p=>{
+    const el = document.createElement('div'); el.className='parcel';
+    el.innerHTML = `
+      <div class="row"><div><strong>${p.waybill || p.waybill_number}</strong></div><div class="muted">${p.status}</div></div>
+      <div class="muted">${p.recipient || p.recipient_name} — ${p.recipient_address || p.recipient_address_short}</div>
+      <div class="actions">
+        <button class="smallbtn" onclick="markDelivered('${p.id}')">Delivered</button>
+        <button class="smallbtn" onclick="markException('${p.id}')">Exception</button>
+        <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="sel" data-id="${p.id}"/> Select</label>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+async function markDelivered(parcelId){
+  // TODO: POST /api/parcels/:id/scan -> delivered
+  await fetch('/api/parcels/'+parcelId+'/deliver', {method:'POST', headers:{'Authorization':'Bearer '+token}});
+  loadParcels();
+}
+
+async function markException(parcelId){
+  const reason = prompt('Exception reason (nobody home, misroute, refused, no paperwork):');
+  if(!reason) return;
+  await fetch('/api/parcels/'+parcelId+'/exception', {method:'POST', headers:{'content-type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({reason})});
+  loadParcels();
+}
+
+/* Adhoc add */
+document.getElementById('addAdhocBtn').addEventListener('click', async ()=>{
+  const way = document.getElementById('adhocWaybill').value.trim();
+  const cust = document.getElementById('adhocCustomer').value.trim();
+  const pieces = Number(document.getElementById('adhocPieces').value) || 1;
+  const desc = document.getElementById('adhocDesc').value.trim();
+  if(!way || !cust){ alert('waybill and customer required'); return; }
+  // TODO: POST /api/driver/adhoc-add {waybill, customer, pieces, desc, tripsheetId}
+  await fetch('/api/driver/adhoc', {method:'POST', headers:{'content-type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({
+    waybill: way, customer: cust, pieces, desc, tripsheetId: document.getElementById('tripsheetSelect').value
+  })});
+  document.getElementById('adhocWaybill').value=''; document.getElementById('adhocCustomer').value='';
+  loadParcels();
+});
+
+/* Collections */
+document.getElementById('recordCollectionBtn').addEventListener('click', async ()=>{
+  const temp = document.getElementById('colTemp').value.trim();
+  const way = document.getElementById('colWaybill').value.trim();
+  const pieces = Number(document.getElementById('colPieces').value) || 1;
+  const dims = document.getElementById('colDims').value.trim();
+  if(!temp){ alert('enter temp coll ref'); return; }
+  // TODO: POST /api/driver/collection {tempRef, waybill, pieces, dims}
+  await fetch('/api/driver/collection', {method:'POST', headers:{'content-type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({temp:temp, waybill:way, pieces, dims})});
+  document.getElementById('colTemp').value=''; document.getElementById('colWaybill').value='';
+  loadParcels();
+});
+
+/* Combine selected */
+document.getElementById('combineBtn').addEventListener('click', async ()=>{
+  const master = document.getElementById('masterRef').value.trim();
+  if(!master) return alert('enter master ref');
+  const sels = Array.from(document.querySelectorAll('.sel:checked')).map(i=>i.dataset.id);
+  if(!sels.length) return alert('select parcels to combine');
+  // TODO: POST /api/driver/combine {masterRef, parcelIds}
+  await fetch('/api/driver/combine', {method:'POST', headers:{'content-type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({masterRef:master, parcelIds:sels})});
+  document.getElementById('masterRef').value=''; loadParcels();
+});
+
+/* init */
+if(token) initDriver();
+</script>
+</body>
+</html>
