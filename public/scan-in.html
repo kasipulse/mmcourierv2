@@ -1,50 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scan In | MM Courier</title>
-<link rel="stylesheet" href="css/styles.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-<div class="panel">
-  <h2>Scan In Parcels</h2>
-  <label>Scan Tracking #:</label>
-  <input type="text" id="trackingInput" placeholder="Scan or enter tracking number" autofocus>
-  <button id="scanBtn">Scan In</button>
-</div>
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scan In — MM Courier</title>
+<style>
+  body{font-family:Tahoma,Arial;background:#f0f0f0;margin:0;padding:12px}
+  .card{background:#fff;padding:12px;border-radius:6px}
+  input{width:100%;padding:10px;font-size:16px}
+  .muted{font-size:13px;color:#666;margin-top:8px}
+  button{margin-top:8px;padding:10px;background:#0a2b52;color:#fff;border:none;border-radius:4px}
+</style>
+</head><body>
+  <div class="card">
+    <h2>Quick Scan In</h2>
+    <input id="scan" placeholder="Scan or enter waybill number" autofocus/>
+    <select id="reason" style="margin-top:8px">
+      <option value="">No reason</option>
+      <option>Received at depot</option>
+      <option>Manifested</option>
+    </select>
+    <button id="send">Scan In</button>
+    <div class="muted" id="status"></div>
+  </div>
 
 <script>
-const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
-const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const input = document.getElementById('scan'), status=document.getElementById('status');
+document.getElementById('send').addEventListener('click', doScan);
+input.addEventListener('keydown', e=>{ if(e.key==='Enter') doScan(); });
 
-const scanBtn = document.getElementById('scanBtn');
-
-scanBtn.addEventListener('click', async () => {
-  const tracking = document.getElementById('trackingInput').value.trim();
-  if(!tracking) return alert('Enter a tracking number');
-
-  // Check parcel exists
-  const { data: parcel, error } = await supabase
-    .from('parcels')
-    .select('*')
-    .eq('tracking_number', tracking)
-    .single();
-
-  if(error) return alert('Parcel not found');
-
-  if(parcel.status === 'In Depot') return alert('Parcel already scanned in');
-
-  await supabase.from('parcels').update({
-    status: 'In Depot',
-    scanned_in_at: new Date()
-  }).eq('tracking_number', tracking);
-
-  alert('Parcel scanned into depot successfully');
-  document.getElementById('trackingInput').value = '';
-});
+async function doScan(){
+  const code = input.value.trim(); if(!code) return;
+  const reason = document.getElementById('reason').value;
+  try{
+    // TODO: replace with your API
+    const res = await fetch('/api/scan-in', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({waybill:code, reason})});
+    if(!res.ok) throw new Error('scan failed');
+    status.textContent = 'Scanned: '+code;
+    input.value=''; input.focus();
+  }catch(err){ status.textContent = 'Error: '+err.message; input.focus(); }
+}
 </script>
-</body>
-</html>
+</body></html>
