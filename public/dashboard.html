@@ -21,6 +21,8 @@
       padding: 4px;
       gap: 6px;
       flex-wrap: wrap;
+      position: relative;
+      z-index: 10;
     }
 
     .menu-btn {
@@ -40,10 +42,6 @@
       position: relative;
     }
 
-    .menu-group:hover .dropdown {
-      display: block;
-    }
-
     .dropdown {
       display: none;
       position: absolute;
@@ -53,6 +51,10 @@
       border: 2px outset #fff;
       z-index: 1000;
       min-width: 200px;
+    }
+
+    .dropdown.show {
+      display: block;
     }
 
     .dropdown button {
@@ -107,7 +109,7 @@
   <div class="toolbar">
     <!-- Data -->
     <div class="menu-group">
-      <button class="menu-btn">Data</button>
+      <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
       <div class="dropdown">
         <button onclick="showPanel('import.html')">Import Data</button>
         <button onclick="showPanel('customers.html')">Customers</button>
@@ -119,7 +121,7 @@
 
     <!-- Tripsheets -->
     <div class="menu-group">
-      <button class="menu-btn">Tripsheets</button>
+      <button class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
       <div class="dropdown">
         <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
         <button onclick="showPanel('driver-login.html')">Driver Login</button>
@@ -129,7 +131,7 @@
 
     <!-- Operations -->
     <div class="menu-group">
-      <button class="menu-btn">Operations</button>
+      <button class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
       <div class="dropdown">
         <button onclick="showPanel('floorcheck.html')">Floor Check</button>
         <button onclick="showPanel('scan-in.html')">Scan In</button>
@@ -146,7 +148,7 @@
 
     <!-- Reports -->
     <div class="menu-group">
-      <button class="menu-btn">Reports</button>
+      <button class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
       <div class="dropdown">
         <button onclick="showPanel('daily.html')">Daily Deliveries</button>
         <button onclick="showPanel('age.html')">Age Analysis</button>
@@ -193,6 +195,7 @@
                    .replace(/<\/body>/i, '');
 
         contentPanel.innerHTML = html;
+        closeAllDropdowns();
       } catch (err) {
         contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
       }
@@ -201,6 +204,23 @@
     function logout() {
       window.location.href = 'login.html';
     }
+
+    // Dropdown open/close logic
+    function toggleDropdown(button) {
+      const dropdown = button.nextElementSibling;
+      const isOpen = dropdown.classList.contains('show');
+      closeAllDropdowns();
+      if (!isOpen) dropdown.classList.add('show');
+    }
+
+    function closeAllDropdowns() {
+      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.menu-group')) closeAllDropdowns();
+    });
   </script>
 </body>
 </html>
