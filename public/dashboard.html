@@ -1,200 +1,247 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Dashboard</title>
-  <style>
-    /* Overall body and font */
-    body {
-      background: #c0c0c0;
-      font-family: "Tahoma", "Segoe UI", sans-serif;
-      margin: 0;
-      color: #000;
-      font-size: 13px;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Driver — MM Courier</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#111}
+  header{background:#0a2b52;color:#fff;padding:12px;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:16px;margin:0}
+  .small{font-size:12px;color:#ddd}
+  main{padding:12px}
+  .card{background:#fff;border-radius:6px;padding:10px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+  input,select,button,textarea{width:100%;padding:10px;margin-top:6px;border:1px solid #ccd;box-sizing:border-box;border-radius:4px}
+  .list{max-height:55vh;overflow:auto;margin-top:8px}
+  .parcel{padding:8px;border-bottom:1px solid #eee;display:flex;flex-direction:column}
+  .parcel .row{display:flex;justify-content:space-between;align-items:center}
+  .smallbtn{padding:6px 8px;border-radius:4px;border:none;background:#0a2b52;color:#fff;cursor:pointer}
+  .muted{color:#666;font-size:13px}
+  .actions{display:flex;gap:8px;margin-top:8px}
+  .fab{position:fixed;right:14px;bottom:14px;background:#deb657;color:#0a2b52;padding:12px;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,0.2);border:none}
+  @media(min-width:700px){ main{max-width:700px;margin:0 auto} }
 
-    /* Toolbar like Windows 98 menu bar */
-    .toolbar {
-      background: #d4d0c8;
-      border-bottom: 2px solid #fff;
-      display: flex;
-      align-items: center;
-      padding: 4px;
-      gap: 6px;
-    }
-
-    .menu-btn {
-      background: #e0e0e0;
-      border: 2px outset #fff;
-      padding: 2px 10px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .menu-btn:active {
-      border: 2px inset #fff;
-      background: #d0d0d0;
-    }
-
-    .menu-group {
-      position: relative;
-    }
-
-    .menu-group:hover .dropdown {
-      display: block;
-    }
-
-    .dropdown {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      z-index: 1000;
-      min-width: 180px;
-    }
-
-    .dropdown button {
-      width: 100%;
-      text-align: left;
-      border: none;
-      border-bottom: 1px solid #808080;
-      background: #d4d0c8;
-      padding: 4px 8px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .dropdown button:hover {
-      background: #b0b0b0;
-    }
-
-    .logout {
-      margin-left: auto;
-      background: #f2e5b8;
-    }
-
-    /* Content panel */
-    #content-panel {
-      padding: 12px;
-    }
-
-    .panel {
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: inset 1px 1px #fff;
-    }
-
-    h1, h2, h3 {
-      margin: 4px 0;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      font-size: 11px;
-      color: #333;
-      border-top: 2px solid #fff;
-      padding: 6px;
-      background: #d4d0c8;
-    }
-  </style>
+  /* Quick nav tiles */
+  .quick-nav {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .quick-btn {
+    background:#fff;
+    border:1px solid #409dbc;
+    border-radius:6px;
+    padding:10px 6px;
+    font-size:13px;
+    color:#0a2b52;
+    font-weight:600;
+    text-align:center;
+    cursor:pointer;
+    transition:0.2s;
+  }
+  .quick-btn:hover {background:#409dbc;color:#fff;}
+</style>
 </head>
-
 <body>
+  <header>
+    <div>
+      <h1>Driver App</h1>
+      <div class="small" id="driverName">Not logged in</div>
+    </div>
+    <div><button id="logoutBtn" class="smallbtn" style="background:#a00">Logout</button></div>
+  </header>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <!-- Data Group -->
-    <div class="menu-group">
-      <button class="menu-btn">Data</button>
-      <div class="dropdown">
-        <button onclick="showPanel('import.html')">Import Data</button>
-        <button onclick="showPanel('view-waybills.html')">View Waybills</button>
+  <main>
+    <!-- Login -->
+    <div id="loginPanel" class="card">
+      <label>Driver Email</label>
+      <input id="email" placeholder="email@example.com"/>
+      <label>Password</label>
+      <input id="password" type="password" placeholder="password"/>
+      <button id="loginBtn" class="smallbtn">Login</button>
+      <div class="muted" style="margin-top:8px">Use your driver credentials</div>
+    </div>
+
+    <!-- Driver Panel -->
+    <div id="driverPanel" style="display:none">
+
+      <!-- Quick Navigation Tiles -->
+      <div class="quick-nav">
+        <div class="quick-btn" onclick="openPage('scan-in.html')">📦 Scan In</div>
+        <div class="quick-btn" onclick="openPage('scan-out.html')">🚚 Scan Out</div>
+        <div class="quick-btn" onclick="openPage('scan-return.html')">🏠 Return</div>
+        <div class="quick-btn" onclick="openPage('tripsheet.html')">🗒️ Tripsheet</div>
+        <div class="quick-btn" onclick="openPage('upload-pod.html')">📸 Upload POD</div>
+        <div class="quick-btn" onclick="openPage('sign-glass.html')">✍️ Sign</div>
+        <div class="quick-btn" onclick="openPage('collections.html')">📥 Collect</div>
+        <div class="quick-btn" onclick="openPage('exceptions.html')">⚠️ Issues</div>
+      </div>
+
+      <!-- Search / Tripsheet -->
+      <div class="card">
+        <div style="display:flex;gap:8px">
+          <input id="search" placeholder="Search waybill or recipient"/>
+          <button id="refreshBtn" class="smallbtn">Refresh</button>
+        </div>
+        <div style="margin-top:8px">
+          <label>Tripsheet</label>
+          <select id="tripsheetSelect"></select>
+        </div>
+      </div>
+
+      <!-- Parcel List -->
+      <div class="card">
+        <strong>Parcels</strong>
+        <div class="muted">Tap a parcel to update status</div>
+        <div class="list" id="parcelList"></div>
+      </div>
+
+      <!-- Adhoc -->
+      <div class="card">
+        <strong>Add Adhoc Parcel</strong>
+        <label>Waybill #</label><input id="adhocWaybill" placeholder="Enter waybill number"/>
+        <label>Customer</label><input id="adhocCustomer" placeholder="Customer name or ID"/>
+        <label>Pieces</label><input id="adhocPieces" type="number" value="1"/>
+        <label>Description</label><input id="adhocDesc" placeholder="contents / description"/>
+        <button id="addAdhocBtn" class="smallbtn">Add & Link</button>
+      </div>
+
+      <!-- Collections -->
+      <div class="card">
+        <strong>Collections</strong>
+        <label>Temp Collection Ref</label><input id="colTemp" placeholder="COL-12345"/>
+        <label>Actual Waybill</label><input id="colWaybill" placeholder="885300001234"/>
+        <label>Pieces</label><input id="colPieces" type="number" value="1"/>
+        <label>Dimensions</label><input id="colDims" placeholder="L x W x H"/>
+        <button id="recordCollectionBtn" class="smallbtn">Record Collection</button>
+      </div>
+
+      <!-- Combine -->
+      <div class="card">
+        <strong>Combine Parcels</strong>
+        <label>Master Reference</label><input id="masterRef" placeholder="MASTER-001"/>
+        <button id="combineBtn" class="smallbtn">Combine Selected</button>
       </div>
     </div>
+  </main>
 
-    <!-- Tripsheets Group -->
-    <div class="menu-group">
-      <button class="menu-btn">Tripsheets</button>
-      <div class="dropdown">
-        <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
-        <button onclick="showPanel('driver-login.html')">Driver Login</button>
+  <button class="fab" id="quickRefresh">⟳</button>
+
+<script>
+let token = localStorage.getItem('driver_token');
+const driverNameEl = document.getElementById('driverName');
+
+function openPage(page){ window.location.href = page; }
+
+async function login(email,password){
+  const res = await fetch('/api/driver-login',{
+    method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({email,password})
+  });
+  if(!res.ok){alert('Login failed');return;}
+  const json = await res.json();
+  token=json.token; localStorage.setItem('driver_token',token);
+  initDriver();
+}
+
+async function initDriver(){
+  if(!token){document.getElementById('loginPanel').style.display='block';return;}
+  document.getElementById('loginPanel').style.display='none';
+  document.getElementById('driverPanel').style.display='block';
+  const res=await fetch('/api/driver/me',{headers:{'Authorization':'Bearer '+token}});
+  if(res.ok){
+    const me=await res.json();
+    driverNameEl.textContent=me.name||me.email;
+    populateTripsheets();
+    loadParcels();
+  }else{
+    token=null;localStorage.removeItem('driver_token');
+    document.getElementById('loginPanel').style.display='block';
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click',()=>login(
+  document.getElementById('email').value,
+  document.getElementById('password').value
+));
+document.getElementById('logoutBtn').addEventListener('click',()=>{token=null;localStorage.removeItem('driver_token');location.reload();});
+document.getElementById('refreshBtn').addEventListener('click',loadParcels);
+document.getElementById('quickRefresh').addEventListener('click',loadParcels);
+
+async function populateTripsheets(){
+  const res=await fetch('/api/driver/tripsheets',{headers:{'Authorization':'Bearer '+token}});
+  const list=await res.json();const sel=document.getElementById('tripsheetSelect');
+  sel.innerHTML='<option value="">-- select --</option>';
+  list.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.route_name+' - '+t.date;sel.appendChild(o);});
+  sel.addEventListener('change',loadParcels);
+}
+
+async function loadParcels(){
+  const tripsheetId=document.getElementById('tripsheetSelect').value;
+  const q=document.getElementById('search').value;
+  const res=await fetch('/api/driver/parcels?tripsheetId='+encodeURIComponent(tripsheetId||'')+'&q='+encodeURIComponent(q||''),{headers:{'Authorization':'Bearer '+token}});
+  const parcels=res.ok?await res.json():[];
+  const list=document.getElementById('parcelList');list.innerHTML='';
+  parcels.forEach(p=>{
+    const el=document.createElement('div');el.className='parcel';
+    el.innerHTML=`
+      <div class="row"><div><strong>${p.waybill||p.waybill_number}</strong></div><div class="muted">${p.status}</div></div>
+      <div class="muted">${p.recipient||p.recipient_name} — ${p.recipient_address||p.recipient_address_short}</div>
+      <div class="actions">
+        <button class="smallbtn" onclick="markDelivered('${p.id}')">Delivered</button>
+        <button class="smallbtn" onclick="markException('${p.id}')">Exception</button>
+        <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="sel" data-id="${p.id}"/> Select</label>
       </div>
-    </div>
+    `;
+    list.appendChild(el);
+  });
+}
 
-    <!-- Operations Group -->
-    <div class="menu-group">
-      <button class="menu-btn">Operations</button>
-      <div class="dropdown">
-        <button onclick="showPanel('floorcheck.html')">Floor Check</button>
-        <button onclick="showPanel('track.html')">Track Parcels</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-        <button onclick="showPanel('collections.html')">Collections</button>
-        <button onclick="showPanel('scan-in.html')">Scan In</button>
-        <button onclick="showPanel('scan-out.html')">Scan Out</button>
-        <button onclick="showPanel('scan-return.html')">Return to Depot</button>
-      </div>
-    </div>
+async function markDelivered(parcelId){
+  await fetch('/api/parcels/'+parcelId+'/deliver',{method:'POST',headers:{'Authorization':'Bearer '+token}});
+  loadParcels();
+}
+async function markException(parcelId){
+  const reason=prompt('Exception reason:');if(!reason)return;
+  await fetch('/api/parcels/'+parcelId+'/exception',{method:'POST',headers:{'content-type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({reason})});
+  loadParcels();
+}
 
-    <!-- Reports Group -->
-    <div class="menu-group">
-      <button class="menu-btn">Reports</button>
-      <div class="dropdown">
-        <button onclick="showPanel('daily.html')">Daily Deliveries</button>
-        <button onclick="showPanel('age.html')">Age Analysis</button>
-        <button onclick="showPanel('pod.html')">POD Compliance</button>
-        <button onclick="showPanel('billing.html')">Billing Summary</button>
-      </div>
-    </div>
+document.getElementById('addAdhocBtn').addEventListener('click',async()=>{
+  const way=document.getElementById('adhocWaybill').value.trim();
+  const cust=document.getElementById('adhocCustomer').value.trim();
+  const pieces=Number(document.getElementById('adhocPieces').value)||1;
+  const desc=document.getElementById('adhocDesc').value.trim();
+  if(!way||!cust)return alert('waybill and customer required');
+  await fetch('/api/driver/adhoc',{method:'POST',headers:{'content-type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({
+    waybill:way,customer:cust,pieces,desc,tripsheetId:document.getElementById('tripsheetSelect').value
+  })});
+  document.getElementById('adhocWaybill').value='';document.getElementById('adhocCustomer').value='';
+  loadParcels();
+});
 
-    <button class="menu-btn logout" onclick="logout()">Logout</button>
-  </div>
+document.getElementById('recordCollectionBtn').addEventListener('click',async()=>{
+  const temp=document.getElementById('colTemp').value.trim();
+  const way=document.getElementById('colWaybill').value.trim();
+  const pieces=Number(document.getElementById('colPieces').value)||1;
+  const dims=document.getElementById('colDims').value.trim();
+  if(!temp)return alert('enter temp coll ref');
+  await fetch('/api/driver/collection',{method:'POST',headers:{'content-type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({temp,waybill:way,pieces,dims})});
+  document.getElementById('colTemp').value='';document.getElementById('colWaybill').value='';
+  loadParcels();
+});
 
-  <!-- Content Panel -->
-  <div id="content-panel">
-    <div class="panel">
-      <h1>Welcome to MM Courier</h1>
-      <p>Select a menu option above to manage imports, tripsheets, parcels, scan in/out, returns, or reports.</p>
-    </div>
-  </div>
+document.getElementById('combineBtn').addEventListener('click',async()=>{
+  const master=document.getElementById('masterRef').value.trim();
+  if(!master)return alert('enter master ref');
+  const sels=Array.from(document.querySelectorAll('.sel:checked')).map(i=>i.dataset.id);
+  if(!sels.length)return alert('select parcels to combine');
+  await fetch('/api/driver/combine',{method:'POST',headers:{'content-type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({masterRef:master,parcelIds:sels})});
+  document.getElementById('masterRef').value='';loadParcels();
+});
 
-  <!-- Footer -->
-  <div class="footer">
-    © 2025 MM Courier Systems. All rights reserved.
-  </div>
-
-  <!-- JS for dynamic panel loading -->
-  <script>
-    const contentPanel = document.getElementById('content-panel');
-
-    async function showPanel(file) {
-      try {
-        const res = await fetch(file);
-        let html = await res.text();
-
-        // Remove <html>, <head>, <body> tags
-        html = html.replace(/<!DOCTYPE html.*?>/i, '')
-                   .replace(/<html.*?>/i, '')
-                   .replace(/<\/html>/i, '')
-                   .replace(/<head.*?>.*<\/head>/is, '')
-                   .replace(/<body.*?>/i, '')
-                   .replace(/<\/body>/i, '');
-
-        contentPanel.innerHTML = html;
-
-      } catch(err) {
-        contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
-      }
-    }
-
-    function logout() {
-      window.location.href = 'login.html';
-    }
-  </script>
+if(token) initDriver();
+</script>
 </body>
 </html>
