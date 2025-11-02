@@ -101,6 +101,17 @@
       padding: 6px;
       background: #d4d0c8;
     }
+
+    input, select {
+      border: 2px inset #fff;
+      background: #fff;
+      font-size: 12px;
+      padding: 3px;
+    }
+
+    button.menu-btn {
+      min-width: 90px;
+    }
   </style>
 </head>
 
@@ -143,8 +154,8 @@
         <button onclick="showPanel('pod-upload.html')">POD Upload</button>
         <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
         <button onclick="showPanel('track.html')">Track Parcels</button>
-        <hr />
-        <button onclick="showPanel('waybill-capture.html')">Capture Waybill</button>
+        <!-- ✅ NEW ENTRY -->
+        <button onclick="showPanel('capture-waybill.html')">Capture Waybill</button>
       </div>
     </div>
 
