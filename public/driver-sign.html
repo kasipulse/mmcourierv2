@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MM Courier | Sign-on-Glass</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f4f4f4;
+      color: #0a2b52;
+      padding: 20px;
+      margin: 0;
+    }
+    h2 {
+      text-align: center;
+      color: #0a2b52;
+    }
+    .container {
+      max-width: 450px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #signature-pad {
+      border: 2px dashed #409dbc;
+      border-radius: 8px;
+      width: 100%;
+      height: 220px;
+      background: #fafafa;
+      cursor: crosshair;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      color: white;
+      background: #0a2b52;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #409dbc;
+    }
+    .btn-clear {
+      background: #deb657;
+      color: #0a2b52;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Sign for Delivery</h2>
+
+    <form id="signForm">
+      <label>Waybill Number</label>
+      <input type="text" id="waybill" readonly>
+
+      <label>Recipient Name</label>
+      <input type="text" id="recipient" placeholder="Enter recipient name" required>
+
+      <label>Signature</label>
+      <canvas id="signature-pad"></canvas>
+
+      <button type="submit">Confirm Delivery</button>
+      <button type="button" class="btn-clear" id="clear">Clear Signature</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // === CONFIGURATION ===
+    const SUPABASE_URL = "https://YOUR_SUPABASE_URL.supabase.co";
+    const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+    const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload";
+    const CLOUDINARY_UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // === GET WAYBILL FROM URL PARAMETER ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const waybill = urlParams.get("waybill");
+    document.getElementById("waybill").value = waybill || "Not provided";
+
+    // === SIGNATURE PAD LOGIC ===
+    const canvas = document.getElementById("signature-pad");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    const resizeCanvas = () => {
+      const data = canvas.toDataURL();
+      canvas.width = canvas.offsetWidth;
+      canvas.height = 220;
+      const img = new Image();
+      img.src = data;
+      img.onload = () => ctx.drawImage(img, 0, 0);
+    };
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    canvas.addEventListener("mousedown", e => { drawing = true; draw(e); });
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mouseout", () => drawing = false);
+    canvas.addEventListener("touchstart", e => { drawing = true; draw(e.touches[0]); });
+    canvas.addEventListener("touchmove", e => draw(e.touches[0]));
+    canvas.addEventListener("touchend", () => drawing = false);
+
+    function draw(e) {
+      if (!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#0a2b52";
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+
+    document.getElementById("clear").addEventListener("click", () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    // === FORM SUBMIT ===
+    document.getElementById("signForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const recipient = document.getElementById("recipient").value.trim();
+      if (!recipient) return alert("Please enter recipient name");
+
+      const signatureData = canvas.toDataURL("image/png");
+      if (signatureData.length < 2000) return alert("Please provide a signature before submitting");
+
+      // Upload signature to Cloudinary
+      const formData = new FormData();
+      formData.append("file", signatureData);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      formData.append("public_id", `signature_${waybill}_${Date.now()}`);
+
+      const cloudRes = await fetch(CLOUDINARY_UPLOAD_URL, {
+        method: "POST",
+        body: formData
+      });
+      const cloudData = await cloudRes.json();
+
+      if (!cloudData.secure_url) return alert("Error uploading signature to Cloudinary");
+
+      // Update Supabase record
+      const { error } = await supabase
+        .from("parcels")
+        .update({
+          recipient_name: recipient,
+          signature_url: cloudData.secure_url,
+          delivered_at: new Date().toISOString(),
+          pod_type: "SignOnGlass",
+          status: "Delivered"
+        })
+        .eq("waybill_number", waybill);
+
+      if (error) {
+        console.error(error);
+        alert("Error saving POD to Supabase");
+      } else {
+        alert("Delivery successfully confirmed!");
+        window.location.href = `driver-tripsheet.html?refresh=1`;
+      }
+    });
+  </script>
+
+</body>
+</html>
