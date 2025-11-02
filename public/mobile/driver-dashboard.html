@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MM Courier | Driver Dashboard</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      color: #0a2b52;
+    }
+
+    header {
+      background: #0a2b52;
+      color: white;
+      text-align: center;
+      padding: 16px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .driver-info {
+      background: #cebd80;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .menu button {
+      background: white;
+      border: 2px solid #409dbc;
+      color: #0a2b52;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 20px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+    }
+
+    .menu button:hover {
+      background: #409dbc;
+      color: white;
+    }
+
+    footer {
+      background: #0a2b52;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      font-size: 12px;
+      position: fixed;
+      width: 100%;
+      bottom: 0;
+    }
+
+    .logout {
+      width: 100%;
+      border: none;
+      background: #d9534f;
+      color: white;
+      padding: 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .logout:hover {
+      background: #b52b27;
+    }
+  </style>
+</head>
+<body>
+
+  <header>MM Courier Driver Dashboard</header>
+
+  <div class="driver-info" id="driverInfo">
+    Logged in as: <strong>Driver Name</strong>
+  </div>
+
+  <div class="menu">
+    <button onclick="openPage('scan-in.html')">📦 Scan In</button>
+    <button onclick="openPage('scan-out.html')">🚚 Scan Out</button>
+    <button onclick="openPage('scan-return.html')">🏠 Return to Depot</button>
+    <button onclick="openPage('tripsheet.html')">🗒️ Tripsheet</button>
+    <button onclick="openPage('upload-pod.html')">📸 Upload POD</button>
+    <button onclick="openPage('sign-glass.html')">✍️ Sign on Glass</button>
+    <button onclick="openPage('collections.html')">📥 Collections</button>
+    <button onclick="openPage('exceptions.html')">⚠️ Problem Parcels</button>
+  </div>
+
+  <button class="logout" onclick="logout()">Logout</button>
+
+  <footer>© 2025 MM Courier</footer>
+
+  <script>
+    // Retrieve driver name from session/localStorage
+    const driverName = localStorage.getItem("driverName") || "Unknown Driver";
+    document.getElementById("driverInfo").innerHTML = "Logged in as: <strong>" + driverName + "</strong>";
+
+    function openPage(page) {
+      window.location.href = page;
+    }
+
+    function logout() {
+      localStorage.removeItem("driverName");
+      window.location.href = "../login.html";
+    }
+  </script>
+</body>
+</html>
