@@ -143,6 +143,8 @@
         <button onclick="showPanel('pod-upload.html')">POD Upload</button>
         <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
         <button onclick="showPanel('track.html')">Track Parcels</button>
+        <hr />
+        <button onclick="showPanel('waybill-capture.html')">Capture Waybill</button>
       </div>
     </div>
 
@@ -205,7 +207,6 @@
       window.location.href = 'login.html';
     }
 
-    // Dropdown open/close logic
     function toggleDropdown(button) {
       const dropdown = button.nextElementSibling;
       const isOpen = dropdown.classList.contains('show');
@@ -217,7 +218,6 @@
       document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
     }
 
-    // Close dropdowns when clicking outside
     document.addEventListener('click', e => {
       if (!e.target.closest('.menu-group')) closeAllDropdowns();
     });
