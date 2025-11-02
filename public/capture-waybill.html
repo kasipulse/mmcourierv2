@@ -3,12 +3,8 @@
   <p>Manually capture and register a new waybill record.</p>
   <form id="waybillForm" onsubmit="return saveWaybill(event)">
     <table style="width:100%; border-spacing:8px;">
-      <tr>
-        <td><b>Waybill Number:</b></td>
-        <td><input type="text" id="waybill_no" required style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Service:</b></td>
+      <tr><td><b>Waybill Number:</b></td><td><input type="text" id="waybill_no" required style="width:100%;"></td></tr>
+      <tr><td><b>Service:</b></td>
         <td>
           <select id="service" style="width:100%;">
             <option value="NDX">NDX (Next Day)</option>
@@ -17,24 +13,11 @@
           </select>
         </td>
       </tr>
-      <tr>
-        <td><b>Customer:</b></td>
-        <td><input type="text" id="customer" placeholder="e.g. FedEx" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Consignee Name:</b></td>
-        <td><input type="text" id="consignee_name" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Consignee Address:</b></td>
-        <td><input type="text" id="consignee_address" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Consignee Phone:</b></td>
-        <td><input type="text" id="consignee_phone" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Region:</b></td>
+      <tr><td><b>Customer:</b></td><td><input type="text" id="customer" placeholder="e.g. FedEx" style="width:100%;"></td></tr>
+      <tr><td><b>Consignee Name:</b></td><td><input type="text" id="consignee_name" style="width:100%;"></td></tr>
+      <tr><td><b>Consignee Address:</b></td><td><input type="text" id="consignee_address" style="width:100%;"></td></tr>
+      <tr><td><b>Consignee Phone:</b></td><td><input type="text" id="consignee_phone" style="width:100%;"></td></tr>
+      <tr><td><b>Region:</b></td>
         <td>
           <select id="region" style="width:100%;">
             <option value="JHB">JHB</option>
@@ -44,30 +27,17 @@
           </select>
         </td>
       </tr>
-      <tr>
-        <td><b>Sender Name:</b></td>
-        <td><input type="text" id="sender_name" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Sender Address:</b></td>
-        <td><input type="text" id="sender_address" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Item Description:</b></td>
-        <td><input type="text" id="item_desc" style="width:100%;"></td>
-      </tr>
-      <tr>
-        <td><b>Dimensions (L x W x H):</b></td>
+      <tr><td><b>Sender Name:</b></td><td><input type="text" id="sender_name" style="width:100%;"></td></tr>
+      <tr><td><b>Sender Address:</b></td><td><input type="text" id="sender_address" style="width:100%;"></td></tr>
+      <tr><td><b>Item Description:</b></td><td><input type="text" id="item_desc" style="width:100%;"></td></tr>
+      <tr><td><b>Dimensions (L x W x H):</b></td>
         <td>
           <input type="number" id="length" placeholder="L" style="width:30%;"> ×
           <input type="number" id="width" placeholder="W" style="width:30%;"> ×
           <input type="number" id="height" placeholder="H" style="width:30%;">
         </td>
       </tr>
-      <tr>
-        <td><b>Weight (kg):</b></td>
-        <td><input type="number" id="weight" step="0.1" style="width:100%;"></td>
-      </tr>
+      <tr><td><b>Weight (kg):</b></td><td><input type="number" id="weight" step="0.1" style="width:100%;"></td></tr>
     </table>
     <br>
     <button type="submit" class="menu-btn">Save Waybill</button>
