@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload PODs | MM Courier</title>
+  <style>
+    body {
+      background: #c0c0c0;
+      font-family: "Tahoma", "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #000;
+      font-size: 13px;
+    }
+
+    .panel {
+      background: #d4d0c8;
+      border: 2px outset #fff;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: inset 1px 1px #fff;
+    }
+
+    h1, h2, h3 {
+      margin: 4px 0;
+    }
+
+    .upload-area {
+      border: 2px dashed #808080;
+      padding: 40px;
+      text-align: center;
+      background: #e0e0e0;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .upload-area.dragover {
+      background: #b0b0b0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid #808080;
+      padding: 6px;
+      text-align: left;
+    }
+
+    th {
+      background: #d4d0c8;
+    }
+
+    .matched {
+      color: green;
+      font-weight: bold;
+    }
+
+    .unmatched {
+      color: red;
+      font-weight: bold;
+    }
+
+    .btn {
+      background: #e0e0e0;
+      border: 2px outset #fff;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn:active {
+      border: 2px inset #fff;
+      background: #d0d0d0;
+    }
+
+    .preview-img {
+      width: 80px;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h2>📦 Upload POD Images</h2>
+    <p>Drop scanned POD images below or click to upload. The system will auto-detect waybill numbers from barcodes and show matches.</p>
+
+    <div id="uploadArea" class="upload-area">
+      Drag & Drop POD Images Here or Click to Upload
+    </div>
+
+    <input type="file" id="fileInput" multiple accept="image/*" style="display:none;" />
+
+    <table id="resultsTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Detected Waybill</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Barcode scanning via ZXing -->
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const resultsTable = document.getElementById('resultsTable');
+    const resultsBody = document.getElementById('resultsBody');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    async function handleFiles(files) {
+      resultsTable.style.display = 'table';
+      resultsBody.innerHTML = '';
+
+      for (const file of files) {
+        const imgURL = URL.createObjectURL(file);
+        const waybill = await scanBarcode(imgURL);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><img src="${imgURL}" class="preview-img" /></td>
+          <td>${waybill || '<em>Not detected</em>'}</td>
+          <td class="${waybill ? 'matched' : 'unmatched'}">${waybill ? 'Matched' : 'Unmatched'}</td>
+          <td>
+            ${waybill ? 
+              '<button class="btn" onclick="confirmPOD(\''+waybill+'\')">Confirm</button>' :
+              '<button class="btn" onclick="manualLink()">Link Manually</button>'}
+          </td>
+        `;
+        resultsBody.appendChild(tr);
+      }
+    }
+
+    async function scanBarcode(imageUrl) {
+      try {
+        const codeReader = new ZXing.BrowserBarcodeReader();
+        const result = await codeReader.decodeFromImageUrl(imageUrl);
+        return result.text || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function confirmPOD(waybill) {
+      alert(`POD for Waybill ${waybill} confirmed and uploaded (simulation).`);
+      // TODO: send to Supabase + Cloudinary
+    }
+
+    function manualLink() {
+      const input = prompt('Enter waybill number to link:');
+      if (input) alert(`Linked image to waybill ${input} (simulation).`);
+    }
+  </script>
+</body>
+</html>
