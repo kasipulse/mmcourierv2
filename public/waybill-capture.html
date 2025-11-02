@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waybill Capture | MM Courier</title>
+  <style>
+    body {
+      background: #c0c0c0;
+      font-family: "Tahoma", "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 10px;
+      font-size: 13px;
+      color: #000;
+    }
+
+    .panel {
+      background: #d4d0c8;
+      border: 2px outset #fff;
+      padding: 15px;
+      max-width: 700px;
+      margin: 0 auto;
+      box-shadow: inset 1px 1px #fff;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+
+    input, select, textarea {
+      padding: 5px;
+      font-size: 13px;
+      border: 1px solid #808080;
+      background: #fff;
+      border-radius: 3px;
+      width: 100%;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .col {
+      flex: 1;
+      min-width: 48%;
+    }
+
+    .buttons {
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #e0e0e0;
+      border: 2px outset #fff;
+      padding: 5px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    button:active {
+      border: 2px inset #fff;
+      background: #d0d0d0;
+    }
+
+    .success {
+      color: green;
+      margin-top: 10px;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="panel">
+    <h2>Manual Waybill Capture</h2>
+
+    <form id="waybillForm">
+      <div class="row">
+        <div class="col">
+          <label>Waybill Number</label>
+          <input type="text" name="waybill_no" required />
+        </div>
+        <div class="col">
+          <label>Service</label>
+          <select name="service" required>
+            <option value="">Select Service</option>
+            <option value="NDX">NDX - Next Day</option>
+            <option value="SDX">SDX - Same Day</option>
+            <option value="ONX">ONX - Overnight</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Customer</label>
+          <input type="text" name="customer" placeholder="e.g. FedEx, Seabourne, Brima" required />
+        </div>
+        <div class="col">
+          <label>Region</label>
+          <select name="region" required>
+            <option value="">Select Region</option>
+            <option value="JHB">JHB</option>
+            <option value="PRY">PRY</option>
+            <option value="DBN">DBN</option>
+            <option value="CPT">CPT</option>
+          </select>
+        </div>
+      </div>
+
+      <hr />
+
+      <h3>Consignee Details (Receiver)</h3>
+      <div class="row">
+        <div class="col">
+          <label>Consignee Name</label>
+          <input type="text" name="consignee_name" required />
+        </div>
+        <div class="col">
+          <label>Phone Number</label>
+          <input type="text" name="consignee_phone" required />
+        </div>
+      </div>
+
+      <label>Consignee Address</label>
+      <textarea name="consignee_address" rows="2" required></textarea>
+
+      <hr />
+
+      <h3>Sender Details</h3>
+      <label>Sender Address</label>
+      <textarea name="sender_address" rows="2" required></textarea>
+
+      <hr />
+
+      <h3>Parcel Dimensions</h3>
+      <div class="row">
+        <div class="col">
+          <label>Length (cm)</label>
+          <input type="number" name="length" step="0.01" required />
+        </div>
+        <div class="col">
+          <label>Width (cm)</label>
+          <input type="number" name="width" step="0.01" required />
+        </div>
+        <div class="col">
+          <label>Height (cm)</label>
+          <input type="number" name="height" step="0.01" required />
+        </div>
+        <div class="col">
+          <label>Weight (kg)</label>
+          <input type="number" name="weight" step="0.01" required />
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button type="submit">Save Waybill</button>
+      </div>
+
+      <div id="message"></div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('waybillForm');
+    const msg = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = Object.fromEntries(new FormData(form).entries());
+      console.log("Captured waybill:", formData);
+
+      msg.innerHTML = "<p class='success'>Waybill saved successfully (temporary local mode).</p>";
+
+      // TODO: connect to Supabase with INSERT INTO waybills
+      // Example:
+      // const { data, error } = await supabase.from('waybills').insert([formData]);
+    });
+  </script>
+</body>
+</html>
