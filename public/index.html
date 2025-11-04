@@ -1,102 +1,142 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Smart Courier Management System</title>
-  <meta name="description" content="MM Courier helps logistics companies manage scans, tripsheets, drivers, and PODs efficiently with full FedEx integration and client tracking.">
-  <meta name="keywords" content="courier system, delivery tracking, FedEx integration, logistics software, POD management, MM Courier, parcel tracking, cloud courier system">
-  <meta name="author" content="MM Courier">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MM Courier | Courier Management Software, Delivery & POD System</title>
+  <link rel="canonical" href="https://www.mmcourier.co.za/">
 
-  <!-- Social meta -->
-  <meta property="og:title" content="MM Courier | Smarter Courier Management System" />
-  <meta property="og:description" content="Manage your entire courier operation from scan-in to POD upload, fully integrated with FedEx and ParcelPerfect." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://www.mmcourier.co.za/" />
-  
-  <link rel="canonical" href="https://www.mmcourier.co.za/" />
+  <meta name="description" content="MM Courier provides delivery and POD management software that automates bookings, tracks deliveries, and integrates seamlessly with over 40 global carriers. Simplify your logistics, save time, and grow your courier business.">
+  <meta name="keywords" content="courier management software, delivery software, POD management, logistics platform, supply chain management, warehouse management system, courier tracking, dispatch software, e-commerce fulfilment, order tracking, logistics automation">
+  <meta name="robots" content="index, follow">
+
+  <meta property="og:title" content="MM Courier | Courier Management Software & Delivery Platform">
+  <meta property="og:description" content="Automate bookings, track deliveries, and manage PODs with MM Courier — the modern logistics software for smart courier and fulfilment management.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mmcourier.co.za">
+  <meta property="og:site_name" content="MM Courier">
+  <meta property="og:locale" content="en_ZA">
+
   <style>
     body {
-      font-family: "Inter", Arial, sans-serif;
       margin: 0;
-      padding: 0;
-      background-color: #f9f9f9;
+      font-family: "Segoe UI", Arial, sans-serif;
       color: #0a2b52;
+      background-color: #ffffff;
     }
-
     header {
       background-color: #0a2b52;
       color: white;
-      padding: 20px;
-      text-align: center;
-    }
-
-    nav {
-      background-color: #409dbc;
+      padding: 15px 40px;
       display: flex;
+      align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
+      flex-direction: column;
     }
-
-    nav a {
-      color: white;
-      padding: 15px 20px;
-      text-decoration: none;
-      font-weight: 500;
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 1px;
     }
-
-    nav a:hover {
-      background-color: #cebd80;
-      color: #0a2b52;
-    }
-
     section {
       padding: 60px 20px;
-      max-width: 1000px;
-      margin: auto;
       text-align: center;
     }
-
-    h1, h2 {
+    section.hero {
+      background: linear-gradient(to right, #0a2b52, #409dbc);
+      color: white;
+      padding: 80px 20px;
+    }
+    .hero h2 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 18px;
+      max-width: 700px;
+      margin: 0 auto 30px;
+      line-height: 1.6;
+    }
+    .btn {
+      background-color: #deb657;
       color: #0a2b52;
-    }
-
-    .cta {
-      background-color: #0a2b52;
-      color: white;
-      padding: 12px 30px;
-      border-radius: 25px;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
       text-decoration: none;
-      font-weight: 600;
-      display: inline-block;
-      margin-top: 20px;
-      transition: background 0.3s ease;
+      transition: 0.3s;
     }
-
-    .cta:hover {
-      background-color: #409dbc;
+    .btn:hover {
+      background-color: #cebd80;
     }
-
+    .features, .integration, .pricing, .contact {
+      background-color: #f7f7f7;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: white;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card h4 {
+      color: #0a2b52;
+      margin-bottom: 8px;
+    }
     footer {
+      text-align: center;
+      padding: 30px 20px;
       background-color: #0a2b52;
       color: white;
-      text-align: center;
-      padding: 20px;
       font-size: 14px;
     }
+    input, textarea {
+      width: 90%;
+      max-width: 400px;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #deb657;
+      color: #0a2b52;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #cebd80;
+    }
 
-    @media (max-width: 768px) {
-      section {
-        padding: 40px 15px;
-      }
-
-      h1 {
-        font-size: 1.6em;
-      }
-
-      .cta {
-        padding: 10px 25px;
-      }
+    /* Blog section */
+    .blog {
+      background-color: #ffffff;
+      padding: 60px 20px;
+      text-align: center;
+    }
+    .blog h3 {
+      color: #0a2b52;
+      margin-bottom: 30px;
+    }
+    .blog .card a {
+      color: #0a2b52;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .blog .card a:hover {
+      color: #409dbc;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -104,45 +144,119 @@
 
   <header>
     <h1>MM Courier</h1>
-    <p>Powerful Courier Management System Built for Efficiency</p>
   </header>
 
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="about.html">About</a>
-    <a href="services.html">Services</a>
-    <a href="contact.html">Contact</a>
-    <a href="dashboard.html">Dashboard</a>
-  </nav>
-
-  <section>
-    <h2>Smart Courier Solutions for Modern Logistics</h2>
-    <p>MM Courier helps logistics companies manage their daily operations — from parcel scanning and driver tripsheets to POD uploads and billing — all in one secure cloud-based system.</p>
-    <a href="contact.html" class="cta">Request a Demo</a>
+  <section class="hero">
+    <h2>Courier Management Software for Smart Delivery Operations</h2>
+    <p>MM Courier is a next-generation <strong>delivery and POD management platform</strong> designed to streamline logistics, e-commerce fulfilment, and warehouse operations. Reduce manual processes, automate workflows, and gain complete visibility into your courier network — all in one dashboard.</p>
+    <a href="https://www.mmcourier.co.za/login.html" class="btn">Login to Dashboard</a>
   </section>
 
-  <section style="background-color:#ffffff;">
-    <h2>Key Features</h2>
-    <ul style="list-style:none; padding:0; text-align:left; display:inline-block; text-align:left;">
-      <li>• Scan In / Scan Out automation</li>
-      <li>• FedEx and ParcelPerfect integration</li>
-      <li>• POD uploads with image preview</li>
-      <li>• Trip Sheet management with sign-on-glass</li>
-      <li>• Driver and route performance tracking</li>
-      <li>• Real-time reporting and client access</li>
-    </ul>
+  <section class="features">
+    <h3>We Specialize In</h3>
+    <div class="grid">
+      <div class="card">
+        <h4>📦 Order Fulfilment Platforms</h4>
+        <p>Built for businesses managing daily parcel movements, deliveries, and client notifications with accuracy and speed.</p>
+      </div>
+      <div class="card">
+        <h4>🛒 E-Commerce Platforms</h4>
+        <p>Integrate and manage orders from Shopify, WooCommerce, or custom online stores with seamless courier connections.</p>
+      </div>
+      <div class="card">
+        <h4>🔗 API Integrations</h4>
+        <p>Connect your ERP, courier, and warehouse systems to automate data sharing and reduce manual input errors.</p>
+      </div>
+      <div class="card">
+        <h4>🏢 Mailroom Applications</h4>
+        <p>Digitize your corporate mailroom for faster, error-free parcel handling, tracking, and internal distribution.</p>
+      </div>
+    </div>
   </section>
 
-  <section style="background-color:#409dbc; color:white;">
-    <h2>Why Choose MM Courier?</h2>
-    <p>We simplify your logistics process with automation, transparency, and control — whether you're managing 100 or 10,000 parcels a day.</p>
-    <a href="about.html" class="cta" style="background-color:#cebd80; color:#0a2b52;">Learn More</a>
+  <section class="integration">
+    <h3>Powerful Supply Chain & Delivery Integrations</h3>
+    <p>Seamlessly connect with over <strong>40 global, regional, and local carriers</strong>, automating booking and tracking, and eliminating duplicate work.</p>
+    <div class="grid">
+      <div class="card">
+        <h4>⚙️ Connect to Delivery Partners</h4>
+        <p>Easily connect to your preferred local and international delivery partners — from couriers to supply chain systems.</p>
+      </div>
+      <div class="card">
+        <h4>📦 Automated Booking & Tracking</h4>
+        <p>Bookings, POD updates, and tracking data sync in real time — no spreadsheets, no manual uploads.</p>
+      </div>
+      <div class="card">
+        <h4>✅ Eliminate Double Entry</h4>
+        <p>Automate your workflow to prevent duplicate entries and reduce operational errors by over 50%.</p>
+      </div>
+      <div class="card">
+        <h4>🚀 Save Time & Improve Efficiency</h4>
+        <p>Our intelligent automation reduces courier processing time, helping you deliver faster and smarter.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing">
+    <h3>Simple, Transparent Pricing</h3>
+    <div class="grid">
+      <div class="card">
+        <h4>Small Business Plan</h4>
+        <p><strong>R499 / month</strong></p>
+        <p>Includes up to 3 users, parcel scanning, POD uploads, and delivery performance reports.</p>
+      </div>
+      <div class="card">
+        <h4>Growing Business</h4>
+        <p><strong>R899 / month</strong></p>
+        <p>Up to 10 users, driver & vehicle management, advanced analytics, and API integrations.</p>
+      </div>
+      <div class="card">
+        <h4>Enterprise / Custom</h4>
+        <p><strong>Custom Quote</strong></p>
+        <p>Includes API access, dedicated support, and unlimited users — built for large-scale logistics operations.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact">
+    <h3>Request a Demo or Contact Us</h3>
+    <p>Let’s show you how MM Courier can optimize your courier, warehouse, and supply chain operations.</p>
+    <form action="mailto:info@mmcourier.co.za" method="post" enctype="text/plain">
+      <input type="text" name="name" placeholder="Your Name" required><br>
+      <input type="email" name="email" placeholder="Your Email" required><br>
+      <textarea name="message" rows="4" placeholder="Tell us about your business needs..."></textarea><br>
+      <button type="submit">Send Message</button>
+    </form>
+  </section>
+
+  <!-- 📰 Blog Section -->
+  <section class="blog">
+    <h3>Latest Articles</h3>
+    <div class="grid">
+      <div class="card">
+        <a href="blog/top-courier-management-systems.html">Top Courier Management Systems in 2025</a>
+        <p>Explore how platforms like MM Courier are redefining logistics management for growing courier businesses.</p>
+      </div>
+      <div class="card">
+        <a href="blog/courier-delivery-software.html">Courier Delivery Software Explained</a>
+        <p>Learn how delivery software improves visibility, reduces delays, and automates proof of delivery updates.</p>
+      </div>
+      <div class="card">
+        <a href="blog/parcelperfect-alternative.html">The Best Parcel Perfect Alternative</a>
+        <p>Discover why MM Courier is the flexible, modern alternative to Parcel Perfect for South African logistics teams.</p>
+      </div>
+    </div>
   </section>
 
   <footer>
-    <p>© 2025 MM Courier. All rights reserved.</p>
-    <p>10 Burry Koean Street, Jet Park, Boksburg, 1469 | Tel: 011 397 1151 | <a href="mailto:ops1@pakisalogistics.co.za" style="color:#cebd80;">ops1@pakisalogistics.co.za</a></p>
+    <p>&copy; <span id="year"></span> MM Courier. All rights reserved.</p>
+    <p>10 Burry Koean Street, Jet Park, Boksburg, 1469 | Email: info@mmcourier.co.za | Tel: 065 817 7124</p>
+    <p><a href="https://www.mmcourier.co.za" style="color: #deb657; text-decoration: none;">www.mmcourier.co.za</a></p>
   </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
 
 </body>
 </html>
