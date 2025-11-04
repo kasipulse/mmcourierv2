@@ -1,0 +1,65 @@
+<div class="panel">
+  <h2>Client File Imports</h2>
+  <p>Select a client and import files via SFTP, API, webhook, or manual upload.</p>
+
+  <!-- Client Selector -->
+  <label>Select Client:</label>
+  <select id="clientSelect">
+    <!-- Dynamically load from Supabase or hardcoded for now -->
+    <option value="fedex">FedEx</option>
+    <option value="seabourne">Seabourne</option>
+    <option value="brima">Brima</option>
+  </select>
+
+  <!-- Integration options -->
+  <div id="integrationOptions" style="margin-top:8px;">
+    <button id="fetchBtn">Fetch Files</button>
+
+    <form id="uploadForm" style="margin-top:6px;" enctype="multipart/form-data">
+      <label>Select file to upload:</label>
+      <input type="file" name="file" accept=".csv,.xml,.txt" />
+      <button type="submit">Upload File</button>
+    </form>
+  </div>
+
+  <div id="importStatus" style="margin-top:12px;"></div>
+</div>
+
+<script>
+  const fetchBtn = document.getElementById('fetchBtn');
+  const clientSelect = document.getElementById('clientSelect');
+  const uploadForm = document.getElementById('uploadForm');
+  const statusDiv = document.getElementById('importStatus');
+
+  fetchBtn.addEventListener('click', async () => {
+    const client = clientSelect.value;
+    statusDiv.innerText = `Fetching files for ${client}...`;
+    try {
+      const res = await fetch(`/api/integrations/fetch/${client}`, { method: 'POST' });
+      const data = await res.json();
+      statusDiv.innerText = `Fetched ${data.fetched || 0} files for ${client}`;
+    } catch (err) {
+      statusDiv.innerText = `Error: ${err.message}`;
+    }
+  });
+
+  uploadForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const client = clientSelect.value;
+    statusDiv.innerText = `Uploading file for ${client}...`;
+
+    const formData = new FormData(uploadForm);
+    formData.append('client', client);
+
+    try {
+      const res = await fetch('/api/integrations/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      statusDiv.innerText = data.message || 'File uploaded successfully';
+    } catch (err) {
+      statusDiv.innerText = `Upload failed: ${err.message}`;
+    }
+  });
+</script>
