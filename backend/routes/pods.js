@@ -2,31 +2,38 @@
 import express from 'express';
 import multer from 'multer';
 import streamifier from 'streamifier';
-import cloudinaryModule from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import vision from '@google-cloud/vision';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { v2: cloudinary } = cloudinaryModule;
+// 🔹 Initialize Supabase
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// 🔹 Initialize Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+// 🔹 Initialize Google Vision Client using JSON credentials from ENV
+let visionClient;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+  visionClient = new vision.ImageAnnotatorClient({ credentials: creds });
+} else {
+  console.error('❌ GOOGLE_APPLICATION_CREDENTIALS_JSON not found');
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max
 });
 
 const router = express.Router();
-
-// Initialize Google Vision API client for OCR
-const visionClient = new vision.ImageAnnotatorClient();
 
 /**
  * Utility: Upload buffer to Cloudinary
@@ -55,8 +62,7 @@ const extractBarcodeFromImage = async (buffer) => {
     if (!detections || detections.length === 0) return null;
 
     const fullText = detections[0].description.replace(/\s+/g, '');
-    // Basic heuristic: find 12–14 digit numeric string (FedEx/waybill style)
-    const match = fullText.match(/\b\d{10,14}\b/);
+    const match = fullText.match(/\b\d{10,14}\b/); // heuristic for FedEx/waybill
     return match ? match[0] : null;
   } catch (err) {
     console.error('OCR error:', err);
@@ -132,7 +138,7 @@ router.post('/batch-upload', upload.array('files', 50), async (req, res) => {
           });
         }
       } else {
-        // No barcode detected at all
+        // No barcode detected
         await supabase.from('unmatched_pods').insert([
           {
             barcode: null,
