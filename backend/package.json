@@ -16,6 +16,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "bcrypt": "^5.1.0",
     "uuid": "^9.0.0"
+    "@google-cloud/vision": "^4.3.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
