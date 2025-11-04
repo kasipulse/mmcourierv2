@@ -19,148 +19,131 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 🔹 Initialize Google Vision Client using JSON credentials from ENV
+// 🔹 Initialize Google Vision client from env var
 let visionClient;
 if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-  const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-  visionClient = new vision.ImageAnnotatorClient({ credentials: creds });
+  try {
+    const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    visionClient = new vision.ImageAnnotatorClient({ credentials: creds });
+    console.log("✅ Google Vision client initialized");
+  } catch (err) {
+    console.error("❌ Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON:", err.message);
+  }
 } else {
-  console.error('❌ GOOGLE_APPLICATION_CREDENTIALS_JSON not found');
+  console.warn("⚠️ GOOGLE_APPLICATION_CREDENTIALS_JSON not found. OCR disabled.");
 }
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
 const router = express.Router();
 
 /**
- * Utility: Upload buffer to Cloudinary
+ * POST /api/pods/upload
+ * Upload a scanned POD image.
+ * - Automatically detects barcode/waybill using Google Vision
+ * - Matches parcel in Supabase
+ * - Updates parcel or stores unmatched POD
  */
-const streamUpload = (buffer) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'mmcourier/pods', resource_type: 'image' },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    // 🔹 1. OCR scan for barcode (or use provided one)
+    let barcode = (req.body.barcode || '').trim();
+    if (!barcode && visionClient) {
+      const [result] = await visionClient.textDetection(req.file.buffer);
+      const detections = result.textAnnotations;
+      if (detections && detections.length > 0) {
+        const text = detections[0].description;
+        const match = text.match(/\b\d{10,15}\b/); // Match 10–15 digit number
+        if (match) barcode = match[0];
       }
-    );
-    streamifier.createReadStream(buffer).pipe(stream);
-  });
-};
-
-/**
- * Utility: Detect barcode/waybill text from image using OCR
- */
-const extractBarcodeFromImage = async (buffer) => {
-  try {
-    const [result] = await visionClient.textDetection({ image: { content: buffer } });
-    const detections = result.textAnnotations;
-
-    if (!detections || detections.length === 0) return null;
-
-    const fullText = detections[0].description.replace(/\s+/g, '');
-    const match = fullText.match(/\b\d{10,14}\b/); // heuristic for FedEx/waybill
-    return match ? match[0] : null;
-  } catch (err) {
-    console.error('OCR error:', err);
-    return null;
-  }
-};
-
-/**
- * POST /api/pods/batch-upload
- * Allows multiple image uploads — auto detects barcodes and matches to parcels
- */
-router.post('/batch-upload', upload.array('files', 50), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    const results = [];
+    if (!barcode) {
+      return res.status(400).json({ error: 'No barcode detected in image' });
+    }
 
-    for (const file of req.files) {
-      const buffer = file.buffer;
-
-      // Step 1: Extract barcode from image via OCR
-      const detectedBarcode = await extractBarcodeFromImage(buffer);
-
-      // Step 2: Upload to Cloudinary
-      const uploadResult = await streamUpload(buffer);
-      const podUrl = uploadResult.secure_url;
-
-      if (detectedBarcode) {
-        const { data: parcels, error } = await supabase
-          .from('parcels')
-          .select('*')
-          .eq('waybill_number', detectedBarcode)
-          .limit(1);
-
-        if (error) console.error('Supabase select error', error);
-
-        if (parcels && parcels.length > 0) {
-          const parcel = parcels[0];
-          const { error: updateError } = await supabase
-            .from('parcels')
-            .update({
-              pod_url: podUrl,
-              pod_uploaded_at: new Date().toISOString(),
-              status: 'POD Received',
-            })
-            .eq('id', parcel.id);
-
-          if (updateError) console.error('Update error:', updateError);
-
-          results.push({
-            filename: file.originalname,
-            matched: true,
-            waybill: detectedBarcode,
-            pod_url: podUrl,
-          });
-        } else {
-          await supabase.from('unmatched_pods').insert([
-            {
-              barcode: detectedBarcode,
-              pod_url: podUrl,
-              filename: file.originalname,
-              uploaded_at: new Date().toISOString(),
-            },
-          ]);
-
-          results.push({
-            filename: file.originalname,
-            matched: false,
-            barcode: detectedBarcode,
-            pod_url: podUrl,
-          });
+    // 🔹 2. Upload image to Cloudinary
+    const uploadToCloudinary = () => new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'mmcourier/pods', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
         }
-      } else {
-        // No barcode detected
-        await supabase.from('unmatched_pods').insert([
-          {
-            barcode: null,
-            pod_url: podUrl,
-            filename: file.originalname,
-            uploaded_at: new Date().toISOString(),
-          },
-        ]);
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
 
-        results.push({
-          filename: file.originalname,
-          matched: false,
-          barcode: null,
-          pod_url: podUrl,
-        });
-      }
+    const cloudRes = await uploadToCloudinary();
+    const podUrl = cloudRes.secure_url;
+
+    // 🔹 3. Try find parcel by barcode/waybill
+    const { data: parcels, error: parcelErr } = await supabase
+      .from('parcels')
+      .select('*')
+      .eq('waybill_number', barcode)
+      .limit(1);
+
+    if (parcelErr) {
+      console.error('Supabase select error:', parcelErr);
+      return res.status(500).json({ error: 'Database error' });
     }
 
-    res.json({ success: true, count: results.length, results });
+    if (parcels && parcels.length > 0) {
+      const parcel = parcels[0];
+
+      const updates = {
+        pod_url: podUrl,
+        pod_uploaded_at: new Date().toISOString(),
+        status: 'POD Received',
+      };
+
+      const { data: updated, error: updateErr } = await supabase
+        .from('parcels')
+        .update(updates)
+        .eq('id', parcel.id)
+        .select()
+        .single();
+
+      if (updateErr) {
+        console.error('Supabase update error:', updateErr);
+        return res.status(500).json({ error: 'Failed to update parcel' });
+      }
+
+      return res.json({
+        success: true,
+        matched: true,
+        barcode,
+        parcel: updated,
+        pod_url: podUrl,
+      });
+    } else {
+      // 🔹 4. Save to unmatched_pods for manual review
+      await supabase.from('unmatched_pods').insert([
+        {
+          barcode,
+          pod_url: podUrl,
+          uploaded_at: new Date().toISOString(),
+          filename: req.file.originalname,
+        },
+      ]);
+
+      return res.json({
+        success: true,
+        matched: false,
+        barcode,
+        message: 'Barcode not matched. Saved to unmatched_pods.',
+        pod_url: podUrl,
+      });
+    }
   } catch (err) {
-    console.error('Batch POD upload error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('POD upload error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
