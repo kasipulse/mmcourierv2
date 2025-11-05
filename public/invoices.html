@@ -1,0 +1,36 @@
+<div class="panel" id="invoices-panel">
+  <h2>Invoices</h2>
+  <table id="invoices-table" border="1" cellpadding="4" cellspacing="0" style="width:100%; border-collapse:collapse;">
+    <thead style="background:#d4d0c8;">
+      <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+async function loadInvoices() {
+  try {
+    const res = await fetch('/api/invoices');
+    const data = await res.json();
+    const tbody = document.querySelector('#invoices-table tbody');
+    tbody.innerHTML = '';
+    data.forEach(i => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i.id}</td><td>${i.customer_name || i.customer_id}</td><td>${i.date}</td><td>${i.amount}</td><td>${i.status}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    document.querySelector('#invoices-panel').innerHTML =
+      `<div style="color:red;">Failed to load invoices: ${err}</div>`;
+  }
+}
+
+loadInvoices();
+</script>
