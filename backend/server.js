@@ -35,6 +35,7 @@ app.use('/api/vehicles', vehiclesRoutes);
 // New routes
 app.use('/api/customers', customersRoutes);
 app.use('/api/invoices', invoicesRoutes);
+app.use('/api/parcels', parcelsRoutes);
 
 // --- Serve static frontend (optional if backend also serves frontend) ---
 const __filename = fileURLToPath(import.meta.url);
