@@ -1,132 +1,53 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>MM Courier — Import Data</title>
-<style>
-  /* ERP / Win98-ish panel look — small font */
-  body{font-family:Tahoma,Arial,sans-serif;background:#c0c0c0;margin:0;color:#000;font-size:13px}
-  .toolbar{background:#d4d0c8;padding:6px;border-bottom:2px solid #fff;display:flex;gap:6px}
-  .menu-btn{background:#e0e0e0;border:2px outset #fff;padding:4px 10px;cursor:pointer}
-  .container{padding:12px}
-  .panel{background:#d4d0c8;border:2px outset #fff;padding:12px;margin-bottom:12px}
-  label{display:block;margin:6px 0;font-weight:600}
-  input[type=file], select, input[type=text]{padding:6px;border:2px inset #fff;background:#fff;width:100%;box-sizing:border-box}
-  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .btn{background:#e0e0e0;border:2px outset #fff;padding:6px 10px;cursor:pointer}
-  .btn:active{border:2px inset #fff}
-  .status{margin-top:8px}
-  @media(max-width:800px){ .grid{grid-template-columns:1fr} }
-</style>
-</head>
-<body>
-  <div class="toolbar">
-    <button class="menu-btn" onclick="location.href='dashboard.html'">Back</button>
-    <div style="margin-left:10px;font-weight:700">Import CSVs — Waybill / Content / Track</div>
-  </div>
+<div class="panel">
+  <h2>Import CSV Files</h2>
 
-  <div class="container">
-    <div class="panel">
-      <label for="customerSelect">Assign to Customer</label>
-      <select id="customerSelect">
-        <option value="">-- Select customer --</option>
-        <!-- populate from API -->
-      </select>
-      <small>Select the customer these CSVs belong to before upload. This ensures invoices and reporting attach correctly.</small>
-    </div>
+  <!-- Manifest CSV -->
+  <form id="manifest-form" enctype="multipart/form-data">
+    <label>Parcel Manifest CSV:</label>
+    <input type="file" name="file" required>
+    <button type="submit">Process Manifest</button>
+  </form>
 
-    <div class="panel">
-      <div class="grid">
-        <div>
-          <label>Waybill CSV</label>
-          <input type="file" id="waybillFile" accept=".csv"/>
-        </div>
-        <div>
-          <label>Content CSV</label>
-          <input type="file" id="contentFile" accept=".csv"/>
-        </div>
-        <div>
-          <label>Track CSV</label>
-          <input type="file" id="trackFile" accept=".csv"/>
-        </div>
-      </div>
+  <!-- Scan CSV -->
+  <form id="scan-form" enctype="multipart/form-data">
+    <label>Parcel Scan CSV:</label>
+    <input type="file" name="file" required>
+    <button type="submit">Process Scan</button>
+  </form>
 
-      <div style="margin-top:10px;">
-        <label>Options</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <label><input type="checkbox" id="previewOnly"/> Preview only (don't commit)</label>
-          <label><input type="checkbox" id="autoLink"/> Auto-link by waybill if possible</label>
-        </div>
-      </div>
-
-      <div style="margin-top:12px;">
-        <button id="uploadBtn" class="btn">Upload & Process</button>
-        <span id="status" class="status"></span>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3>Import Log</h3>
-      <pre id="log" style="height:180px;overflow:auto;background:#fff;border:2px inset #fff;padding:8px"></pre>
-    </div>
-  </div>
+  <div id="import-feedback" style="margin-top:10px;"></div>
+</div>
 
 <script>
-/* Populate customers (replace endpoint) */
-async function loadCustomers(){
-  try{
-    // TODO: replace with your API (e.g. /api/customers)
-    const res = await fetch('/api/customers');
-    if(!res.ok) throw new Error('Failed fetching customers');
-    const customers = await res.json();
-    const sel = document.getElementById('customerSelect');
-    customers.forEach(c=>{
-      const o = document.createElement('option');
-      o.value = c.id;
-      o.textContent = c.name;
-      sel.appendChild(o);
-    });
-  }catch(err){
-    console.warn('customer load',err);
-  }
-}
+const feedback = document.getElementById("import-feedback");
 
-document.getElementById('uploadBtn').addEventListener('click', async ()=>{
-  const customerId = document.getElementById('customerSelect').value;
-  const way = document.getElementById('waybillFile').files[0];
-  const content = document.getElementById('contentFile').files[0];
-  const track = document.getElementById('trackFile').files[0];
-  const previewOnly = document.getElementById('previewOnly').checked;
-  const status = document.getElementById('status');
-  const log = document.getElementById('log');
-
-  if(!customerId){ status.textContent='Select customer first'; return; }
-  if(!way){ status.textContent='Select waybill CSV'; return; }
-
-  status.textContent = 'Uploading...';
-  log.textContent='';
-  try{
-    const form = new FormData();
-    form.append('customerId', customerId);
-    form.append('previewOnly', previewOnly ? '1':'0');
-    if(way) form.append('waybill', way);
-    if(content) form.append('content', content);
-    if(track) form.append('track', track);
-
-    // TODO: replace with your backend route that parses CSVs and inserts parcels
-    const res = await fetch('/api/import-csv', { method:'POST', body: form });
-    const json = await res.json();
-    if(!res.ok) throw new Error(json.error || 'Import failed');
-    status.textContent = 'Import complete';
-    log.textContent = JSON.stringify(json, null, 2);
-  }catch(err){
-    status.textContent = 'Error';
-    log.textContent = String(err);
-  }
+// Manifest
+document.getElementById("manifest-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const res = await fetch("/api/parcels/import-manifest", {
+    method: "POST",
+    body: formData,
+  });
+  const data = await res.json();
+  feedback.innerHTML = data.success
+    ? `✅ Manifest imported: ${data.inserted} parcels`
+    : `❌ Error: ${data.error}`;
+  if (data.success) showPanel("view-waybills.html");
 });
 
-loadCustomers();
+// Scan
+document.getElementById("scan-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const res = await fetch("/api/parcels/import-scan", {
+    method: "POST",
+    body: formData,
+  });
+  const data = await res.json();
+  feedback.innerHTML = data.success
+    ? `✅ Scan CSV processed: ${data.updated} parcels updated`
+    : `❌ Error: ${data.error}`;
+  if (data.success) showPanel("view-waybills.html");
+});
 </script>
-</body>
-</html>
