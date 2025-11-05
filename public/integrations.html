@@ -145,27 +145,13 @@
       color: white;
     }
 
-    .status-active {
-      color: green;
-      font-weight: bold;
-    }
-
-    .status-error {
-      color: red;
-      font-weight: bold;
-    }
-
-    .status-inactive {
-      color: #999;
-    }
+    .status-active { color: green; font-weight: bold; }
+    .status-error { color: red; font-weight: bold; }
+    .status-inactive { color: #999; }
 
     @media (max-width: 768px) {
-      .sidebar {
-        display: none;
-      }
-      .main {
-        flex: 1;
-      }
+      .sidebar { display: none; }
+      .main { flex: 1; }
     }
   </style>
 </head>
@@ -235,31 +221,50 @@
             </tr>
           </thead>
           <tbody id="integration-table">
-            <tr>
-              <td>FedEx</td>
-              <td>SFTP</td>
-              <td>Inbound</td>
-              <td>2025-11-05 10:25</td>
-              <td class="status-active">Active</td>
-            </tr>
-            <tr>
-              <td>ParcelPerfect</td>
-              <td>Webhook</td>
-              <td>Outbound</td>
-              <td>2025-11-04 09:10</td>
-              <td class="status-active">Active</td>
-            </tr>
-            <tr>
-              <td>Brima</td>
-              <td>Manual</td>
-              <td>Inbound</td>
-              <td>-</td>
-              <td class="status-inactive">Not Connected</td>
-            </tr>
+            <tr><td colspan="5" style="text-align:center;color:#777;">Loading integrations...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
+
+  <script>
+    async function loadIntegrations() {
+      try {
+        const res = await fetch('/api/integrations');
+        const data = await res.json();
+
+        const table = document.getElementById('integration-table');
+        table.innerHTML = '';
+
+        if (!Array.isArray(data) || data.length === 0) {
+          table.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#777;">No integrations found</td></tr>';
+          return;
+        }
+
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.partner_name || '-'}</td>
+            <td>${item.integration_type || '-'}</td>
+            <td>${item.direction || '-'}</td>
+            <td>${item.last_sync ? new Date(item.last_sync).toLocaleString() : '-'}</td>
+            <td class="${
+              item.status === 'Active' ? 'status-active' :
+              item.status === 'Error' ? 'status-error' :
+              'status-inactive'
+            }">${item.status || '-'}</td>
+          `;
+          table.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Error loading integrations:', err);
+        document.getElementById('integration-table').innerHTML =
+          '<tr><td colspan="5" style="text-align:center;color:red;">Error loading data</td></tr>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadIntegrations);
+  </script>
 </body>
 </html>
