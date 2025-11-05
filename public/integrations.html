@@ -181,29 +181,22 @@
         <div class="integration-type">
           <h4>Webhook</h4>
           <p>Real-time data exchange with partners (e.g., ParcelPerfect, Shopify).</p>
-          <button>Configure</button>
-          <button>Test</button>
-          <button>View Logs</button>
+          <button onclick="createIntegration('Webhook', 'Outbound')">Add</button>
         </div>
         <div class="integration-type">
           <h4>SFTP</h4>
           <p>Secure file transfers (e.g., FedEx, Seabourne, Brima uploads).</p>
-          <button>Configure</button>
-          <button>Test</button>
-          <button>View Logs</button>
+          <button onclick="createIntegration('SFTP', 'Inbound')">Add</button>
         </div>
         <div class="integration-type">
           <h4>Manual Import</h4>
           <p>Upload CSVs or XMLs manually for customers or partners.</p>
-          <button>Import</button>
-          <button>View Logs</button>
+          <button onclick="createIntegration('Manual', 'Inbound')">Add</button>
         </div>
         <div class="integration-type">
           <h4>API</h4>
           <p>Allow external systems to send/receive data directly via REST endpoints.</p>
-          <button>Configure</button>
-          <button>Test</button>
-          <button>View Logs</button>
+          <button onclick="createIntegration('API', 'Bidirectional')">Add</button>
         </div>
       </div>
 
@@ -221,7 +214,7 @@
             </tr>
           </thead>
           <tbody id="integration-table">
-            <tr><td colspan="5" style="text-align:center;color:#777;">Loading integrations...</td></tr>
+            <tr><td colspan="5">Loading integrations...</td></tr>
           </tbody>
         </table>
       </div>
@@ -232,39 +225,47 @@
     async function loadIntegrations() {
       try {
         const res = await fetch('/api/integrations');
-        const data = await res.json();
-
+        const integrations = await res.json();
         const table = document.getElementById('integration-table');
         table.innerHTML = '';
 
-        if (!Array.isArray(data) || data.length === 0) {
-          table.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#777;">No integrations found</td></tr>';
-          return;
-        }
-
-        data.forEach(item => {
+        integrations.forEach(intg => {
           const row = document.createElement('tr');
           row.innerHTML = `
-            <td>${item.partner_name || '-'}</td>
-            <td>${item.integration_type || '-'}</td>
-            <td>${item.direction || '-'}</td>
-            <td>${item.last_sync ? new Date(item.last_sync).toLocaleString() : '-'}</td>
-            <td class="${
-              item.status === 'Active' ? 'status-active' :
-              item.status === 'Error' ? 'status-error' :
-              'status-inactive'
-            }">${item.status || '-'}</td>
+            <td>${intg.partner_name}</td>
+            <td>${intg.integration_type}</td>
+            <td>${intg.direction}</td>
+            <td>${intg.last_sync ? new Date(intg.last_sync).toLocaleString() : '-'}</td>
+            <td class="${intg.status === 'Active' ? 'status-active' : intg.status === 'Error' ? 'status-error' : 'status-inactive'}">${intg.status}</td>
           `;
           table.appendChild(row);
         });
       } catch (err) {
-        console.error('Error loading integrations:', err);
-        document.getElementById('integration-table').innerHTML =
-          '<tr><td colspan="5" style="text-align:center;color:red;">Error loading data</td></tr>';
+        console.error(err);
+        document.getElementById('integration-table').innerHTML = '<tr><td colspan="5" style="color:red;">Failed to load integrations</td></tr>';
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadIntegrations);
+    async function createIntegration(type, direction) {
+      const partner_name = prompt("Enter Partner Name (e.g. FedEx, ParcelPerfect)");
+      if (!partner_name) return alert("Partner name is required.");
+
+      const body = { partner_name, integration_type: type, direction };
+      const res = await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        alert("Integration created successfully!");
+        loadIntegrations();
+      } else {
+        alert("Failed to create integration.");
+      }
+    }
+
+    loadIntegrations();
   </script>
 </body>
 </html>
