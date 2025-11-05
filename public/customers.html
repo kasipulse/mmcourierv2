@@ -1,0 +1,29 @@
+<div class="panel" id="customers-panel">
+  <h2>Customers</h2>
+  <table id="customers-table">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Email</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+async function loadCustomers() {
+  try {
+    const res = await fetch('/api/customers');
+    const data = await res.json();
+    const tbody = document.querySelector('#customers-table tbody');
+    tbody.innerHTML = '';
+    data.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${c.id}</td><td>${c.name}</td><td>${c.email}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Failed to load customers', err);
+  }
+}
+
+loadCustomers();
+</script>
