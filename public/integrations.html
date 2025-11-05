@@ -1,65 +1,265 @@
-<div class="panel">
-  <h2>Client File Imports</h2>
-  <p>Select a client and import files via SFTP, API, webhook, or manual upload.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MM Courier | Integration Hub</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f8f9fb;
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+    }
 
-  <!-- Client Selector -->
-  <label>Select Client:</label>
-  <select id="clientSelect">
-    <!-- Dynamically load from Supabase or hardcoded for now -->
-    <option value="fedex">FedEx</option>
-    <option value="seabourne">Seabourne</option>
-    <option value="brima">Brima</option>
-  </select>
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: #0a2b52;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+    }
 
-  <!-- Integration options -->
-  <div id="integrationOptions" style="margin-top:8px;">
-    <button id="fetchBtn">Fetch Files</button>
+    .sidebar h2 {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #cebd80;
+      margin-bottom: 30px;
+    }
 
-    <form id="uploadForm" style="margin-top:6px;" enctype="multipart/form-data">
-      <label>Select file to upload:</label>
-      <input type="file" name="file" accept=".csv,.xml,.txt" />
-      <button type="submit">Upload File</button>
-    </form>
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      padding: 12px 20px;
+      display: block;
+      border-left: 4px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .sidebar a:hover, .sidebar a.active {
+      background: #409dbc;
+      border-left: 4px solid #cebd80;
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: white;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar h1 {
+      font-size: 1.3rem;
+      color: #0a2b52;
+      margin: 0;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #0a2b52;
+    }
+
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .integration-type {
+      background: #fff;
+      border: 1px solid #e1e1e1;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      transition: 0.2s;
+    }
+
+    .integration-type:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .integration-type h4 {
+      color: #0a2b52;
+      margin-bottom: 10px;
+    }
+
+    .integration-type p {
+      color: #555;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .integration-type button {
+      background: #409dbc;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 3px;
+      font-size: 0.9rem;
+    }
+
+    .integration-type button:hover {
+      background: #0a2b52;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #0a2b52;
+      color: white;
+    }
+
+    .status-active {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-error {
+      color: red;
+      font-weight: bold;
+    }
+
+    .status-inactive {
+      color: #999;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .main {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>MM Courier</h2>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="scanin.html">Scan In</a>
+    <a href="scanout.html">Scan Out</a>
+    <a href="tripsheet.html">Trip Sheets</a>
+    <a href="reports.html">Reports</a>
+    <a href="integration.html" class="active">Integrations</a>
   </div>
 
-  <div id="importStatus" style="margin-top:12px;"></div>
-</div>
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <h1>Integration Hub</h1>
+      <span style="color:#409dbc;">Connected Systems Overview</span>
+    </div>
 
-<script>
-  const fetchBtn = document.getElementById('fetchBtn');
-  const clientSelect = document.getElementById('clientSelect');
-  const uploadForm = document.getElementById('uploadForm');
-  const statusDiv = document.getElementById('importStatus');
+    <div class="container">
+      <!-- Integration types -->
+      <div class="integration-grid">
+        <div class="integration-type">
+          <h4>Webhook</h4>
+          <p>Real-time data exchange with partners (e.g., ParcelPerfect, Shopify).</p>
+          <button>Configure</button>
+          <button>Test</button>
+          <button>View Logs</button>
+        </div>
+        <div class="integration-type">
+          <h4>SFTP</h4>
+          <p>Secure file transfers (e.g., FedEx, Seabourne, Brima uploads).</p>
+          <button>Configure</button>
+          <button>Test</button>
+          <button>View Logs</button>
+        </div>
+        <div class="integration-type">
+          <h4>Manual Import</h4>
+          <p>Upload CSVs or XMLs manually for customers or partners.</p>
+          <button>Import</button>
+          <button>View Logs</button>
+        </div>
+        <div class="integration-type">
+          <h4>API</h4>
+          <p>Allow external systems to send/receive data directly via REST endpoints.</p>
+          <button>Configure</button>
+          <button>Test</button>
+          <button>View Logs</button>
+        </div>
+      </div>
 
-  fetchBtn.addEventListener('click', async () => {
-    const client = clientSelect.value;
-    statusDiv.innerText = `Fetching files for ${client}...`;
-    try {
-      const res = await fetch(`/api/integrations/fetch/${client}`, { method: 'POST' });
-      const data = await res.json();
-      statusDiv.innerText = `Fetched ${data.fetched || 0} files for ${client}`;
-    } catch (err) {
-      statusDiv.innerText = `Error: ${err.message}`;
-    }
-  });
-
-  uploadForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const client = clientSelect.value;
-    statusDiv.innerText = `Uploading file for ${client}...`;
-
-    const formData = new FormData(uploadForm);
-    formData.append('client', client);
-
-    try {
-      const res = await fetch('/api/integrations/upload', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      statusDiv.innerText = data.message || 'File uploaded successfully';
-    } catch (err) {
-      statusDiv.innerText = `Upload failed: ${err.message}`;
-    }
-  });
-</script>
+      <!-- Active Integrations -->
+      <div class="card">
+        <h3>Active Integrations</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Partner</th>
+              <th>Type</th>
+              <th>Direction</th>
+              <th>Last Sync</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="integration-table">
+            <tr>
+              <td>FedEx</td>
+              <td>SFTP</td>
+              <td>Inbound</td>
+              <td>2025-11-05 10:25</td>
+              <td class="status-active">Active</td>
+            </tr>
+            <tr>
+              <td>ParcelPerfect</td>
+              <td>Webhook</td>
+              <td>Outbound</td>
+              <td>2025-11-04 09:10</td>
+              <td class="status-active">Active</td>
+            </tr>
+            <tr>
+              <td>Brima</td>
+              <td>Manual</td>
+              <td>Inbound</td>
+              <td>-</td>
+              <td class="status-inactive">Not Connected</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
