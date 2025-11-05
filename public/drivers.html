@@ -1,0 +1,36 @@
+<div class="panel" id="drivers-panel">
+  <h2>Drivers</h2>
+  <table id="drivers-table" border="1" cellpadding="4" cellspacing="0" style="width:100%; border-collapse:collapse;">
+    <thead style="background:#d4d0c8;">
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Vehicle</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+async function loadDrivers() {
+  try {
+    const res = await fetch('/api/drivers');
+    const data = await res.json();
+    const tbody = document.querySelector('#drivers-table tbody');
+    tbody.innerHTML = '';
+    data.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${d.id}</td><td>${d.name}</td><td>${d.email}</td><td>${d.phone || ''}</td><td>${d.vehicle || ''}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    document.querySelector('#drivers-panel').innerHTML =
+      `<div style="color:red;">Failed to load drivers: ${err}</div>`;
+  }
+}
+
+loadDrivers();
+</script>
