@@ -12,6 +12,8 @@ import vehiclesRoutes from './routes/vehicles.js';
 import customersRoutes from './routes/customers.js';
 import invoicesRoutes from './routes/invoices.js';
 import parcelsRoutes from './routes/parcels.js';
+import importRoutes from "./routes/import.js";
+app.use("/api/import", importRoutes);
 
 dotenv.config();
 
