@@ -2,233 +2,238 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MM Courier | Dashboard</title>
   <style>
+    /* --- Windows 95/98 Theme --- */
     body {
-      background: #c0c0c0;
-      font-family: "Tahoma", "Segoe UI", sans-serif;
       margin: 0;
-      color: #000;
-      font-size: 13px;
+      padding: 0;
+      background: #c0c0c0;
+      font-family: "MS Sans Serif", Tahoma, sans-serif;
+      color: black;
     }
-    .toolbar {
-      background: #d4d0c8;
-      border-bottom: 2px solid #fff;
-      display: flex;
-      align-items: center;
-      padding: 4px;
-      gap: 6px;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 10;
+
+    .window {
+      border: 2px solid #fff;
+      border-right-color: #808080;
+      border-bottom-color: #808080;
+      margin: 20px;
+      background: #c0c0c0;
+      box-shadow: 2px 2px 0 #000;
     }
-    .menu-btn {
-      background: #e0e0e0;
-      border: 2px outset #fff;
-      padding: 2px 10px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .menu-btn:active {
-      border: 2px inset #fff;
-      background: #d0d0d0;
-    }
-    .menu-group {
-      position: relative;
-    }
-    .dropdown {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      z-index: 1000;
-      min-width: 200px;
-    }
-    .dropdown.show {
-      display: block;
-    }
-    .dropdown button {
-      width: 100%;
-      text-align: left;
-      border: none;
-      border-bottom: 1px solid #808080;
-      background: #d4d0c8;
+
+    .title-bar {
+      background: linear-gradient(to right, navy, #1084d0);
+      color: white;
       padding: 4px 8px;
-      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      height: 24px;
+    }
+
+    .title-bar .buttons {
+      display: flex;
+      gap: 2px;
+    }
+
+    .title-bar button {
+      width: 16px;
+      height: 16px;
+      border: 1px solid #fff;
+      border-right-color: #000;
+      border-bottom-color: #000;
+      background: #c0c0c0;
       cursor: pointer;
     }
-    .dropdown button:hover {
-      background: #b0b0b0;
-    }
-    .logout {
-      margin-left: auto;
-      background: #f2e5b8;
-    }
-    #content-panel {
-      padding: 12px;
-    }
-    .panel {
+
+    .menu-bar {
       background: #d4d0c8;
-      border: 2px outset #fff;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: inset 1px 1px #fff;
-    }
-    h1, h2, h3 {
-      margin: 4px 0;
-    }
-    .footer {
-      text-align: center;
-      font-size: 11px;
-      color: #333;
+      padding: 3px 6px;
       border-top: 2px solid #fff;
-      padding: 6px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #808080;
+      border-right: 2px solid #808080;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 2px solid #808080;
+      background: #d4d0c8;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .tab {
+      padding: 4px 10px;
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #fff;
+      border-bottom-color: #fff;
+      font-weight: bold;
+    }
+
+    .content {
+      padding: 10px;
+      background: #fff;
+      height: 70vh;
+      overflow: auto;
+    }
+
+    button {
+      font-family: inherit;
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      padding: 3px 10px;
+      cursor: pointer;
+    }
+
+    input, select {
+      background: #fff;
+      border: 2px inset #d4d0c8;
+      padding: 3px;
+      font-family: inherit;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #808080;
+      padding: 4px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
       background: #d4d0c8;
     }
-    input, select {
-      border: 2px inset #fff;
-      background: #fff;
+
+    .footer {
+      text-align: right;
+      padding: 5px 10px;
+      background: #d4d0c8;
+      border-top: 2px solid #808080;
       font-size: 12px;
-      padding: 3px;
-    }
-    button.menu-btn {
-      min-width: 90px;
     }
   </style>
 </head>
+
 <body>
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <!-- Data -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
-      <div class="dropdown">
-        <button onclick="showPanel('import.html')">Import Data</button>
-        <button onclick="showPanel('customers.html')">Customers</button>
-        <button onclick="showPanel('drivers.html')">Drivers</button>
-        <button onclick="showPanel('invoices.html')">Invoices</button>
-        <button onclick="showPanel('view-waybills.html')">View Waybills</button>
+  <div class="window">
+    <div class="title-bar">
+      <div>MM Courier Dashboard</div>
+      <div class="buttons">
+        <button title="Minimize"></button>
+        <button title="Maximize"></button>
+        <button title="Close"></button>
       </div>
     </div>
 
-    <!-- Tripsheets -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
-      <div class="dropdown">
-        <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
-        <button onclick="showPanel('driver-login.html')">Driver Login</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
+    <div class="menu-bar">
+      <span>File</span>
+      <span>Edit</span>
+      <span>View</span>
+      <span>Help</span>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="data">Data</div>
+      <div class="tab" data-tab="scanin">Scan In</div>
+      <div class="tab" data-tab="scanout">Scan Out</div>
+      <div class="tab" data-tab="depot">Depot Return</div>
+      <div class="tab" data-tab="reports">Reports</div>
+      <div class="tab" data-tab="settings">Settings</div>
+    </div>
+
+    <div class="content" id="tab-content">
+      <!-- Default: Data Tab -->
+      <h3>Data Management</h3>
+      <p>Import new data files or view existing waybills below.</p>
+      <button id="importBtn">📂 Import Data</button>
+      <button id="viewBtn">📑 View Waybills</button>
+
+      <div id="dataSection" style="margin-top:15px;">
+        <table id="waybillTable">
+          <thead>
+            <tr>
+              <th>Waybill No</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>486517581687</td><td>FedEx</td><td>Delivered</td><td>2025-11-06</td></tr>
+            <tr><td>485097767300</td><td>Seabourne</td><td>In Transit</td><td>2025-11-06</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Operations -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
-      <div class="dropdown">
-        <button onclick="showPanel('floorcheck.html')">Floor Check</button>
-        <button onclick="showPanel('scan-in.html')">Scan In</button>
-        <button onclick="showPanel('scan-out.html')">Scan Out</button>
-        <button onclick="showPanel('scan-return.html')">Return to Depot</button>
-        <button onclick="showPanel('collections.html')">Collections</button>
-        <button onclick="showPanel('adhoc-delivery.html')">Adhoc Delivery</button>
-        <button onclick="showPanel('adhoc-collection.html')">Adhoc Collection</button>
-        <button onclick="showPanel('pod-upload.html')">POD Upload</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-        <button onclick="showPanel('track.html')">Track Parcels</button>
-        <button onclick="showPanel('capture-waybill.html')">Capture Waybill</button>
-      </div>
-    </div>
-
-    <!-- Reports -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
-      <div class="dropdown">
-        <button onclick="showPanel('daily.html')">Daily Deliveries</button>
-        <button onclick="showPanel('age.html')">Age Analysis</button>
-        <button onclick="showPanel('pod.html')">POD Compliance</button>
-        <button onclick="showPanel('billing.html')">Billing Summary</button>
-        <button onclick="showPanel('driver-performance.html')">Driver Performance</button>
-        <button onclick="showPanel('client-delivery.html')">Client Delivery</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-      </div>
-    </div>
-
-    <!-- Logout -->
-    <button class="menu-btn logout" onclick="logout()">Logout</button>
-  </div>
-
-  <!-- Content -->
-  <div id="content-panel">
-    <div class="panel">
-      <h1>Welcome to MM Courier ERP System</h1>
-      <p>Use the toolbar to manage imports, waybills, drivers, tripsheets, scanning, collections, invoicing, and reports.</p>
+    <div class="footer">
+      © 2025 MM Courier | Pakisa Express Logistics
     </div>
   </div>
 
-  <!-- Footer -->
-  <div class="footer">
-    © 2025 MM Courier Systems. All rights reserved.
-  </div>
-
-  <!-- JS -->
   <script>
-    const contentPanel = document.getElementById('content-panel');
+    const tabs = document.querySelectorAll('.tab');
+    const content = document.getElementById('tab-content');
 
-    async function showPanel(file) {
-      try {
-        const res = await fetch(file);
-        let html = await res.text();
+    const tabContent = {
+      data: `
+        <h3>Data Management</h3>
+        <p>Import new data files or view existing waybills below.</p>
+        <button id="importBtn">📂 Import Data</button>
+        <button id="viewBtn">📑 View Waybills</button>
+        <div id="dataSection" style="margin-top:15px;">
+          <table id="waybillTable">
+            <thead>
+              <tr>
+                <th>Waybill No</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>486517581687</td><td>FedEx</td><td>Delivered</td><td>2025-11-06</td></tr>
+              <tr><td>485097767300</td><td>Seabourne</td><td>In Transit</td><td>2025-11-06</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `,
+      scanin: `<h3>Scan In</h3><p>Scan parcels into depot. (Coming soon...)</p>`,
+      scanout: `<h3>Scan Out</h3><p>Scan parcels out for delivery. (Coming soon...)</p>`,
+      depot: `<h3>Depot Return</h3><p>Return misrouted or undelivered parcels. (Coming soon...)</p>`,
+      reports: `<h3>Reports</h3><p>Generate and export delivery reports. (Coming soon...)</p>`,
+      settings: `<h3>Settings</h3><p>Manage user access and configuration. (Coming soon...)</p>`
+    };
 
-        // Clean out the full HTML wrappers
-        html = html
-          .replace(/<!DOCTYPE html.*?>/i, '')
-          .replace(/<html.*?>/i, '')
-          .replace(/<\/html>/i, '')
-          .replace(/<head.*?>.*<\/head>/is, '')
-          .replace(/<body.*?>/i, '')
-          .replace(/<\/body>/i, '');
-
-        contentPanel.innerHTML = html;
-        closeAllDropdowns();
-
-        // ✅ Automatically initialize scripts for certain panels
-        if (file.includes('import.html') && typeof initImportForm === 'function') {
-          initImportForm();
-        } else if (file.includes('drivers.html') && typeof initDrivers === 'function') {
-          initDrivers();
-        } else if (file.includes('view-waybills.html') && typeof initWaybills === 'function') {
-          initWaybills();
-        }
-
-      } catch (err) {
-        contentPanel.innerHTML = `
-          <div class="panel" style="color:red;">
-            Failed to load panel: ${err}
-          </div>`;
-      }
-    }
-
-    function logout() {
-      window.location.href = 'login.html';
-    }
-
-    function toggleDropdown(button) {
-      const dropdown = button.nextElementSibling;
-      const isOpen = dropdown.classList.contains('show');
-      closeAllDropdowns();
-      if (!isOpen) dropdown.classList.add('show');
-    }
-
-    function closeAllDropdowns() {
-      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
-    }
-
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.menu-group')) closeAllDropdowns();
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const selected = tab.getAttribute('data-tab');
+        content.innerHTML = tabContent[selected];
+      });
     });
   </script>
 </body>
