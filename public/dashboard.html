@@ -204,27 +204,31 @@
   </div>
 
   <!-- JS -->
-  <script>
-    const contentPanel = document.getElementById('content-panel');
+async function showPanel(file) {
+  try {
+    const res = await fetch(file);
+    let html = await res.text();
 
-    async function showPanel(file) {
-      try {
-        const res = await fetch(file);
-        let html = await res.text();
+    // Remove full HTML structure
+    html = html.replace(/<!DOCTYPE html.*?>/i, '')
+               .replace(/<html.*?>/i, '')
+               .replace(/<\/html>/i, '')
+               .replace(/<head.*?>.*<\/head>/is, '')
+               .replace(/<body.*?>/i, '')
+               .replace(/<\/body>/i, '');
 
-        html = html.replace(/<!DOCTYPE html.*?>/i, '')
-                   .replace(/<html.*?>/i, '')
-                   .replace(/<\/html>/i, '')
-                   .replace(/<head.*?>.*<\/head>/is, '')
-                   .replace(/<body.*?>/i, '')
-                   .replace(/<\/body>/i, '');
+    contentPanel.innerHTML = html;
+    closeAllDropdowns();
 
-        contentPanel.innerHTML = html;
-        closeAllDropdowns();
-      } catch (err) {
-        contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
-      }
+    // Initialize Import CSV form if loading import.html
+    if (file.includes('import.html') && window.initImportForm) {
+      initImportForm();
     }
+
+  } catch (err) {
+    contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
+  }
+}
 
     function logout() {
       window.location.href = 'login.html';
