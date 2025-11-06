@@ -4,40 +4,76 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MM Courier | Dashboard</title>
+  <link rel="stylesheet" href="assets/css/windows98.css" />
   <style>
     body {
-      background: #c0c0c0;
-      font-family: "Tahoma", "Segoe UI", sans-serif;
+      background-color: #0a2b52;
+      color: white;
+      font-family: "Segoe UI", sans-serif;
       margin: 0;
-      color: #000;
-      font-size: 13px;
-    }
-
-    .toolbar {
-      background: #d4d0c8;
-      border-bottom: 2px solid #fff;
       display: flex;
-      align-items: center;
-      padding: 4px;
-      gap: 6px;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 10;
+      flex-direction: column;
+      height: 100vh;
     }
 
-    .menu-btn {
-      background: #e0e0e0;
-      border: 2px outset #fff;
-      padding: 2px 10px;
-      font-size: 13px;
+    header {
+      background-color: #cebd80;
+      color: #0a2b52;
+      padding: 10px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    nav {
+      width: 230px;
+      background-color: #409dbc;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    nav button {
+      background: white;
+      border: 2px solid #0a2b52;
+      color: #0a2b52;
+      font-weight: bold;
+      padding: 6px;
+      margin: 3px 0;
+      text-align: left;
       cursor: pointer;
     }
 
-    .menu-btn:active {
-      border: 2px inset #fff;
-      background: #d0d0d0;
+    nav button:hover {
+      background-color: #cebd80;
     }
 
+    main {
+      flex: 1;
+      background: white;
+      color: black;
+      overflow-y: auto;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    footer {
+      background: #cebd80;
+      color: #0a2b52;
+      text-align: center;
+      padding: 4px;
+      font-size: 13px;
+    }
+
+    /* Dropdown styling */
     .menu-group {
       position: relative;
     }
@@ -45,12 +81,12 @@
     .dropdown {
       display: none;
       position: absolute;
-      top: 100%;
       left: 0;
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      z-index: 1000;
-      min-width: 200px;
+      top: 100%;
+      background: #fff;
+      border: 2px solid #0a2b52;
+      width: 100%;
+      z-index: 10;
     }
 
     .dropdown.show {
@@ -58,195 +94,125 @@
     }
 
     .dropdown button {
+      background: white;
+      border: none;
       width: 100%;
       text-align: left;
-      border: none;
-      border-bottom: 1px solid #808080;
-      background: #d4d0c8;
-      padding: 4px 8px;
-      font-size: 12px;
-      cursor: pointer;
+      padding: 5px;
+      font-weight: normal;
     }
 
     .dropdown button:hover {
-      background: #b0b0b0;
-    }
-
-    .logout {
-      margin-left: auto;
-      background: #f2e5b8;
-    }
-
-    #content-panel {
-      padding: 12px;
-    }
-
-    .panel {
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: inset 1px 1px #fff;
-    }
-
-    h1, h2, h3 {
-      margin: 4px 0;
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 11px;
-      color: #333;
-      border-top: 2px solid #fff;
-      padding: 6px;
-      background: #d4d0c8;
-    }
-
-    input, select {
-      border: 2px inset #fff;
-      background: #fff;
-      font-size: 12px;
-      padding: 3px;
-    }
-
-    button.menu-btn {
-      min-width: 90px;
+      background: #cebd80;
     }
   </style>
 </head>
-
 <body>
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <!-- Data -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
-      <div class="dropdown">
-        <button onclick="showPanel('import.html')">Import Data</button>
-        <button onclick="showPanel('customers.html')">Customers</button>
-        <button onclick="showPanel('drivers.html')">Drivers</button>
-        <button onclick="showPanel('invoices.html')">Invoices</button>
-        <button onclick="showPanel('view-waybills.html')">View Waybills</button>
-      </div>
+  <header>
+    <div>📦 MM Courier Dashboard</div>
+    <div>
+      <button onclick="logout()" style="background:white;border:2px solid #0a2b52;color:#0a2b52;font-weight:bold;">Logout</button>
     </div>
+  </header>
 
-    <!-- Tripsheets -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
-      <div class="dropdown">
-        <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
-        <button onclick="showPanel('driver-login.html')">Driver Login</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
+  <div class="container">
+    <nav>
+      <div class="menu-group">
+        <button onclick="toggleDropdown(this)">📁 Data</button>
+        <div class="dropdown">
+          <button onclick="showPanel('data/import.html')">Import Data</button>
+          <button onclick="showPanel('data/view-waybills.html')">View Waybills</button>
+          <button onclick="showPanel('data/customers.html')">Customers</button>
+          <button onclick="showPanel('data/drivers.html')">Drivers</button>
+          <button onclick="showPanel('data/invoices.html')">Invoices</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Operations -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
-      <div class="dropdown">
-        <button onclick="showPanel('floorcheck.html')">Floor Check</button>
-        <button onclick="showPanel('scan-in.html')">Scan In</button>
-        <button onclick="showPanel('scan-out.html')">Scan Out</button>
-        <button onclick="showPanel('scan-return.html')">Return to Depot</button>
-        <button onclick="showPanel('collections.html')">Collections</button>
-        <button onclick="showPanel('adhoc-delivery.html')">Adhoc Delivery</button>
-        <button onclick="showPanel('adhoc-collection.html')">Adhoc Collection</button>
-        <button onclick="showPanel('pod-upload.html')">POD Upload</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-        <button onclick="showPanel('track.html')">Track Parcels</button>
-        <!-- ✅ NEW ENTRY -->
-        <button onclick="showPanel('capture-waybill.html')">Capture Waybill</button>
+      <div class="menu-group">
+        <button onclick="toggleDropdown(this)">🚚 Operations</button>
+        <div class="dropdown">
+          <button onclick="showPanel('operations/scan-in.html')">Scan In</button>
+          <button onclick="showPanel('operations/scan-out.html')">Scan Out</button>
+          <button onclick="showPanel('operations/scan-return.html')">Depot Return</button>
+          <button onclick="showPanel('operations/floorcheck.html')">Floor Check</button>
+          <button onclick="showPanel('operations/pod-upload.html')">Upload POD</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Reports -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
-      <div class="dropdown">
-        <button onclick="showPanel('daily.html')">Daily Deliveries</button>
-        <button onclick="showPanel('age.html')">Age Analysis</button>
-        <button onclick="showPanel('pod.html')">POD Compliance</button>
-        <button onclick="showPanel('billing.html')">Billing Summary</button>
-        <button onclick="showPanel('driver-performance.html')">Driver Performance</button>
-        <button onclick="showPanel('client-delivery.html')">Client Delivery</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
+      <div class="menu-group">
+        <button onclick="toggleDropdown(this)">🧾 Reports</button>
+        <div class="dropdown">
+          <button onclick="showPanel('reports/age.html')">Age Analysis</button>
+          <button onclick="showPanel('reports/daily.html')">Daily Deliveries</button>
+          <button onclick="showPanel('reports/billing.html')">Billing Summary</button>
+          <button onclick="showPanel('reports/trip-summary.html')">Trip Sheet Summary</button>
+        </div>
       </div>
-    </div>
+    </nav>
 
-    <!-- ✅ Integrations -->
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Integrations</button>
-      <div class="dropdown">
-        <button onclick="showPanel('integration.html')">Integration Hub</button>
-        <button onclick="showPanel('webhooks.html')">Webhooks</button>
-        <button onclick="showPanel('sftp.html')">SFTP</button>
-        <button onclick="showPanel('api-endpoints.html')">API Endpoints</button>
-        <button onclick="showPanel('manual-upload.html')">Manual Upload</button>
-      </div>
-    </div>
-
-    <!-- Logout -->
-    <button class="menu-btn logout" onclick="logout()">Logout</button>
+    <main id="contentPanel">
+      <h2>Welcome to MM Courier</h2>
+      <p>Select a module from the left menu to begin.</p>
+    </main>
   </div>
 
-  <!-- Content -->
-  <div id="content-panel">
-    <div class="panel">
-      <h1>Welcome to MM Courier ERP System</h1>
-      <p>Use the toolbar to manage imports, waybills, drivers, tripsheets, scanning, collections, invoicing, and reports.</p>
-    </div>
-  </div>
+  <footer>
+    MM Courier ERP System © 2025 | Pakisa Express Logistics
+  </footer>
 
-  <!-- Footer -->
-  <div class="footer">
-    © 2025 MM Courier Systems. All rights reserved.
-  </div>
+  <script type="module">
+    import { initImportForm } from "./assets/js/import.js";
 
-  <!-- JS -->
-async function showPanel(file) {
-  try {
-    const res = await fetch(file);
-    let html = await res.text();
+    const contentPanel = document.getElementById("contentPanel");
 
-    // Remove full HTML structure
-    html = html.replace(/<!DOCTYPE html.*?>/i, '')
-               .replace(/<html.*?>/i, '')
-               .replace(/<\/html>/i, '')
-               .replace(/<head.*?>.*<\/head>/is, '')
-               .replace(/<body.*?>/i, '')
-               .replace(/<\/body>/i, '');
+    async function showPanel(file) {
+      try {
+        const res = await fetch(file);
+        let html = await res.text();
 
-    contentPanel.innerHTML = html;
-    closeAllDropdowns();
+        html = html
+          .replace(/<!DOCTYPE html.*?>/i, '')
+          .replace(/<html.*?>/i, '')
+          .replace(/<\/html>/i, '')
+          .replace(/<head.*?>.*<\/head>/is, '')
+          .replace(/<body.*?>/i, '')
+          .replace(/<\/body>/i, '');
 
-    // Initialize Import CSV form if loading import.html
-    if (file.includes('import.html') && window.initImportForm) {
-      initImportForm();
+        contentPanel.innerHTML = html;
+        closeAllDropdowns();
+
+        // Initialize import form if applicable
+        if (file.includes("import.html")) {
+          setTimeout(() => {
+            if (typeof initImportForm === "function") initImportForm();
+          }, 300);
+        }
+      } catch (err) {
+        contentPanel.innerHTML = `
+          <div class="panel" style="color:red;">
+            Failed to load panel: ${err}
+          </div>
+        `;
+      }
     }
 
-  } catch (err) {
-    contentPanel.innerHTML = `<div class="panel" style="color:red;">Failed to load panel: ${err}</div>`;
-  }
-}
-
     function logout() {
-      window.location.href = 'login.html';
+      window.location.href = "login.html";
     }
 
     function toggleDropdown(button) {
       const dropdown = button.nextElementSibling;
-      const isOpen = dropdown.classList.contains('show');
+      const isOpen = dropdown.classList.contains("show");
       closeAllDropdowns();
-      if (!isOpen) dropdown.classList.add('show');
+      if (!isOpen) dropdown.classList.add("show");
     }
 
     function closeAllDropdowns() {
-      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+      document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
     }
 
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.menu-group')) closeAllDropdowns();
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".menu-group")) closeAllDropdowns();
     });
   </script>
 </body>
