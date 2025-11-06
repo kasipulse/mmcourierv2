@@ -1,54 +1,73 @@
-const supabaseUrl = "https://lavqgvnjdjfywcjztame.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhdnFndm5qZGpmeXdjanp0YW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyMjk0ODYsImV4cCI6MjA3NjgwNTQ4Nn0.kpguG-8Ap_icuh1FtF6c4k032qwIvoW6-KC_tX57644";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// backend/routes/import.js
+import express from "express";
+import multer from "multer";
+import csv from "csv-parser";
+import fs from "fs";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
-const importBtn = document.getElementById("importBtn");
-const statusDiv = document.getElementById("importStatus");
+dotenv.config();
+const router = express.Router();
 
-async function parseCSV(file) {
-  const text = await file.text();
-  const rows = text.split("\n").map(r => r.split(","));
-  const headers = rows.shift().map(h => h.trim());
-  return rows
-    .filter(r => r.length === headers.length)
-    .map(r => {
-      let obj = {};
-      headers.forEach((h, i) => (obj[h] = r[i]?.trim()));
-      return obj;
+// Supabase setup
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Multer setup for temp uploads
+const upload = multer({ dest: "uploads/" });
+
+// POST /api/import/upload
+router.post("/upload", upload.fields([{ name: "content" }, { name: "waybill" }, { name: "track" }]), async (req, res) => {
+  try {
+    const { company_id } = req.body; // from frontend (or session later)
+    if (!req.files || !req.files.content || !req.files.waybill || !req.files.track)
+      return res.status(400).json({ error: "Please upload all three files (content, waybill, track)" });
+
+    // --- Parse CSV files ---
+    const parseCSV = (filePath) =>
+      new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(filePath)
+          .pipe(csv())
+          .on("data", (row) => results.push(row))
+          .on("end", () => resolve(results))
+          .on("error", reject);
+      });
+
+    const contentData = await parseCSV(req.files.content[0].path);
+    const waybillData = await parseCSV(req.files.waybill[0].path);
+    const trackData = await parseCSV(req.files.track[0].path);
+
+    // --- Merge data by Waybill ---
+    const parcels = waybillData.map((w) => {
+      const content = contentData.find((c) => c.Waybill === w.Waybill);
+      const tracks = trackData.filter((t) => t.Waybill === w.Waybill);
+      return {
+        waybill: w.Waybill,
+        service: w.Service,
+        sender: w.Sender,
+        receiver: w.Receiver,
+        origin: w.OrigPlace,
+        destination: w.DestPlace,
+        pieces: parseInt(w.Pieces || 0),
+        actmass: parseFloat(content?.ActMass || 0),
+        tracking_numbers: tracks.map((t) => t.TrackNo),
+        status: "RECEIVED",
+        company_id,
+      };
     });
-}
 
-async function uploadToSupabase(table, data, fileName) {
-  if (!data.length) return;
+    // --- Insert into Supabase ---
+    const { data, error } = await supabase.from("parcels").insert(parcels);
+    if (error) throw error;
 
-  const { error } = await supabase.from(table).insert(data);
-  if (error) {
-    console.error("Upload failed:", error);
-    statusDiv.innerHTML += `<p class='text-red-600'>❌ ${fileName} import failed: ${error.message}</p>`;
-  } else {
-    statusDiv.innerHTML += `<p class='text-green-600'>✅ ${fileName} imported successfully (${data.length} records)</p>`;
+    // Cleanup temp files
+    Object.values(req.files).flat().forEach((f) => fs.unlinkSync(f.path));
+
+    res.json({ success: true, inserted: parcels.length });
+  } catch (err) {
+    console.error("Import error:", err);
+    res.status(500).json({ error: "Failed to process files" });
   }
-}
-
-importBtn.addEventListener("click", async () => {
-  const waybillFile = document.getElementById("waybillFile").files[0];
-  const contentFile = document.getElementById("contentFile").files[0];
-  const trackingFile = document.getElementById("trackingFile").files[0];
-
-  if (!waybillFile || !contentFile || !trackingFile) {
-    alert("Please select all 3 files before importing.");
-    return;
-  }
-
-  statusDiv.innerHTML = "<p>⏳ Processing files...</p>";
-
-  const waybillData = await parseCSV(waybillFile);
-  const contentData = await parseCSV(contentFile);
-  const trackingData = await parseCSV(trackingFile);
-
-  await uploadToSupabase("waybills", waybillData, "Waybill File");
-  await uploadToSupabase("contents", contentData, "Content File");
-  await uploadToSupabase("tracking_events", trackingData, "Tracking File");
-
-  statusDiv.innerHTML += "<p class='mt-4 font-medium'>✅ Import complete!</p>";
 });
+
+export default router;
