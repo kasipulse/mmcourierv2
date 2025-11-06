@@ -88,57 +88,57 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
+      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Data</button>
       <div class="dropdown">
-        <button onclick="showPanel('import.html')">Import Data</button>
-        <button onclick="showPanel('customers.html')">Customers</button>
-        <button onclick="showPanel('drivers.html')">Drivers</button>
-        <button onclick="showPanel('invoices.html')">Invoices</button>
-        <button onclick="showPanel('view-waybills.html')">View Waybills</button>
+        <button type="button" onclick="showPanel('import.html', event)">Import Data</button>
+        <button type="button" onclick="showPanel('customers.html', event)">Customers</button>
+        <button type="button" onclick="showPanel('drivers.html', event)">Drivers</button>
+        <button type="button" onclick="showPanel('invoices.html', event)">Invoices</button>
+        <button type="button" onclick="showPanel('view-waybills.html', event)">View Waybills</button>
       </div>
     </div>
 
     <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
+      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
       <div class="dropdown">
-        <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
-        <button onclick="showPanel('driver-login.html')">Driver Login</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
+        <button type="button" onclick="showPanel('tripsheet.html', event)">Driver Tripsheets</button>
+        <button type="button" onclick="showPanel('driver-login.html', event)">Driver Login</button>
+        <button type="button" onclick="showPanel('trip-summary.html', event)">Trip Sheet Summary</button>
       </div>
     </div>
 
     <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
+      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
       <div class="dropdown">
-        <button onclick="showPanel('floorcheck.html')">Floor Check</button>
-        <button onclick="showPanel('scan-in.html')">Scan In</button>
-        <button onclick="showPanel('scan-out.html')">Scan Out</button>
-        <button onclick="showPanel('scan-return.html')">Return to Depot</button>
-        <button onclick="showPanel('collections.html')">Collections</button>
-        <button onclick="showPanel('adhoc-delivery.html')">Adhoc Delivery</button>
-        <button onclick="showPanel('adhoc-collection.html')">Adhoc Collection</button>
-        <button onclick="showPanel('pod-upload.html')">POD Upload</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-        <button onclick="showPanel('track.html')">Track Parcels</button>
-        <button onclick="showPanel('capture-waybill.html')">Capture Waybill</button>
+        <button type="button" onclick="showPanel('floorcheck.html', event)">Floor Check</button>
+        <button type="button" onclick="showPanel('scan-in.html', event)">Scan In</button>
+        <button type="button" onclick="showPanel('scan-out.html', event)">Scan Out</button>
+        <button type="button" onclick="showPanel('scan-return.html', event)">Return to Depot</button>
+        <button type="button" onclick="showPanel('collections.html', event)">Collections</button>
+        <button type="button" onclick="showPanel('adhoc-delivery.html', event)">Adhoc Delivery</button>
+        <button type="button" onclick="showPanel('adhoc-collection.html', event)">Adhoc Collection</button>
+        <button type="button" onclick="showPanel('pod-upload.html', event)">POD Upload</button>
+        <button type="button" onclick="showPanel('exceptions.html', event)">Scan Exceptions</button>
+        <button type="button" onclick="showPanel('track.html', event)">Track Parcels</button>
+        <button type="button" onclick="showPanel('capture-waybill.html', event)">Capture Waybill</button>
       </div>
     </div>
 
     <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
+      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
       <div class="dropdown">
-        <button onclick="showPanel('daily.html')">Daily Deliveries</button>
-        <button onclick="showPanel('age.html')">Age Analysis</button>
-        <button onclick="showPanel('pod.html')">POD Compliance</button>
-        <button onclick="showPanel('billing.html')">Billing Summary</button>
-        <button onclick="showPanel('driver-performance.html')">Driver Performance</button>
-        <button onclick="showPanel('client-delivery.html')">Client Delivery</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
+        <button type="button" onclick="showPanel('daily.html', event)">Daily Deliveries</button>
+        <button type="button" onclick="showPanel('age.html', event)">Age Analysis</button>
+        <button type="button" onclick="showPanel('pod.html', event)">POD Compliance</button>
+        <button type="button" onclick="showPanel('billing.html', event)">Billing Summary</button>
+        <button type="button" onclick="showPanel('driver-performance.html', event)">Driver Performance</button>
+        <button type="button" onclick="showPanel('client-delivery.html', event)">Client Delivery</button>
+        <button type="button" onclick="showPanel('trip-summary.html', event)">Trip Sheet Summary</button>
+        <button type="button" onclick="showPanel('exceptions.html', event)">Scan Exceptions</button>
       </div>
     </div>
 
-    <button class="menu-btn logout" onclick="logout()">Logout</button>
+    <button type="button" class="menu-btn logout" onclick="logout()">Logout</button>
   </div>
 
   <!-- Content -->
@@ -156,14 +156,14 @@
   <script>
     const contentPanel = document.getElementById("content-panel");
 
-    async function showPanel(file) {
+    async function showPanel(file, event) {
+      if(event) event.preventDefault(); // prevent default page reload
       try {
         const response = await fetch(file + "?t=" + Date.now(), { cache: "no-store" });
         if (!response.ok) throw new Error(`Failed to load ${file}`);
 
         let html = await response.text();
 
-        // Strip full HTML layout if present
         html = html
           .replace(/<!DOCTYPE[^>]*>/gi, "")
           .replace(/<html[^>]*>/gi, "")
@@ -172,13 +172,12 @@
           .replace(/<body[^>]*>/gi, "")
           .replace(/<\/body>/gi, "");
 
-        // Inject
         contentPanel.innerHTML = html;
         closeAllDropdowns();
 
-        // Auto-init page scripts
-        if (typeof initImportForm === "function" && file.includes("import.html")) initImportForm();
-        if (typeof initWaybills === "function" && file.includes("view-waybills.html")) initWaybills();
+        if(typeof initImportForm === "function" && file.includes("import.html")) initImportForm();
+        if(typeof initWaybills === "function" && file.includes("view-waybills.html")) initWaybills();
+
       } catch (err) {
         contentPanel.innerHTML = `
           <div class="panel" style="color:red;">
@@ -187,15 +186,13 @@
       }
     }
 
-    function logout() {
-      window.location.href = "login.html";
-    }
+    function logout() { window.location.href = "login.html"; }
 
     function toggleDropdown(button) {
       const dropdown = button.nextElementSibling;
       const isOpen = dropdown.classList.contains("show");
       closeAllDropdowns();
-      if (!isOpen) dropdown.classList.add("show");
+      if(!isOpen) dropdown.classList.add("show");
     }
 
     function closeAllDropdowns() {
@@ -203,7 +200,7 @@
     }
 
     document.addEventListener("click", e => {
-      if (!e.target.closest(".menu-group")) closeAllDropdowns();
+      if(!e.target.closest(".menu-group")) closeAllDropdowns();
     });
   </script>
 </body>
