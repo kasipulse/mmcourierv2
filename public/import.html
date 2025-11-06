@@ -1,4 +1,3 @@
-<!-- frontend/data/import.html -->
 <div class="panel">
   <h2>Import Parcels</h2>
   <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
@@ -18,37 +17,3 @@
 
   <div id="importStatus" style="margin-top: 10px;"></div>
 </div>
-
-<script>
-  const form = document.getElementById('importForm');
-  const statusDiv = document.getElementById('importStatus');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-
-    statusDiv.textContent = "Processing...";
-
-    try {
-      const res = await fetch('/api/import/parcels', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include' // keeps session cookies if needed
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        statusDiv.style.color = 'green';
-        statusDiv.textContent = `Success! ${data.inserted} parcels imported.`;
-      } else {
-        statusDiv.style.color = 'red';
-        statusDiv.textContent = `Error: ${data.error}`;
-      }
-    } catch (err) {
-      statusDiv.style.color = 'red';
-      statusDiv.textContent = `Error: ${err.message}`;
-    }
-  });
-</script>
