@@ -1,53 +1,54 @@
+<!-- frontend/data/import.html -->
 <div class="panel">
-  <h2>Import CSV Files</h2>
+  <h2>Import Parcels</h2>
+  <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
 
-  <!-- Manifest CSV -->
-  <form id="manifest-form" enctype="multipart/form-data">
-    <label>Parcel Manifest CSV:</label>
-    <input type="file" name="file" required>
-    <button type="submit">Process Manifest</button>
+  <form id="importForm">
+    <label>Content CSV:</label>
+    <input type="file" name="content" accept=".csv" required /><br /><br />
+
+    <label>Waybill CSV:</label>
+    <input type="file" name="waybill" accept=".csv" required /><br /><br />
+
+    <label>Track CSV:</label>
+    <input type="file" name="track" accept=".csv" required /><br /><br />
+
+    <button type="submit">Process Import</button>
   </form>
 
-  <!-- Scan CSV -->
-  <form id="scan-form" enctype="multipart/form-data">
-    <label>Parcel Scan CSV:</label>
-    <input type="file" name="file" required>
-    <button type="submit">Process Scan</button>
-  </form>
-
-  <div id="import-feedback" style="margin-top:10px;"></div>
+  <div id="importStatus" style="margin-top: 10px;"></div>
 </div>
 
 <script>
-const feedback = document.getElementById("import-feedback");
+  const form = document.getElementById('importForm');
+  const statusDiv = document.getElementById('importStatus');
 
-// Manifest
-document.getElementById("manifest-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const res = await fetch("/api/parcels/import-manifest", {
-    method: "POST",
-    body: formData,
-  });
-  const data = await res.json();
-  feedback.innerHTML = data.success
-    ? `✅ Manifest imported: ${data.inserted} parcels`
-    : `❌ Error: ${data.error}`;
-  if (data.success) showPanel("view-waybills.html");
-});
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-// Scan
-document.getElementById("scan-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const res = await fetch("/api/parcels/import-scan", {
-    method: "POST",
-    body: formData,
+    const formData = new FormData(form);
+
+    statusDiv.textContent = "Processing...";
+
+    try {
+      const res = await fetch('/api/import/parcels', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include' // keeps session cookies if needed
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        statusDiv.style.color = 'green';
+        statusDiv.textContent = `Success! ${data.inserted} parcels imported.`;
+      } else {
+        statusDiv.style.color = 'red';
+        statusDiv.textContent = `Error: ${data.error}`;
+      }
+    } catch (err) {
+      statusDiv.style.color = 'red';
+      statusDiv.textContent = `Error: ${err.message}`;
+    }
   });
-  const data = await res.json();
-  feedback.innerHTML = data.success
-    ? `✅ Scan CSV processed: ${data.updated} parcels updated`
-    : `❌ Error: ${data.error}`;
-  if (data.success) showPanel("view-waybills.html");
-});
 </script>
