@@ -2,18 +2,58 @@
   <h2>Import Parcels</h2>
   <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
 
-  <form id="importForm">
-    <label>Content CSV:</label>
-    <input type="file" name="content" accept=".csv" required /><br /><br />
+  <form id="importForm" onsubmit="return false;" style="margin-top: 10px;">
+    <label>Content CSV:</label><br />
+    <input type="file" id="contentFile" name="content" accept=".csv" required /><br /><br />
 
-    <label>Waybill CSV:</label>
-    <input type="file" name="waybill" accept=".csv" required /><br /><br />
+    <label>Waybill CSV:</label><br />
+    <input type="file" id="waybillFile" name="waybill" accept=".csv" required /><br /><br />
 
-    <label>Track CSV:</label>
-    <input type="file" name="track" accept=".csv" required /><br /><br />
+    <label>Track CSV:</label><br />
+    <input type="file" id="trackFile" name="track" accept=".csv" required /><br /><br />
 
-    <button type="submit">Process Import</button>
+    <button type="button" id="processBtn" class="menu-btn">Process Import</button>
   </form>
 
   <div id="importStatus" style="margin-top: 10px;"></div>
 </div>
+
+<script>
+  function initImportForm() {
+    const form = document.getElementById("importForm");
+    const statusDiv = document.getElementById("importStatus");
+    const processBtn = document.getElementById("processBtn");
+
+    processBtn.addEventListener("click", async () => {
+      const contentFile = document.getElementById("contentFile").files[0];
+      const waybillFile = document.getElementById("waybillFile").files[0];
+      const trackFile = document.getElementById("trackFile").files[0];
+
+      if (!contentFile || !waybillFile || !trackFile) {
+        statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files before processing.</div>`;
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("content", contentFile);
+      formData.append("waybill", waybillFile);
+      formData.append("track", trackFile);
+
+      statusDiv.innerHTML = `<div>⏳ Uploading and processing files...</div>`;
+
+      try {
+        const res = await fetch("/api/import", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const data = await res.json();
+
+        statusDiv.innerHTML = `<div style="color:green;">✅ ${data.message || "Import successful!"}</div>`;
+      } catch (err) {
+        statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
+      }
+    });
+  }
+</script>
