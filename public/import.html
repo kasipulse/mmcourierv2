@@ -16,56 +16,78 @@
   </form>
 
   <div id="importStatus" style="margin-top: 10px;"></div>
+  <div id="waybillTable" style="margin-top: 15px;"></div>
 </div>
 
 <script>
-  function initImportForm() {
-    const form = document.getElementById("importForm");
-    const statusDiv = document.getElementById("importStatus");
-    const processBtn = document.getElementById("processBtn");
+function initImportForm() {
+  const processBtn = document.getElementById("processBtn");
+  const statusDiv = document.getElementById("importStatus");
+  const waybillDiv = document.getElementById("waybillTable");
 
-    processBtn.addEventListener("click", async () => {
-      const contentFile = document.getElementById("contentFile").files[0];
-      const waybillFile = document.getElementById("waybillFile").files[0];
-      const trackFile = document.getElementById("trackFile").files[0];
+  processBtn.addEventListener("click", async () => {
+    const contentFile = document.getElementById("contentFile").files[0];
+    const waybillFile = document.getElementById("waybillFile").files[0];
+    const trackFile = document.getElementById("trackFile").files[0];
 
-      if (!contentFile || !waybillFile || !trackFile) {
-        statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files before processing.</div>`;
-        return;
-      }
+    if (!contentFile || !waybillFile || !trackFile) {
+      statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files.</div>`;
+      return;
+    }
 
-      const formData = new FormData();
-      formData.append("content", contentFile);
-      formData.append("waybill", waybillFile);
-      formData.append("track", trackFile);
-      formData.append("company_id", "TEST_COMPANY"); // adjust as needed
+    const formData = new FormData();
+    formData.append("content", contentFile);
+    formData.append("waybill", waybillFile);
+    formData.append("track", trackFile);
 
-      statusDiv.innerHTML = `<div>⏳ Uploading and processing CSVs...</div>`;
+    statusDiv.innerHTML = `<div>⏳ Uploading and processing CSVs...</div>`;
+    waybillDiv.innerHTML = "";
 
-      try {
-        const res = await fetch("/api/import/upload", {
-          method: "POST",
-          body: formData
+    try {
+      const res = await fetch("/api/import/upload", {  // <-- correct endpoint
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const data = await res.json();
+
+      if (data.success) {
+        statusDiv.innerHTML = `<div style="color:green;">✅ Successfully imported ${data.inserted} parcels!</div>`;
+
+        // Show inserted waybills in table
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.innerHTML = `
+          <tr style="background:#b0b0b0;">
+            <th style="border:1px solid #000; padding:4px;">Waybill</th>
+            <th style="border:1px solid #000; padding:4px;">Sender</th>
+            <th style="border:1px solid #000; padding:4px;">Receiver</th>
+            <th style="border:1px solid #000; padding:4px;">Pieces</th>
+            <th style="border:1px solid #000; padding:4px;">Act Mass</th>
+          </tr>
+        `;
+        data.insertedData = data.insertedData || []; // optional if backend returns full inserted parcels
+        data.insertedData.forEach(p => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="border:1px solid #000; padding:4px;">${p.waybill}</td>
+            <td style="border:1px solid #000; padding:4px;">${p.sender}</td>
+            <td style="border:1px solid #000; padding:4px;">${p.receiver}</td>
+            <td style="border:1px solid #000; padding:4px;">${p.pieces}</td>
+            <td style="border:1px solid #000; padding:4px;">${p.actmass}</td>
+          `;
+          table.appendChild(tr);
         });
-
-        const text = await res.text(); // read raw response
-        let data;
-
-        try {
-          data = JSON.parse(text); // try parsing as JSON
-        } catch {
-          // If JSON parsing fails, show raw text (likely HTML error)
-          throw new Error(`Server returned non-JSON response:\n${text}`);
-        }
-
-        if (!res.ok) {
-          throw new Error(data.error || `Server returned status ${res.status}`);
-        }
-
-        statusDiv.innerHTML = `<div style="color:green;">✅ Import successful! Inserted ${data.inserted || 0} parcels.</div>`;
-      } catch (err) {
-        statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
+        waybillDiv.appendChild(table);
+      } else {
+        statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${data.error || 'Unknown error'}</div>`;
       }
-    });
-  }
+
+    } catch (err) {
+      statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
+    }
+  });
+}
 </script>
