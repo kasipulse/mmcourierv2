@@ -1,100 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MM Courier | Dashboard</title>
-  <style>
-    body {
-      background: #c0c0c0;
-      font-family: "Tahoma", "Segoe UI", sans-serif;
-      margin: 0;
-      color: #000;
-      font-size: 13px;
-    }
-    .toolbar {
-      background: #d4d0c8;
-      border-bottom: 2px solid #fff;
-      display: flex;
-      align-items: center;
-      padding: 4px;
-      gap: 6px;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 10;
-    }
-    .menu-btn {
-      background: #e0e0e0;
-      border: 2px outset #fff;
-      padding: 2px 10px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .menu-btn:active {
-      border: 2px inset #fff;
-      background: #d0d0d0;
-    }
-    .menu-group { position: relative; }
-    .dropdown {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      z-index: 1000;
-      min-width: 200px;
-    }
-    .dropdown.show { display: block; }
-    .dropdown button {
-      width: 100%;
-      text-align: left;
-      border: none;
-      border-bottom: 1px solid #808080;
-      background: #d4d0c8;
-      padding: 4px 8px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .dropdown button:hover { background: #b0b0b0; }
-    .logout { margin-left: auto; background: #f2e5b8; }
-    #content-panel { padding: 12px; }
-    .panel {
-      background: #d4d0c8;
-      border: 2px outset #fff;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: inset 1px 1px #fff;
-    }
-    h1, h2, h3 { margin: 4px 0; }
-    .footer {
-      text-align: center;
-      font-size: 11px;
-      color: #333;
-      border-top: 2px solid #fff;
-      padding: 6px;
-      background: #d4d0c8;
-    }
-    input, select {
-      border: 2px inset #fff;
-      background: #fff;
-      font-size: 12px;
-      padding: 3px;
-    }
-    button.menu-btn { min-width: 90px; }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      background: #fff;
-      font-size: 12px;
-    }
-    th, td {
-      border: 1px solid #888;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    th { background: #bdbdbd; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MM Courier | Dashboard</title>
+<style>
+  body {
+    background: #c0c0c0;
+    font-family: "Tahoma", "Segoe UI", sans-serif;
+    margin: 0;
+    color: #000;
+    font-size: 13px;
+  }
+  .toolbar {
+    background: #d4d0c8;
+    border-bottom: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    gap: 6px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 10;
+  }
+  .menu-btn {
+    background: #e0e0e0;
+    border: 2px outset #fff;
+    padding: 2px 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .menu-btn:active { border: 2px inset #fff; background: #d0d0d0; }
+  .menu-group { position: relative; }
+  .dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #d4d0c8;
+    border: 2px outset #fff;
+    z-index: 1000;
+    min-width: 200px;
+  }
+  .dropdown.show { display: block; }
+  .dropdown button {
+    width: 100%;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid #808080;
+    background: #d4d0c8;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .dropdown button:hover { background: #b0b0b0; }
+  .logout { margin-left: auto; background: #f2e5b8; }
+  #content-panel { padding: 12px; }
+  .panel {
+    background: #d4d0c8;
+    border: 2px outset #fff;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: inset 1px 1px #fff;
+  }
+  h1, h2, h3 { margin: 4px 0; }
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    border-top: 2px solid #fff;
+    padding: 6px;
+    background: #d4d0c8;
+  }
+  input, select { border: 2px inset #fff; background: #fff; font-size: 12px; padding: 3px; }
+  button.menu-btn { min-width: 90px; }
+</style>
 </head>
 <body>
   <!-- Toolbar -->
@@ -103,53 +83,9 @@
       <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
       <div class="dropdown">
         <button onclick="showPanel('import.html')">Import Data</button>
-        <button onclick="showPanel('customers.html')">Customers</button>
-        <button onclick="showPanel('drivers.html')">Drivers</button>
-        <button onclick="showPanel('invoices.html')">Invoices</button>
         <button onclick="showPanel('view-waybills.html')">View Waybills</button>
       </div>
     </div>
-
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
-      <div class="dropdown">
-        <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
-        <button onclick="showPanel('driver-login.html')">Driver Login</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
-      </div>
-    </div>
-
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
-      <div class="dropdown">
-        <button onclick="showPanel('floorcheck.html')">Floor Check</button>
-        <button onclick="showPanel('scan-in.html')">Scan In</button>
-        <button onclick="showPanel('scan-out.html')">Scan Out</button>
-        <button onclick="showPanel('scan-return.html')">Return to Depot</button>
-        <button onclick="showPanel('collections.html')">Collections</button>
-        <button onclick="showPanel('adhoc-delivery.html')">Adhoc Delivery</button>
-        <button onclick="showPanel('adhoc-collection.html')">Adhoc Collection</button>
-        <button onclick="showPanel('pod-upload.html')">POD Upload</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-        <button onclick="showPanel('track.html')">Track Parcels</button>
-        <button onclick="showPanel('capture-waybill.html')">Capture Waybill</button>
-      </div>
-    </div>
-
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
-      <div class="dropdown">
-        <button onclick="showPanel('daily.html')">Daily Deliveries</button>
-        <button onclick="showPanel('age.html')">Age Analysis</button>
-        <button onclick="showPanel('pod.html')">POD Compliance</button>
-        <button onclick="showPanel('billing.html')">Billing Summary</button>
-        <button onclick="showPanel('driver-performance.html')">Driver Performance</button>
-        <button onclick="showPanel('client-delivery.html')">Client Delivery</button>
-        <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
-        <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
-      </div>
-    </div>
-
     <button class="menu-btn logout" onclick="logout()">Logout</button>
   </div>
 
@@ -157,125 +93,57 @@
   <div id="content-panel">
     <div class="panel">
       <h1>Welcome to MM Courier ERP System</h1>
-      <p>Use the toolbar to manage imports, waybills, drivers, tripsheets, scanning, collections, invoicing, and reports.</p>
+      <p>Use the toolbar to manage imports and waybills.</p>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">© 2025 MM Courier Systems. All rights reserved.</div>
 
-  <script>
-    const BACKEND_URL = "https://mmcourierv2.onrender.com";
-    const contentPanel = document.getElementById("content-panel");
+<script>
+  const contentPanel = document.getElementById("content-panel");
 
-    async function showPanel(file) {
-      if (file === "import.html") {
-        contentPanel.innerHTML = `
-          <div class="panel">
-            <h2>Import Parcels</h2>
-            <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
-            <form id="importForm">
-              <label>Content CSV:</label>
-              <input type="file" name="content" accept=".csv" required /><br /><br />
-              <label>Waybill CSV:</label>
-              <input type="file" name="waybill" accept=".csv" required /><br /><br />
-              <label>Track CSV:</label>
-              <input type="file" name="track" accept=".csv" required /><br /><br />
-              <button type="submit">Process Import</button>
-            </form>
-            <div id="importStatus" style="margin-top:10px;"></div>
-          </div>
-        `;
-        initImportForm();
-      } else if (file === "view-waybills.html") {
-        loadWaybills();
-      }
+  async function showPanel(file) {
+    try {
+      const res = await fetch(file + "?t=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to load ${file}`);
+      let html = await res.text();
+
+      // Remove full HTML wrapper
+      html = html
+        .replace(/<!DOCTYPE[^>]*>/gi,"")
+        .replace(/<html[^>]*>/gi,"")
+        .replace(/<\/html>/gi,"")
+        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi,"")
+        .replace(/<body[^>]*>/gi,"")
+        .replace(/<\/body>/gi,"");
+
+      contentPanel.innerHTML = html;
       closeAllDropdowns();
+
+      // init JS if present
+      if (typeof initImportForm === "function" && file.includes("import.html")) initImportForm();
+    } catch (err) {
+      contentPanel.innerHTML = `<div class="panel" style="color:red;">Error loading ${file}: ${err.message}</div>`;
     }
+  }
 
-    function logout() {
-      window.location.href = "login.html";
-    }
+  function logout() { window.location.href="login.html"; }
 
-    function toggleDropdown(button) {
-      const dropdown = button.nextElementSibling;
-      const isOpen = dropdown.classList.contains("show");
-      closeAllDropdowns();
-      if (!isOpen) dropdown.classList.add("show");
-    }
+  function toggleDropdown(btn) {
+    const dd = btn.nextElementSibling;
+    const isOpen = dd.classList.contains("show");
+    closeAllDropdowns();
+    if (!isOpen) dd.classList.add("show");
+  }
 
-    function closeAllDropdowns() {
-      document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
-    }
+  function closeAllDropdowns() {
+    document.querySelectorAll(".dropdown").forEach(d=>d.classList.remove("show"));
+  }
 
-    document.addEventListener("click", e => {
-      if (!e.target.closest(".menu-group")) closeAllDropdowns();
-    });
-
-    // Import Form
-    function initImportForm() {
-      const form = document.getElementById("importForm");
-      const statusDiv = document.getElementById("importStatus");
-
-      form.addEventListener("submit", async e => {
-        e.preventDefault();
-        statusDiv.textContent = "⏳ Uploading and processing CSVs...";
-
-        const formData = new FormData(form);
-        try {
-          const response = await fetch(`${BACKEND_URL}/api/import`, {
-            method: "POST",
-            body: formData
-          });
-
-          const text = await response.text(); // handle plain text or JSON
-          let result;
-          try { result = JSON.parse(text); } catch { result = { message: text }; }
-
-          if (response.ok) {
-            statusDiv.textContent = "✅ Import successful!";
-            setTimeout(() => showPanel("view-waybills.html"), 1000);
-          } else {
-            statusDiv.textContent = "❌ Import failed: " + (result.error || result.message);
-          }
-        } catch (err) {
-          statusDiv.textContent = "❌ Error: " + err.message;
-        }
-      });
-    }
-
-    // Load Waybills
-    async function loadWaybills() {
-      contentPanel.innerHTML = `<div class="panel"><h2>Loading waybills...</h2></div>`;
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/waybills`);
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { data = []; }
-
-        if (!res.ok) throw new Error("Server error");
-
-        if (!data.length) {
-          contentPanel.innerHTML = `<div class="panel"><h2>No waybills found.</h2></div>`;
-          return;
-        }
-
-        let table = `
-          <div class="panel">
-            <h2>Waybills</h2>
-            <table>
-              <thead><tr><th>Waybill</th><th>Recipient</th><th>Status</th></tr></thead>
-              <tbody>
-        `;
-        data.forEach(wb => {
-          table += `<tr><td>${wb.tracking_number || ""}</td><td>${wb.recipient_name || ""}</td><td>${wb.status || ""}</td></tr>`;
-        });
-        table += `</tbody></table></div>`;
-        contentPanel.innerHTML = table;
-      } catch (err) {
-        contentPanel.innerHTML = `<div class="panel" style="color:red;">❌ Error: ${err.message}</div>`;
-      }
-    }
-  </script>
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".menu-group")) closeAllDropdowns();
+  });
+</script>
 </body>
 </html>
