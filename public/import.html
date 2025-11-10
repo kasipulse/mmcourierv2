@@ -20,7 +20,6 @@
 
 <script>
   function initImportForm() {
-    const form = document.getElementById("importForm");
     const statusDiv = document.getElementById("importStatus");
     const processBtn = document.getElementById("processBtn");
 
@@ -42,15 +41,16 @@
       statusDiv.innerHTML = `<div>⏳ Uploading and processing files...</div>`;
 
       try {
-      const res = await fetch("/api/import/upload", {
-  method: "POST",
-  body: formData,
-});
+        // ✅ Post to correct backend route
+        const res = await fetch("/api/import/upload", {
+          method: "POST",
+          body: formData,
+        });
 
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const data = await res.json();
 
-        statusDiv.innerHTML = `<div style="color:green;">✅ ${data.message || "Import successful!"}</div>`;
+        statusDiv.innerHTML = `<div style="color:green;">✅ Import successful! ${data.inserted || 0} parcels inserted.</div>`;
       } catch (err) {
         statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
       }
