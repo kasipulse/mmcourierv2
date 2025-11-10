@@ -2,55 +2,70 @@
   <h2>Import Parcels</h2>
   <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
 
-  <form id="importForm" style="margin-top:10px;" onsubmit="return false;">
-    <label>Content CSV:</label><br/>
-    <input type="file" id="contentFile" name="content" accept=".csv" required /><br/><br/>
-    <label>Waybill CSV:</label><br/>
-    <input type="file" id="waybillFile" name="waybill" accept=".csv" required /><br/><br/>
-    <label>Track CSV:</label><br/>
-    <input type="file" id="trackFile" name="track" accept=".csv" required /><br/><br/>
+  <form id="importForm" onsubmit="return false;" style="margin-top: 10px;">
+    <label>Content CSV:</label><br />
+    <input type="file" id="contentFile" name="content" accept=".csv" required /><br /><br />
+
+    <label>Waybill CSV:</label><br />
+    <input type="file" id="waybillFile" name="waybill" accept=".csv" required /><br /><br />
+
+    <label>Track CSV:</label><br />
+    <input type="file" id="trackFile" name="track" accept=".csv" required /><br /><br />
+
     <button type="button" id="processBtn" class="menu-btn">Process Import</button>
   </form>
 
-  <div id="importStatus" style="margin-top:10px;"></div>
+  <div id="importStatus" style="margin-top: 10px;"></div>
 </div>
 
 <script>
-function initImportForm() {
-  const statusDiv = document.getElementById("importStatus");
-  document.getElementById("processBtn").addEventListener("click", async () => {
-    const contentFile = document.getElementById("contentFile").files[0];
-    const waybillFile = document.getElementById("waybillFile").files[0];
-    const trackFile = document.getElementById("trackFile").files[0];
+  function initImportForm() {
+    const form = document.getElementById("importForm");
+    const statusDiv = document.getElementById("importStatus");
+    const processBtn = document.getElementById("processBtn");
 
-    if (!contentFile || !waybillFile || !trackFile) {
-      statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files.</div>`;
-      return;
-    }
+    processBtn.addEventListener("click", async () => {
+      const contentFile = document.getElementById("contentFile").files[0];
+      const waybillFile = document.getElementById("waybillFile").files[0];
+      const trackFile = document.getElementById("trackFile").files[0];
 
-    const formData = new FormData();
-    formData.append("content", contentFile);
-    formData.append("waybill", waybillFile);
-    formData.append("track", trackFile);
-
-    statusDiv.innerHTML = `<div>⏳ Uploading and processing CSVs...</div>`;
-
-    try {
-      const res = await fetch("/api/import/upload", {
-        method: "POST",
-        body: formData
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
+      if (!contentFile || !waybillFile || !trackFile) {
+        statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files before processing.</div>`;
+        return;
       }
 
-      const data = await res.json();
-      statusDiv.innerHTML = `<div style="color:green;">✅ Imported ${data.inserted} parcels successfully!</div>`;
-    } catch (err) {
-      statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
-    }
-  });
-}
+      const formData = new FormData();
+      formData.append("content", contentFile);
+      formData.append("waybill", waybillFile);
+      formData.append("track", trackFile);
+      formData.append("company_id", "TEST_COMPANY"); // adjust as needed
+
+      statusDiv.innerHTML = `<div>⏳ Uploading and processing CSVs...</div>`;
+
+      try {
+        const res = await fetch("/api/import/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        const text = await res.text(); // read raw response
+        let data;
+
+        try {
+          data = JSON.parse(text); // try parsing as JSON
+        } catch {
+          // If JSON parsing fails, show raw text (likely HTML error)
+          throw new Error(`Server returned non-JSON response:\n${text}`);
+        }
+
+        if (!res.ok) {
+          throw new Error(data.error || `Server returned status ${res.status}`);
+        }
+
+        statusDiv.innerHTML = `<div style="color:green;">✅ Import successful! Inserted ${data.inserted || 0} parcels.</div>`;
+      } catch (err) {
+        statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
+      }
+    });
+  }
 </script>
