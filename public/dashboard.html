@@ -82,117 +82,83 @@
       padding: 3px;
     }
     button.menu-btn { min-width: 90px; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: #fff;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #888;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th { background: #bdbdbd; }
   </style>
 </head>
 <body>
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="menu-group">
-      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Data</button>
+      <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
       <div class="dropdown">
-        <button type="button" onclick="showPanel('import.html', event)">Import Data</button>
-        <button type="button" onclick="showPanel('customers.html', event)">Customers</button>
-        <button type="button" onclick="showPanel('drivers.html', event)">Drivers</button>
-        <button type="button" onclick="showPanel('invoices.html', event)">Invoices</button>
-        <button type="button" onclick="showPanel('view-waybills.html', event)">View Waybills</button>
+        <button onclick="showPanel('import.html')">Import Data</button>
+        <button onclick="showPanel('view-waybills.html')">View Waybills</button>
       </div>
     </div>
-
-    <div class="menu-group">
-      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
-      <div class="dropdown">
-        <button type="button" onclick="showPanel('tripsheet.html', event)">Driver Tripsheets</button>
-        <button type="button" onclick="showPanel('driver-login.html', event)">Driver Login</button>
-        <button type="button" onclick="showPanel('trip-summary.html', event)">Trip Sheet Summary</button>
-      </div>
-    </div>
-
-    <div class="menu-group">
-      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
-      <div class="dropdown">
-        <button type="button" onclick="showPanel('floorcheck.html', event)">Floor Check</button>
-        <button type="button" onclick="showPanel('scan-in.html', event)">Scan In</button>
-        <button type="button" onclick="showPanel('scan-out.html', event)">Scan Out</button>
-        <button type="button" onclick="showPanel('scan-return.html', event)">Return to Depot</button>
-        <button type="button" onclick="showPanel('collections.html', event)">Collections</button>
-        <button type="button" onclick="showPanel('adhoc-delivery.html', event)">Adhoc Delivery</button>
-        <button type="button" onclick="showPanel('adhoc-collection.html', event)">Adhoc Collection</button>
-        <button type="button" onclick="showPanel('pod-upload.html', event)">POD Upload</button>
-        <button type="button" onclick="showPanel('exceptions.html', event)">Scan Exceptions</button>
-        <button type="button" onclick="showPanel('track.html', event)">Track Parcels</button>
-        <button type="button" onclick="showPanel('capture-waybill.html', event)">Capture Waybill</button>
-      </div>
-    </div>
-
-    <div class="menu-group">
-      <button type="button" class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
-      <div class="dropdown">
-        <button type="button" onclick="showPanel('daily.html', event)">Daily Deliveries</button>
-        <button type="button" onclick="showPanel('age.html', event)">Age Analysis</button>
-        <button type="button" onclick="showPanel('pod.html', event)">POD Compliance</button>
-        <button type="button" onclick="showPanel('billing.html', event)">Billing Summary</button>
-        <button type="button" onclick="showPanel('driver-performance.html', event)">Driver Performance</button>
-        <button type="button" onclick="showPanel('client-delivery.html', event)">Client Delivery</button>
-        <button type="button" onclick="showPanel('trip-summary.html', event)">Trip Sheet Summary</button>
-        <button type="button" onclick="showPanel('exceptions.html', event)">Scan Exceptions</button>
-      </div>
-    </div>
-
-    <button type="button" class="menu-btn logout" onclick="logout()">Logout</button>
+    <button class="menu-btn logout" onclick="logout()">Logout</button>
   </div>
 
   <!-- Content -->
   <div id="content-panel">
     <div class="panel">
       <h1>Welcome to MM Courier ERP System</h1>
-      <p>Use the toolbar to manage imports, waybills, drivers, tripsheets, scanning, collections, invoicing, and reports.</p>
+      <p>Use the toolbar to import and manage waybills.</p>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">© 2025 MM Courier Systems. All rights reserved.</div>
 
-  <!-- JS -->
   <script>
+    const BACKEND_URL = "https://mmcourierv2.onrender.com"; // your backend
+
     const contentPanel = document.getElementById("content-panel");
 
-    async function showPanel(file, event) {
-      if(event) event.preventDefault(); // prevent default page reload
-      try {
-        const response = await fetch(file + "?t=" + Date.now(), { cache: "no-store" });
-        if (!response.ok) throw new Error(`Failed to load ${file}`);
-
-        let html = await response.text();
-
-        html = html
-          .replace(/<!DOCTYPE[^>]*>/gi, "")
-          .replace(/<html[^>]*>/gi, "")
-          .replace(/<\/html>/gi, "")
-          .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
-          .replace(/<body[^>]*>/gi, "")
-          .replace(/<\/body>/gi, "");
-
-        contentPanel.innerHTML = html;
-        closeAllDropdowns();
-
-        if(typeof initImportForm === "function" && file.includes("import.html")) initImportForm();
-        if(typeof initWaybills === "function" && file.includes("view-waybills.html")) initWaybills();
-
-      } catch (err) {
+    async function showPanel(file) {
+      if (file === "import.html") {
         contentPanel.innerHTML = `
-          <div class="panel" style="color:red;">
-            Error loading ${file}: ${err.message}
-          </div>`;
+          <div class="panel">
+            <h2>Import Parcels</h2>
+            <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
+            <form id="importForm">
+              <label>Content CSV:</label>
+              <input type="file" name="content" accept=".csv" required /><br /><br />
+              <label>Waybill CSV:</label>
+              <input type="file" name="waybill" accept=".csv" required /><br /><br />
+              <label>Track CSV:</label>
+              <input type="file" name="track" accept=".csv" required /><br /><br />
+              <button type="submit">Process Import</button>
+            </form>
+            <div id="importStatus" style="margin-top:10px;"></div>
+          </div>
+        `;
+        initImportForm();
+      } else if (file === "view-waybills.html") {
+        loadWaybills();
       }
+      closeAllDropdowns();
     }
 
-    function logout() { window.location.href = "login.html"; }
+    function logout() {
+      window.location.href = "login.html";
+    }
 
     function toggleDropdown(button) {
       const dropdown = button.nextElementSibling;
       const isOpen = dropdown.classList.contains("show");
       closeAllDropdowns();
-      if(!isOpen) dropdown.classList.add("show");
+      if (!isOpen) dropdown.classList.add("show");
     }
 
     function closeAllDropdowns() {
@@ -200,8 +166,68 @@
     }
 
     document.addEventListener("click", e => {
-      if(!e.target.closest(".menu-group")) closeAllDropdowns();
+      if (!e.target.closest(".menu-group")) closeAllDropdowns();
     });
+
+    // Import Form Handler
+    function initImportForm() {
+      const form = document.getElementById("importForm");
+      const statusDiv = document.getElementById("importStatus");
+
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        statusDiv.textContent = "Uploading and processing CSVs...";
+
+        const formData = new FormData(form);
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/import`, {
+            method: "POST",
+            body: formData
+          });
+
+          const result = await response.json();
+          if (response.ok) {
+            statusDiv.textContent = "✅ Import successful!";
+            setTimeout(() => showPanel("view-waybills.html"), 1000);
+          } else {
+            statusDiv.textContent = "❌ Import failed: " + result.error;
+          }
+        } catch (err) {
+          statusDiv.textContent = "❌ Error connecting to backend: " + err.message;
+        }
+      });
+    }
+
+    // Load Waybills
+    async function loadWaybills() {
+      contentPanel.innerHTML = `<div class="panel"><h2>Loading waybills...</h2></div>`;
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/waybills`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Failed to load");
+
+        if (!data.length) {
+          contentPanel.innerHTML = `<div class="panel"><h2>No waybills found.</h2></div>`;
+          return;
+        }
+
+        let table = `
+          <div class="panel">
+            <h2>Waybills</h2>
+            <table>
+              <thead><tr><th>Waybill</th><th>Recipient</th><th>Status</th></tr></thead>
+              <tbody>
+        `;
+        data.forEach(wb => {
+          table += `<tr><td>${wb.tracking_number || ""}</td><td>${wb.recipient_name || ""}</td><td>${wb.status || ""}</td></tr>`;
+        });
+        table += `</tbody></table></div>`;
+        contentPanel.innerHTML = table;
+      } catch (err) {
+        contentPanel.innerHTML = `<div class="panel" style="color:red;">❌ Error: ${err.message}</div>`;
+      }
+    }
   </script>
 </body>
 </html>
