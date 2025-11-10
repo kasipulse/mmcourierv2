@@ -72,78 +72,161 @@
     padding: 6px;
     background: #d4d0c8;
   }
-  input, select { border: 2px inset #fff; background: #fff; font-size: 12px; padding: 3px; }
+  input, select {
+    border: 2px inset #fff;
+    background: #fff;
+    font-size: 12px;
+    padding: 3px;
+  }
   button.menu-btn { min-width: 90px; }
 </style>
 </head>
 <body>
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="menu-group">
-      <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
-      <div class="dropdown">
-        <button onclick="showPanel('import.html')">Import Data</button>
-        <button onclick="showPanel('view-waybills.html')">View Waybills</button>
-      </div>
-    </div>
-    <button class="menu-btn logout" onclick="logout()">Logout</button>
-  </div>
 
-  <!-- Content -->
-  <div id="content-panel">
-    <div class="panel">
-      <h1>Welcome to MM Courier ERP System</h1>
-      <p>Use the toolbar to manage imports and waybills.</p>
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleDropdown(this)">Data</button>
+    <div class="dropdown">
+      <button onclick="showPanel('import.html')">Import Data</button>
+      <button onclick="showPanel('customers.html')">Customers</button>
+      <button onclick="showPanel('drivers.html')">Drivers</button>
+      <button onclick="showPanel('invoices.html')">Invoices</button>
+      <button onclick="showPanel('view-waybills.html')">View Waybills</button>
     </div>
   </div>
 
-  <!-- Footer -->
-  <div class="footer">© 2025 MM Courier Systems. All rights reserved.</div>
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleDropdown(this)">Tripsheets</button>
+    <div class="dropdown">
+      <button onclick="showPanel('tripsheet.html')">Driver Tripsheets</button>
+      <button onclick="showPanel('driver-login.html')">Driver Login</button>
+      <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
+    </div>
+  </div>
 
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleDropdown(this)">Operations</button>
+    <div class="dropdown">
+      <button onclick="showPanel('floorcheck.html')">Floor Check</button>
+      <button onclick="showPanel('scan-in.html')">Scan In</button>
+      <button onclick="showPanel('scan-out.html')">Scan Out</button>
+      <button onclick="showPanel('scan-return.html')">Return to Depot</button>
+      <button onclick="showPanel('collections.html')">Collections</button>
+      <button onclick="showPanel('adhoc-delivery.html')">Adhoc Delivery</button>
+      <button onclick="showPanel('adhoc-collection.html')">Adhoc Collection</button>
+      <button onclick="showPanel('pod-upload.html')">POD Upload</button>
+      <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
+      <button onclick="showPanel('track.html')">Track Parcels</button>
+      <button onclick="showPanel('capture-waybill.html')">Capture Waybill</button>
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <button class="menu-btn" onclick="toggleDropdown(this)">Reports</button>
+    <div class="dropdown">
+      <button onclick="showPanel('daily.html')">Daily Deliveries</button>
+      <button onclick="showPanel('age.html')">Age Analysis</button>
+      <button onclick="showPanel('pod.html')">POD Compliance</button>
+      <button onclick="showPanel('billing.html')">Billing Summary</button>
+      <button onclick="showPanel('driver-performance.html')">Driver Performance</button>
+      <button onclick="showPanel('client-delivery.html')">Client Delivery</button>
+      <button onclick="showPanel('trip-summary.html')">Trip Sheet Summary</button>
+      <button onclick="showPanel('exceptions.html')">Scan Exceptions</button>
+    </div>
+  </div>
+
+  <button class="menu-btn logout" onclick="logout()">Logout</button>
+</div>
+
+<!-- Content -->
+<div id="content-panel">
+  <div class="panel">
+    <h1>Welcome to MM Courier ERP System</h1>
+    <p>Use the toolbar to manage imports, waybills, drivers, tripsheets, scanning, collections, invoicing, and reports.</p>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">© 2025 MM Courier Systems. All rights reserved.</div>
+
+<!-- JS -->
 <script>
-  const contentPanel = document.getElementById("content-panel");
+const contentPanel = document.getElementById("content-panel");
 
-  async function showPanel(file) {
-    try {
-      const res = await fetch(file + "?t=" + Date.now(), { cache: "no-store" });
-      if (!res.ok) throw new Error(`Failed to load ${file}`);
-      let html = await res.text();
+function logout() {
+  window.location.href = "login.html";
+}
 
-      // Remove full HTML wrapper
-      html = html
-        .replace(/<!DOCTYPE[^>]*>/gi,"")
-        .replace(/<html[^>]*>/gi,"")
-        .replace(/<\/html>/gi,"")
-        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi,"")
-        .replace(/<body[^>]*>/gi,"")
-        .replace(/<\/body>/gi,"");
+function toggleDropdown(button) {
+  const dropdown = button.nextElementSibling;
+  const isOpen = dropdown.classList.contains("show");
+  closeAllDropdowns();
+  if (!isOpen) dropdown.classList.add("show");
+}
 
-      contentPanel.innerHTML = html;
-      closeAllDropdowns();
+function closeAllDropdowns() {
+  document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+}
 
-      // init JS if present
-      if (typeof initImportForm === "function" && file.includes("import.html")) initImportForm();
-    } catch (err) {
-      contentPanel.innerHTML = `<div class="panel" style="color:red;">Error loading ${file}: ${err.message}</div>`;
-    }
-  }
+document.addEventListener("click", e => {
+  if (!e.target.closest(".menu-group")) closeAllDropdowns();
+});
 
-  function logout() { window.location.href="login.html"; }
-
-  function toggleDropdown(btn) {
-    const dd = btn.nextElementSibling;
-    const isOpen = dd.classList.contains("show");
+async function showPanel(file) {
+  try {
+    const response = await fetch(file + "?t=" + Date.now(), { cache: "no-store" });
+    if (!response.ok) throw new Error(`Failed to load ${file}`);
+    let html = await response.text();
+    html = html.replace(/<!DOCTYPE[^>]*>/gi, "")
+               .replace(/<html[^>]*>/gi, "")
+               .replace(/<\/html>/gi, "")
+               .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+               .replace(/<body[^>]*>/gi, "")
+               .replace(/<\/body>/gi, "");
+    contentPanel.innerHTML = html;
     closeAllDropdowns();
-    if (!isOpen) dd.classList.add("show");
+    if (typeof initImportForm === "function" && file.includes("import.html")) initImportForm();
+  } catch(err) {
+    contentPanel.innerHTML = `<div class="panel" style="color:red;">Error loading ${file}: ${err.message}</div>`;
   }
+}
 
-  function closeAllDropdowns() {
-    document.querySelectorAll(".dropdown").forEach(d=>d.classList.remove("show"));
-  }
+// --- Initialize Import Form ---
+function initImportForm() {
+  const processBtn = document.getElementById("processBtn");
+  const statusDiv = document.getElementById("importStatus");
 
-  document.addEventListener("click", e => {
-    if (!e.target.closest(".menu-group")) closeAllDropdowns();
+  processBtn.addEventListener("click", async () => {
+    const contentFile = document.getElementById("contentFile").files[0];
+    const waybillFile = document.getElementById("waybillFile").files[0];
+    const trackFile = document.getElementById("trackFile").files[0];
+    if (!contentFile || !waybillFile || !trackFile) {
+      statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files.</div>`;
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("content", contentFile);
+    formData.append("waybill", waybillFile);
+    formData.append("track", trackFile);
+    formData.append("company_id", "TEST_COMPANY");
+
+    statusDiv.innerHTML = `⏳ Uploading and processing CSVs...`;
+
+    try {
+      const res = await fetch("/api/import/upload", {
+        method: "POST",
+        body: formData
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const data = await res.json();
+      statusDiv.innerHTML = `<div style="color:green;">✅ Imported ${data.inserted} parcels successfully!</div>`;
+    } catch(err) {
+      statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
+    }
   });
+}
 </script>
 </body>
 </html>
