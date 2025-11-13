@@ -1,27 +1,27 @@
 // =======================================================
-// backend/routes/import.js (Hardened Version for Free Tier)
+// backend/routes/import.js (Hardcoded Fix for Server Startup)
 // =======================================================
+
+// WARNING: This file contains hardcoded, sensitive keys and MUST be reverted 
+// to use process.env before deploying to ANY public environment.
 
 import express from "express";
 import multer from "multer";
 import csv from "csv-parser";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
 
-dotenv.config();
-const router = express.Router();
+// --- HARDCODED SUPABASE CREDENTIALS (Temporary FIX) ---
+const SUPABASE_URL = "https://lavqgvnjdjfywcjztame.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhdnFndm5qZGpmeXdjanp0YW1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTIyOTQ4NiwiZXhwIjoyMDc2ODA1NDg2fQ.LBU2sJP8CdZQ8dhhBJP0NpGdH9HBvl16SaxsVLfziwg";
 
-// Initialize Supabase Client with Service Role Key
-const supabase = createClient(
-    process.env.SUPABASE_URL, 
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Supabase setup: Using the Service Role Key for privileged writes
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Configure Multer for temporary file uploads
+// Multer setup for temp uploads
 const upload = multer({ dest: "uploads/" });
 
-// Helper function to read and parse CSV data
+// Helper to parse CSV data from a file path
 const parseCSV = (filePath) => new Promise((resolve, reject) => {
     const results = [];
     fs.createReadStream(filePath)
@@ -45,37 +45,32 @@ router.post("/upload", upload.fields([
     const waybillFile = req.files?.waybill?.[0];
     const { company_id, customer_id, user_id } = req.body || {};
     
-    // Store file paths for cleanup, regardless of success or failure
     uploadedFiles = Object.values(req.files || {}).flat();
 
     try {
-        // --- 1. CRITICAL SYNCHRONOUS VALIDATION (Prevents immediate crash) ---
+        // --- 1. CRITICAL SYNCHRONOUS VALIDATION ---
         if (!waybillFile || !waybillFile.path) {
             return res.status(400).json({ error: "Waybill file missing or path is inaccessible." });
         }
         
         if (!company_id || !customer_id) {
-            // This error is sent back immediately without hitting the DB
             return res.status(400).json({ 
                 error: "Missing mandatory Company ID or Customer ID in request body." 
             });
         }
         
-        // --- 2. PARSE DATA (Robustly handle parsing errors) ---
+        // --- 2. PARSE DATA ---
         let waybillData;
         try {
             waybillData = await parseCSV(waybillFile.path);
         } catch (e) {
-             // If parsing fails, throw an error for the main catch block to handle
              throw new Error(`CSV Parsing failed: ${e.message.substring(0, 100)}...`);
         }
 
         // --- 3. DATA TRANSFORMATION & DATA SANITIZATION ---
         const parcelsToInsert = waybillData.map(w => {
-            // CRITICAL SANITIZATION: Check for the most important field (Waybill)
             const waybillNumber = w.Waybill?.trim();
             if (!waybillNumber) {
-                // If a row is invalid, skip it and throw a clean error
                 throw new Error("Invalid row detected: Waybill number is missing or empty.");
             }
 
@@ -92,19 +87,14 @@ router.post("/upload", upload.fields([
                 destination: w.DestPlace, 
                 service_type: w.Service,
                 
-                // --- WEIGHTS & PIECES (Casting, defaults to 0 or 1) ---
+                // --- WEIGHTS & PIECES (Casting) ---
                 pieces: parseInt(w.Pieces || 1),
                 actual_mass: parseFloat(w.ActKg || 0),
                 charge_mass: parseFloat(w.ChargeMass || 0),
                 
                 // --- PRICING COLUMNS (Defaults) ---
-                surcharges: 0.00,
-                basic: 0.00,
-                fuel: 0.00,
-                other: 0.00,
-                subtotal: 0.00,
-                vat: 0.00,
-                total: 0.00,
+                surcharges: 0.00, basic: 0.00, fuel: 0.00, other: 0.00,
+                subtotal: 0.00, vat: 0.00, total: 0.00,
 
                 // --- STATUS & DEFAULTS ---
                 status: "Pending",
@@ -155,15 +145,13 @@ router.post("/upload", upload.fields([
     } catch (err) {
         // --- 6. ERROR RESPONSE ---
         console.error("❌ Import error:", err);
-        // This ensures a structured error response is sent back for client debugging
         res.status(500).json({ error: err.message || "An unexpected server error occurred." });
         
     } finally {
-        // --- 7. SAFE FILE CLEANUP (Guaranteed to run) ---
+        // --- 7. SAFE FILE CLEANUP ---
         if (uploadedFiles.length > 0) {
             uploadedFiles.forEach((f) => {
                 try {
-                    // Check if the file path exists before attempting unlink
                     if (fs.existsSync(f.path)) {
                         fs.unlinkSync(f.path);
                     }
