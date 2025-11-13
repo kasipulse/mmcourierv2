@@ -1,5 +1,5 @@
 // =======================================================
-// backend/routes/import.js
+// backend/routes/import.js (Hardened Version for Free Tier)
 // =======================================================
 
 import express from "express";
@@ -12,7 +12,7 @@ import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
 
-// Initialize Supabase Client with Service Role Key for secure, privileged writes
+// Initialize Supabase Client with Service Role Key
 const supabase = createClient(
     process.env.SUPABASE_URL, 
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -34,53 +34,70 @@ const parseCSV = (filePath) => new Promise((resolve, reject) => {
 
 // POST /api/import/upload
 router.post("/upload", upload.fields([
-    { name: "content" }, // Included for parsing, but not inserted in this logic
-    { name: "waybill" }, // Mandatory file for parcel creation
-    { name: "track" }    // Included for parsing, but not inserted in this logic
+    { name: "content" },
+    { name: "waybill" },
+    { name: "track" }
 ]), async (req, res) => {
     let uploadedFiles = [];
     let insertedCount = 0;
+    
+    // --- 0. FILE & BODY SETUP ---
+    const waybillFile = req.files?.waybill?.[0];
+    const { company_id, customer_id, user_id } = req.body || {};
+    
+    // Store file paths for cleanup, regardless of success or failure
+    uploadedFiles = Object.values(req.files || {}).flat();
 
     try {
-        // --- 1. VALIDATION AND SETUP ---
-        // Expecting these UUIDs in the request body from the frontend
-        const { company_id, customer_id, user_id } = req.body || {};
-        
-        if (!req.files?.waybill) {
-            return res.status(400).json({ error: "The Waybill file is mandatory for import." });
+        // --- 1. CRITICAL SYNCHRONOUS VALIDATION (Prevents immediate crash) ---
+        if (!waybillFile || !waybillFile.path) {
+            return res.status(400).json({ error: "Waybill file missing or path is inaccessible." });
         }
         
-        // Store file paths for cleanup, regardless of success or failure
-        uploadedFiles = Object.values(req.files).flat();
+        if (!company_id || !customer_id) {
+            // This error is sent back immediately without hitting the DB
+            return res.status(400).json({ 
+                error: "Missing mandatory Company ID or Customer ID in request body." 
+            });
+        }
+        
+        // --- 2. PARSE DATA (Robustly handle parsing errors) ---
+        let waybillData;
+        try {
+            waybillData = await parseCSV(waybillFile.path);
+        } catch (e) {
+             // If parsing fails, throw an error for the main catch block to handle
+             throw new Error(`CSV Parsing failed: ${e.message.substring(0, 100)}...`);
+        }
 
-        // --- 2. PARSE DATA ---
-        const waybillData = await parseCSV(req.files.waybill[0].path);
-        // Note: Content and Track data are available but omitted from insert logic for simplicity
-
-        // --- 3. DATA TRANSFORMATION (Mapping to 'parcels' table) ---
+        // --- 3. DATA TRANSFORMATION & DATA SANITIZATION ---
         const parcelsToInsert = waybillData.map(w => {
-            // Your CSV combines address fields, but your table doesn't have an 'address' column.
-            // We use the appropriate destination fields and rely on other tables (if they existed) for full detail.
+            // CRITICAL SANITIZATION: Check for the most important field (Waybill)
+            const waybillNumber = w.Waybill?.trim();
+            if (!waybillNumber) {
+                // If a row is invalid, skip it and throw a clean error
+                throw new Error("Invalid row detected: Waybill number is missing or empty.");
+            }
 
             return {
-                // --- REQUIRED FOREIGN KEYS (Must exist in DB) ---
+                // --- REQUIRED FOREIGN KEYS ---
                 company_id: company_id,
                 customer_id: customer_id, 
                 
                 // --- SHIPMENT IDENTIFIERS & LOGISTICS ---
-                waybill_number: w.Waybill.trim(),
+                waybill_number: waybillNumber,
                 sender: w.Sender,
                 recipient: w.Receiver,
                 origin: w.OrigPlace, 
                 destination: w.DestPlace, 
                 service_type: w.Service,
                 
-                // --- WEIGHTS & PIECES (Casting) ---
+                // --- WEIGHTS & PIECES (Casting, defaults to 0 or 1) ---
                 pieces: parseInt(w.Pieces || 1),
                 actual_mass: parseFloat(w.ActKg || 0),
                 charge_mass: parseFloat(w.ChargeMass || 0),
                 
-                // --- PRICING COLUMNS (Defaulting to 0.00 as CSV lacks this data) ---
+                // --- PRICING COLUMNS (Defaults) ---
                 surcharges: 0.00,
                 basic: 0.00,
                 fuel: 0.00,
@@ -90,32 +107,33 @@ router.post("/upload", upload.fields([
                 total: 0.00,
 
                 // --- STATUS & DEFAULTS ---
-                status: "Pending", // Initial operational status
+                status: "Pending",
             }
         });
 
         insertedCount = parcelsToInsert.length;
-
+        if (insertedCount === 0) {
+             return res.status(400).json({ error: "No valid parcel records found after processing the CSV." });
+        }
+        
         // --- 4. TRANSACTIONAL INSERTS INTO SUPABASE ---
         
-        // a. Insert Parcels (Parent records) and retrieve their new UUIDs
+        // a. Insert Parcels (Parent records)
         let { data: insertedParcels, error: parcelsError } = await supabase
             .from("parcels")
             .insert(parcelsToInsert)
-            .select("id, waybill_number"); // CRITICAL: Get IDs for 'scans' table FK
+            .select("id, waybill_number");
 
         if (parcelsError) throw new Error(`Parcels Insert Failed: ${parcelsError.message}`);
-        if (!insertedParcels || insertedParcels.length === 0) throw new Error("No parcels were inserted.");
         
         // b. Prepare Scans data using the new parcel UUIDs
         const scansToInsert = insertedParcels.map(p => {
-            // Find the original waybill data to get the origin location for the scan
             const originalWaybill = waybillData.find(w => w.Waybill.trim() === p.waybill_number);
-
+            
             return {
                 parcel_id: p.id,
                 company_id: company_id,
-                scanned_by_user_id: user_id, // User performing the import (if available)
+                scanned_by_user_id: user_id, 
                 scan_type: 'MANIFEST',
                 location: originalWaybill ? originalWaybill.OrigPlace : 'DEPOT', 
                 notes: `Waybill ${p.waybill_number} Manifested via CSV Import`,
@@ -137,17 +155,19 @@ router.post("/upload", upload.fields([
     } catch (err) {
         // --- 6. ERROR RESPONSE ---
         console.error("❌ Import error:", err);
-        // Send a structured JSON error response to the client
-        res.status(500).json({ error: err.message || "Failed to process files" });
+        // This ensures a structured error response is sent back for client debugging
+        res.status(500).json({ error: err.message || "An unexpected server error occurred." });
         
     } finally {
-        // --- 7. CRITICAL: SAFE FILE CLEANUP (Prevents the 'Unexpected end of JSON input' crash) ---
+        // --- 7. SAFE FILE CLEANUP (Guaranteed to run) ---
         if (uploadedFiles.length > 0) {
             uploadedFiles.forEach((f) => {
                 try {
-                    fs.unlinkSync(f.path);
+                    // Check if the file path exists before attempting unlink
+                    if (fs.existsSync(f.path)) {
+                        fs.unlinkSync(f.path);
+                    }
                 } catch(e) {
-                    // Log cleanup error but DO NOT let it crash the server
                     console.warn(`Could not delete file ${f.path}:`, e.message);
                 }
             });
