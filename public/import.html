@@ -1,8 +1,8 @@
 <div class="panel">
   <h2>Import Parcels</h2>
-  <p>Select the three CSV files sent by your 3PL vendors and press "Process Import".</p>
+  <p>Select the three CSV files and click "Process Import".</p>
 
-  <form id="importForm" onsubmit="return false;" style="margin-top: 10px;">
+  <form id="importForm" onsubmit="return false;">
     <label>Content CSV:</label><br />
     <input type="file" id="contentFile" name="content" accept=".csv" required /><br /><br />
 
@@ -21,73 +21,74 @@
 
 <script>
 function initImportForm() {
-  const processBtn = document.getElementById("processBtn");
+  const btn = document.getElementById("processBtn");
   const statusDiv = document.getElementById("importStatus");
-  const waybillDiv = document.getElementById("waybillTable");
+  const tableDiv = document.getElementById("waybillTable");
 
-  processBtn.addEventListener("click", async () => {
-    const contentFile = document.getElementById("contentFile").files[0];
-    const waybillFile = document.getElementById("waybillFile").files[0];
-    const trackFile = document.getElementById("trackFile").files[0];
+  btn.onclick = async () => {
+    const content = document.getElementById("contentFile").files[0];
+    const waybill = document.getElementById("waybillFile").files[0];
+    const track = document.getElementById("trackFile").files[0];
 
-    if (!contentFile || !waybillFile || !trackFile) {
-      statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files.</div>`;
+    if (!content || !waybill || !track) {
+      statusDiv.innerHTML = `<span style="color:red;">⚠️ Select all three files</span>`;
       return;
     }
 
-    const formData = new FormData();
-    formData.append("content", contentFile);
-    formData.append("waybill", waybillFile);
-    formData.append("track", trackFile);
+    const form = new FormData();
+    form.append("content", content);
+    form.append("waybill", waybill);
+    form.append("track", track);
 
-    statusDiv.innerHTML = `<div>⏳ Uploading and processing CSVs...</div>`;
-    waybillDiv.innerHTML = "";
+    // YOUR REAL IDs HERE
+    form.append("company_id", "1");
+    form.append("customer_id", "1");
+    form.append("user_id", "1");
+
+    statusDiv.innerHTML = `⏳ Processing...`;
+    tableDiv.innerHTML = "";
 
     try {
-      const res = await fetch("/api/import/upload", {  // <-- correct endpoint
+      const response = await fetch("/api/import/upload", {
         method: "POST",
-        body: formData
+        body: form,
       });
 
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const data = await res.json();
+      const data = await response.json();
 
-      if (data.success) {
-        statusDiv.innerHTML = `<div style="color:green;">✅ Successfully imported ${data.inserted} parcels!</div>`;
-
-        // Show inserted waybills in table
-        const table = document.createElement("table");
-        table.style.width = "100%";
-        table.style.borderCollapse = "collapse";
-        table.innerHTML = `
-          <tr style="background:#b0b0b0;">
-            <th style="border:1px solid #000; padding:4px;">Waybill</th>
-            <th style="border:1px solid #000; padding:4px;">Sender</th>
-            <th style="border:1px solid #000; padding:4px;">Receiver</th>
-            <th style="border:1px solid #000; padding:4px;">Pieces</th>
-            <th style="border:1px solid #000; padding:4px;">Act Mass</th>
-          </tr>
-        `;
-        data.insertedData = data.insertedData || []; // optional if backend returns full inserted parcels
-        data.insertedData.forEach(p => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td style="border:1px solid #000; padding:4px;">${p.waybill}</td>
-            <td style="border:1px solid #000; padding:4px;">${p.sender}</td>
-            <td style="border:1px solid #000; padding:4px;">${p.receiver}</td>
-            <td style="border:1px solid #000; padding:4px;">${p.pieces}</td>
-            <td style="border:1px solid #000; padding:4px;">${p.actmass}</td>
-          `;
-          table.appendChild(tr);
-        });
-        waybillDiv.appendChild(table);
-      } else {
-        statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${data.error || 'Unknown error'}</div>`;
+      if (!response.ok) {
+        statusDiv.innerHTML = `<span style="color:red;">❌ Import failed: ${data.error}</span>`;
+        return;
       }
 
+      statusDiv.innerHTML = `<span style="color:green;">✅ Imported ${data.inserted} parcels</span>`;
+
+      if (!data.insertedData) return;
+
+      // Build result table
+      let html = `
+        <table border="1" width="100%" style="border-collapse: collapse;">
+        <tr>
+          <th>Waybill</th>
+        </tr>
+      `;
+
+      data.insertedData.forEach((p) => {
+        html += `
+          <tr>
+            <td>${p.waybill_number}</td>
+          </tr>
+        `;
+      });
+
+      html += `</table>`;
+      tableDiv.innerHTML = html;
+
     } catch (err) {
-      statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
+      statusDiv.innerHTML = `<span style="color:red;">❌ Import crashed: ${err.message}</span>`;
     }
-  });
+  };
 }
+
+document.addEventListener("DOMContentLoaded", initImportForm);
 </script>
