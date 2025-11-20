@@ -1,4 +1,10 @@
+# Allow all search engines to crawl everything except sensitive pages
 User-agent: *
-Allow: /
+Disallow: /login.html
+Disallow: /admin/
+Disallow: /dashboard.html
+Disallow: /private/
+Disallow: /config/
 
+# Sitemap location
 Sitemap: https://www.mmcourier.co.za/sitemap.xml
