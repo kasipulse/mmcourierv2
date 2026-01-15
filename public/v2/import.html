@@ -3,148 +3,147 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MM Courier | Import CSV</title>
+<title>MM Courier v2 | Import CSVs</title>
 <style>
-  body { font-family: "Tahoma","Segoe UI",sans-serif; background: #c0c0c0; padding: 20px; }
-  h1 { margin-bottom: 10px; }
-  label { display: block; margin-top: 10px; font-weight: bold; }
-  input { margin-top: 4px; margin-bottom: 10px; }
-  button { padding: 6px 12px; margin-top: 10px; cursor: pointer; }
-  #importStatus { margin-top: 12px; }
+body {
+  font-family: "Tahoma", "Segoe UI", sans-serif;
+  background: #c0c0c0;
+  color: #000;
+  margin: 0;
+  font-size: 13px;
+}
+.panel {
+  background: #d4d0c8;
+  border: 2px outset #fff;
+  padding: 12px;
+  margin: 12px;
+}
+input, button {
+  font-size: 13px;
+  padding: 3px;
+  margin: 4px 0;
+}
+button {
+  border: 2px outset #fff;
+  cursor: pointer;
+}
+button:active { border: 2px inset #fff; background: #d0d0d0; }
+.status { margin-top: 10px; }
 </style>
 </head>
 <body>
+<div class="panel">
+  <h2>Import CSVs</h2>
+  <p>Select the three CSV files to import:</p>
 
-<h1>Import CSVs</h1>
+  <label>Waybill CSV:</label>
+  <input type="file" id="waybillFile" accept=".csv"><br>
 
-<label for="waybillFile">Waybill CSV:</label>
-<input type="file" id="waybillFile" accept=".csv">
+  <label>Content CSV:</label>
+  <input type="file" id="contentFile" accept=".csv"><br>
 
-<label for="contentFile">Content CSV:</label>
-<input type="file" id="contentFile" accept=".csv">
+  <label>Tracking CSV:</label>
+  <input type="file" id="trackFile" accept=".csv"><br>
 
-<label for="trackFile">Tracking CSV:</label>
-<input type="file" id="trackFile" accept=".csv">
-
-<button id="processBtn" disabled>Upload & Process CSVs</button>
-
-<div id="importStatus"></div>
+  <button id="processBtn" disabled>Import CSVs</button>
+  <div id="importStatus" class="status"></div>
+</div>
 
 <script type="module">
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import { initializeApp } from "./js/firebase-app.js"; // adjust path if needed
+import { getFirestore, collection, addDoc, serverTimestamp } from "./js/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "./js/firebase-auth.js";
+import Papa from "./js/papaparse.min.js"; // optional, or use CDN
 
-// --- Firebase Config ---
-const firebaseConfig = {
-  apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
-  authDomain: "mm-courier-software.firebaseapp.com",
-  projectId: "mm-courier-software",
-  storageBucket: "mm-courier-software.firebasestorage.app",
-  messagingSenderId: "1088997998974",
-  appId: "1:1088997998974:web:7d31deb10940ef2b4af32f",
-  measurementId: "G-S9MW03EQ5C"
-};
+// --- Firebase init ---
+import { db } from "./js/firebase.js"; // your firebase.js
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-const statusDiv = document.getElementById("importStatus");
 const processBtn = document.getElementById("processBtn");
+const statusDiv = document.getElementById("importStatus");
 
-let tenantId;
+let tenantId = null;
 
-// --- Wait for logged-in user ---
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    statusDiv.innerHTML = `<span style="color:red;">❌ Please log in first</span>`;
-    return;
-  }
-
-  const userDoc = await (await fetch(`/api/users/${user.uid}`)).json(); 
-  // replace above line with fetching from Firestore users collection if needed
-  if (!userDoc || !userDoc.tenantId) {
-    statusDiv.innerHTML = `<span style="color:red;">❌ Tenant not found for this user</span>`;
-    return;
-  }
-
-  tenantId = userDoc.tenantId;
-  processBtn.disabled = false;
-  statusDiv.innerHTML = `<span style="color:green;">✅ Tenant loaded: ${tenantId}</span>`;
-});
-
-// --- CSV parsing (simple) ---
-function parseCSV(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const text = e.target.result.trim();
-      const lines = text.split(/\r?\n/);
-      const headers = lines.shift().split(",");
-      const data = lines.map(line => {
-        const cols = line.split(",");
-        const obj = {};
-        headers.forEach((h,i) => obj[h] = cols[i] || null);
-        return obj;
-      });
-      resolve(data);
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
-}
-
-// --- Clean row function ---
+// --- Utility to clean undefined ---
 function cleanRow(row) {
   const cleaned = {};
-  for (let key in row) {
-    cleaned[key] = row[key] !== undefined ? row[key] : null;
-  }
+  for (let key in row) cleaned[key] = row[key] !== undefined ? row[key] : null;
   return cleaned;
 }
 
-// --- Import button ---
+// --- Parse CSV ---
+async function parseCSV(file) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: results => resolve(results.data),
+      error: err => reject(err)
+    });
+  });
+}
+
+// --- Enable import after auth ---
+const auth = getAuth();
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    statusDiv.innerHTML = `<span style="color:red;">❌ Please login first</span>`;
+    return;
+  }
+
+  try {
+    // fetch tenantId from Firestore users collection
+    const userDocRef = collection(db, "users");
+    const docSnap = await (await import("./js/firebase-firestore.js")).getDoc((await import("./js/firebase-firestore.js")).doc(db, "users", user.uid));
+    if (!docSnap.exists()) {
+      statusDiv.innerHTML = `<span style="color:red;">❌ Tenant not found for this user</span>`;
+      return;
+    }
+    tenantId = docSnap.data().tenantId;
+    processBtn.disabled = false;
+    statusDiv.innerHTML = `<span style="color:green;">✅ Tenant loaded: ${tenantId}</span>`;
+  } catch(err) {
+    statusDiv.innerHTML = `<span style="color:red;">❌ Error loading tenant: ${err.message}</span>`;
+  }
+});
+
+// --- Import handler ---
 processBtn.addEventListener("click", async () => {
   const waybillFile = document.getElementById("waybillFile").files[0];
   const contentFile = document.getElementById("contentFile").files[0];
   const trackFile = document.getElementById("trackFile").files[0];
 
   if (!waybillFile || !contentFile || !trackFile) {
-    statusDiv.innerHTML = `<span style="color:red;">⚠️ Select all three CSV files</span>`;
+    statusDiv.innerHTML = `<span style="color:red;">⚠️ Please select all three CSV files</span>`;
     return;
   }
 
   statusDiv.innerHTML = `⏳ Parsing CSVs...`;
 
   try {
-    const [waybills, contents, tracks] = await Promise.all([
+    const [waybills, contents, trackings] = await Promise.all([
       parseCSV(waybillFile),
       parseCSV(contentFile),
       parseCSV(trackFile)
     ]);
 
-    statusDiv.innerHTML = `⏳ Uploading to Firestore...`;
+    statusDiv.innerHTML = `⏳ Importing ${waybills.length} waybills...`;
 
-    // Insert waybills
+    // --- Write to Firestore ---
     for (let row of waybills) {
-      await addDoc(collection(db,"waybills"), {...cleanRow(row), tenantId, createdAt: serverTimestamp()});
+      await addDoc(collection(db, "waybills"), { ...cleanRow(row), tenantId, createdAt: serverTimestamp() });
     }
-    // Insert contents
     for (let row of contents) {
-      await addDoc(collection(db,"contents"), {...cleanRow(row), tenantId, createdAt: serverTimestamp()});
+      await addDoc(collection(db, "contents"), { ...cleanRow(row), tenantId, createdAt: serverTimestamp() });
     }
-    // Insert tracking
-    for (let row of tracks) {
-      await addDoc(collection(db,"tracking"), {...cleanRow(row), tenantId, createdAt: serverTimestamp()});
+    for (let row of trackings) {
+      await addDoc(collection(db, "tracking"), { ...cleanRow(row), tenantId, createdAt: serverTimestamp() });
     }
 
-    statusDiv.innerHTML = `<span style="color:green;">✅ CSVs imported successfully!</span>`;
+    statusDiv.innerHTML = `<span style="color:green;">✅ Imported successfully! Waybills: ${waybills.length}, Contents: ${contents.length}, Tracking: ${trackings.length}</span>`;
   } catch(err) {
     statusDiv.innerHTML = `<span style="color:red;">❌ Import failed: ${err.message}</span>`;
   }
 });
 </script>
-
 </body>
 </html>
