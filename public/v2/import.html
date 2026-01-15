@@ -3,99 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Import Data | MM Courier</title>
+<title>MM Courier | Import CSV</title>
 <style>
-  body { font-family: "Tahoma","Segoe UI",sans-serif; background:#c0c0c0; padding:20px; }
-  .panel { background:#d4d0c8; border:2px outset #fff; padding:12px; box-shadow: inset 1px 1px #fff; }
-  input, button { margin:5px 0; padding:5px; font-size:13px; }
-  button { cursor:pointer; border:2px outset #fff; background:#e0e0e0; }
+  body { font-family: Tahoma, sans-serif; background:#c0c0c0; color:#000; padding:20px; }
+  .panel { background:#d4d0c8; border:2px outset #fff; padding:20px; max-width:500px; margin:auto; }
+  label { display:block; margin-top:12px; font-weight:bold; }
+  input[type="file"] { margin-top:4px; }
+  button { margin-top:12px; padding:10px; font-size:14px; cursor:pointer; border:2px outset #fff; background:#e0e0e0; }
   button:active { border:2px inset #fff; background:#d0d0d0; }
-  #importStatus { margin-top:10px; font-size:12px; }
+  #importStatus { margin-top:12px; }
 </style>
 </head>
 <body>
 
 <div class="panel">
   <h2>Import CSV Files</h2>
-  <input type="file" id="contentFile" accept=".csv"><br>
-  <input type="file" id="waybillFile" accept=".csv"><br>
-  <input type="file" id="trackFile" accept=".csv"><br>
-  <button id="processBtn">Upload and Import</button>
+
+  <label for="waybillFile">Waybill CSV:</label>
+  <input type="file" id="waybillFile" accept=".csv">
+
+  <label for="contentFile">Content CSV:</label>
+  <input type="file" id="contentFile" accept=".csv">
+
+  <label for="trackFile">Tracking CSV:</label>
+  <input type="file" id="trackFile" accept=".csv">
+
+  <button id="processBtn" disabled>Upload & Process CSVs</button>
+
   <div id="importStatus"></div>
 </div>
 
 <script type="module">
-import { auth, db } from "/v2/js/firebase.js";
+import { db } from "./firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+import Papa from "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js";
 
+const auth = getAuth();
 const processBtn = document.getElementById("processBtn");
 const statusDiv = document.getElementById("importStatus");
 
-let tenantId;
+let tenantId = null;
 
+// Wait for tenantId from logged-in user
 onAuthStateChanged(auth, async user => {
-  if (!user) {
-    window.location.href = "index.html";
+  if (!user) return window.location.href="index.html";
+
+  const userDoc = await db.collection("users").doc(user.uid).get();
+  if (!userDoc.exists) {
+    statusDiv.innerHTML = `<span style="color:red;">❌ Tenant not found for this user</span>`;
     return;
   }
-  // get tenantId for this user
-  const userSnap = await getDoc(doc(db, "users", user.uid));
-  if (userSnap.exists()) tenantId = userSnap.data().tenantId;
-  else statusDiv.innerText = "Tenant not found!";
+
+  tenantId = userDoc.data().tenantId;
+  processBtn.disabled = false;
 });
 
+// Helper to parse CSV to JSON
 function parseCSV(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const lines = reader.result.split("\n").map(line => line.trim()).filter(Boolean);
-      const headers = lines[0].split(",");
-      const data = lines.slice(1).map(l => {
-        const row = {};
-        l.split(",").forEach((v,i) => row[headers[i]] = v);
-        return row;
-      });
-      resolve(data);
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: results => resolve(results.data),
+      error: err => reject(err)
+    });
   });
 }
 
 processBtn.addEventListener("click", async () => {
-  const contentFile = document.getElementById("contentFile").files[0];
+  if (!tenantId) {
+    statusDiv.innerHTML = `<span style="color:red;">❌ Cannot import: tenantId unknown</span>`;
+    return;
+  }
+
   const waybillFile = document.getElementById("waybillFile").files[0];
+  const contentFile = document.getElementById("contentFile").files[0];
   const trackFile = document.getElementById("trackFile").files[0];
 
-  if (!contentFile || !waybillFile || !trackFile) {
+  if (!waybillFile || !contentFile || !trackFile) {
     statusDiv.innerHTML = `<span style="color:red;">⚠️ Please select all three CSV files.</span>`;
     return;
   }
 
-  statusDiv.innerHTML = `⏳ Importing CSVs...`;
+  statusDiv.innerHTML = `⏳ Processing CSVs...`;
 
   try {
-    const [contents, waybills, tracks] = await Promise.all([
-      parseCSV(contentFile),
+    const [waybills, contents, tracks] = await Promise.all([
       parseCSV(waybillFile),
+      parseCSV(contentFile),
       parseCSV(trackFile)
     ]);
 
-    // Add tenantId and timestamp to each
-    await Promise.all([
-      ...waybills.map(row => addDoc(collection(db,"waybills"), {...row, tenantId, createdAt: serverTimestamp()})),
-      ...contents.map(row => addDoc(collection(db,"contents"), {...row, tenantId, createdAt: serverTimestamp()})),
-      ...tracks.map(row => addDoc(collection(db,"tracking"), {...row, tenantId, createdAt: serverTimestamp()}))
-    ]);
+    // Insert waybills
+    for (let row of waybills) {
+      await addDoc(collection(db, "waybills"), { ...row, tenantId, createdAt: serverTimestamp() });
+    }
+
+    // Insert contents
+    for (let row of contents) {
+      await addDoc(collection(db, "contents"), { ...row, tenantId, createdAt: serverTimestamp() });
+    }
+
+    // Insert tracks
+    for (let row of tracks) {
+      await addDoc(collection(db, "tracking"), { ...row, tenantId, createdAt: serverTimestamp() });
+    }
 
     statusDiv.innerHTML = `<span style="color:green;">✅ Imported successfully!</span>`;
-  } catch(err) {
+  } catch (err) {
+    console.error(err);
     statusDiv.innerHTML = `<span style="color:red;">❌ Import failed: ${err.message}</span>`;
   }
 });
 </script>
+
+<!-- Load PapaParse for CSV parsing -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 </body>
 </html>
