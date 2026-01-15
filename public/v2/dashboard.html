@@ -11,7 +11,6 @@ body {
   font-family: Tahoma, Arial, sans-serif;
   font-size: 12px;
   margin: 0;
-  color: #000;
 }
 
 .toolbar {
@@ -19,7 +18,6 @@ body {
   border-bottom: 2px solid #ffffff;
   padding: 4px;
   display: flex;
-  align-items: center;
   gap: 4px;
 }
 
@@ -47,7 +45,28 @@ body {
   background: #d4d0c8;
   border: 2px outset #ffffff;
   padding: 10px;
-  margin-bottom: 10px;
+}
+
+.sidebar {
+  width: 200px;
+  border: 2px inset #ffffff;
+  background: #e0e0e0;
+}
+
+.sidebar div {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.sidebar div:hover {
+  background: #b5b5b5;
+}
+
+.workspace {
+  flex: 1;
+  border: 2px inset #ffffff;
+  padding: 8px;
+  background: #ffffff;
 }
 
 .status {
@@ -64,15 +83,14 @@ body {
   <button onclick="loadPanel('process')">Process</button>
   <button onclick="loadPanel('view')">View</button>
   <button onclick="loadPanel('reports')">Reports</button>
+  <button onclick="loadPanel('analysis')">Analysis</button>
   <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
-  <button onclick="loadPanel('analytics')">Analytics</button>
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <div id="app">
   <div class="panel">
     <h3>Welcome to MM Courier ERP</h3>
-    <p>Select a module from the toolbar above.</p>
     <div class="status" id="tenantStatus">Loading tenant...</div>
   </div>
 </div>
@@ -81,21 +99,12 @@ body {
 /* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  addDoc
-} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
   authDomain: "mm-courier-software.firebaseapp.com",
   projectId: "mm-courier-software",
-  storageBucket: "mm-courier-software.firebasestorage.app",
-  messagingSenderId: "1088997998974",
-  appId: "1:1088997998974:web:7d31deb10940ef2b4af32f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -106,17 +115,9 @@ let CURRENT_USER = null;
 
 /* ================= AUTH ================= */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    location.href = "login.html";
-    return;
-  }
+  if (!user) location.href = "login.html";
 
   const snap = await getDoc(doc(db, "users", user.uid));
-  if (!snap.exists()) {
-    alert("User profile not found");
-    return;
-  }
-
   CURRENT_USER = snap.data();
 
   document.getElementById("tenantStatus").innerText =
@@ -131,92 +132,89 @@ onAuthStateChanged(auth, async (user) => {
 window.loadPanel = (panel) => {
   const appDiv = document.getElementById("app");
 
-  if (panel === "edit") {
+  if (panel === "process") {
     appDiv.innerHTML = `
-      <div class="panel">
-        <h3>CSV Import</h3>
-
-        <table>
-          <tr>
-            <td>📦 Content CSV</td>
-            <td><input type="file" id="contentCSV" accept=".csv"></td>
-          </tr>
-          <tr>
-            <td>🧾 Waybill CSV</td>
-            <td><input type="file" id="waybillCSV" accept=".csv"></td>
-          </tr>
-          <tr>
-            <td>📍 Track CSV</td>
-            <td><input type="file" id="trackCSV" accept=".csv"></td>
-          </tr>
-        </table>
-
-        <br>
-        <button onclick="importCSVs()">Import Files</button>
-        <div class="status" id="importStatus"></div>
+      <div class="panel" style="display:flex; gap:8px;">
+        <div class="sidebar">
+          <div onclick="showImport()">CSV Import</div>
+          <div>Scan IN</div>
+          <div>Scan OUT</div>
+        </div>
+        <div class="workspace" id="workspace">
+          Select a process.
+        </div>
       </div>`;
   }
 
-  if (panel !== "edit") {
+  if (panel === "edit") {
     appDiv.innerHTML = `
       <div class="panel">
-        <h3>${panel.charAt(0).toUpperCase() + panel.slice(1)}</h3>
+        <h3>Edit</h3>
+        <p>Waybills, Agents, PODs, Invoices (next)</p>
+      </div>`;
+  }
+
+  if (!["edit","process"].includes(panel)) {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>${panel.toUpperCase()}</h3>
         <p>Module coming next.</p>
       </div>`;
   }
 };
 
-/* ================= CSV IMPORT ================= */
+/* ================= IMPORT UI ================= */
+window.showImport = () => {
+  document.getElementById("workspace").innerHTML = `
+    <h3>CSV Import</h3>
+
+    <label>📦 Waybills CSV</label><br>
+    <input type="file" id="waybillCSV"><br><br>
+
+    <label>📍 Scans CSV</label><br>
+    <input type="file" id="scanCSV"><br><br>
+
+    <button onclick="importCSVs()">Import</button>
+    <div class="status" id="importStatus"></div>
+  `;
+};
+
+/* ================= IMPORT LOGIC ================= */
 window.importCSVs = async () => {
   const status = document.getElementById("importStatus");
   status.innerText = "⏳ Importing...";
 
-  if (!CURRENT_USER || !CURRENT_USER.tenantId) {
-    status.innerText = "❌ Tenant not loaded";
-    return;
-  }
-
   try {
-    await importFile("contentCSV", "waybills");
     await importFile("waybillCSV", "waybills");
-    await importFile("trackCSV", "scans");
-
-    status.innerText = "✅ Import completed successfully";
+    await importFile("scanCSV", "scans");
+    status.innerText = "✅ Import completed";
   } catch (e) {
-    status.innerText = "❌ Import failed: " + e.message;
+    status.innerText = "❌ " + e.message;
   }
 };
 
-async function importFile(inputId, subcollection) {
+async function importFile(inputId, collectionName) {
   const input = document.getElementById(inputId);
   if (!input.files.length) return;
 
-  const text = await input.files[0].text();
-  const rows = parseCSV(text);
+  const rows = parseCSV(await input.files[0].text());
 
   for (const row of rows) {
     await addDoc(
-      collection(db, "tenants", CURRENT_USER.tenantId, subcollection),
-      {
-        ...row,
-        tenantId: CURRENT_USER.tenantId,
-        createdAt: new Date()
-      }
+      collection(db, "tenants", CURRENT_USER.tenantId, collectionName),
+      { ...row, tenantId: CURRENT_USER.tenantId, createdAt: new Date() }
     );
   }
 }
 
 /* ================= CSV PARSER ================= */
 function parseCSV(text) {
-  const lines = text.trim().split("\n");
-  const headers = lines.shift().split(",");
+  const [header, ...lines] = text.trim().split("\n");
+  const headers = header.split(",");
 
   return lines.map(line => {
-    const values = line.split(",");
     const obj = {};
-    headers.forEach((h, i) => {
-      obj[h.trim()] = values[i]?.trim() || "";
-    });
+    line.split(",").forEach((v,i)=>obj[headers[i]]=v.trim());
     return obj;
   });
 }
@@ -227,6 +225,5 @@ window.logout = async () => {
   location.href = "login.html";
 };
 </script>
-
 </body>
 </html>
