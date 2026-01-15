@@ -5,7 +5,6 @@
 <title>MM Courier ERP</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<!-- WIN98 STYLE -->
 <style>
 body {
   background: #c0c0c0;
@@ -51,33 +50,8 @@ body {
   margin-bottom: 10px;
 }
 
-.panel h3 {
-  margin-top: 0;
-}
-
-.menu {
-  display: flex;
-  gap: 10px;
-}
-
-.menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu li {
-  padding: 3px;
-  cursor: pointer;
-}
-
-.menu li:hover {
-  background: #b0b0b0;
-}
-
 .status {
   font-size: 11px;
-  color: #333;
   margin-top: 6px;
 }
 </style>
@@ -85,7 +59,6 @@ body {
 
 <body>
 
-<!-- TOP TOOLBAR -->
 <div class="toolbar">
   <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('process')">Process</button>
@@ -96,7 +69,6 @@ body {
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
-<!-- MAIN WINDOW -->
 <div id="app">
   <div class="panel">
     <h3>Welcome to MM Courier ERP</h3>
@@ -105,14 +77,17 @@ body {
   </div>
 </div>
 
-<!-- FIREBASE + LOGIC -->
 <script type="module">
-/* =========================
-   FIREBASE SETUP
-========================= */
+/* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  addDoc
+} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
@@ -129,9 +104,7 @@ const db = getFirestore(app);
 
 let CURRENT_USER = null;
 
-/* =========================
-   AUTH + TENANT LOAD
-========================= */
+/* ================= AUTH ================= */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "login.html";
@@ -154,100 +127,101 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-/* =========================
-   PANEL LOADER
-========================= */
+/* ================= PANELS ================= */
 window.loadPanel = (panel) => {
   const appDiv = document.getElementById("app");
 
   if (panel === "edit") {
     appDiv.innerHTML = `
       <div class="panel">
-        <h3>Edit</h3>
-        <div class="menu">
-          <ul>
-            <li>Waybills</li>
-            <li>Collections</li>
-            <li>PODs</li>
-            <li>Invoices</li>
-            <li>Tripsheets</li>
-            <li>Agents</li>
-          </ul>
-        </div>
+        <h3>CSV Import</h3>
+
+        <table>
+          <tr>
+            <td>📦 Content CSV</td>
+            <td><input type="file" id="contentCSV" accept=".csv"></td>
+          </tr>
+          <tr>
+            <td>🧾 Waybill CSV</td>
+            <td><input type="file" id="waybillCSV" accept=".csv"></td>
+          </tr>
+          <tr>
+            <td>📍 Track CSV</td>
+            <td><input type="file" id="trackCSV" accept=".csv"></td>
+          </tr>
+        </table>
+
+        <br>
+        <button onclick="importCSVs()">Import Files</button>
+        <div class="status" id="importStatus"></div>
       </div>`;
   }
 
-  if (panel === "process") {
+  if (panel !== "edit") {
     appDiv.innerHTML = `
       <div class="panel">
-        <h3>Process</h3>
-        <ul>
-          <li>Scan IN</li>
-          <li>Scan OUT</li>
-          <li>Assign Driver</li>
-          <li>Upload POD</li>
-          <li>Return to Depot</li>
-        </ul>
-      </div>`;
-  }
-
-  if (panel === "view") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>View</h3>
-        <ul>
-          <li>Waybills</li>
-          <li>Tripsheets</li>
-          <li>PODs</li>
-          <li>Invoices</li>
-        </ul>
-      </div>`;
-  }
-
-  if (panel === "reports") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Reports</h3>
-        <ul>
-          <li>Parcels Out for Delivery</li>
-          <li>Parcels on the Floor</li>
-          <li>Age Analysis</li>
-          <li>Missing PODs</li>
-          <li>Not Invoiced</li>
-        </ul>
-      </div>`;
-  }
-
-  if (panel === "admin") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Admin</h3>
-        <ul>
-          <li>Add User</li>
-          <li>Add Agent</li>
-          <li>Assign Roles</li>
-          <li>Deactivate User</li>
-        </ul>
-      </div>`;
-  }
-
-  if (panel === "analytics") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Analytics</h3>
-        <ul>
-          <li>Daily Deliveries</li>
-          <li>Driver Performance</li>
-          <li>Scan Compliance</li>
-          <li>Failed Deliveries</li>
-        </ul>
+        <h3>${panel.charAt(0).toUpperCase() + panel.slice(1)}</h3>
+        <p>Module coming next.</p>
       </div>`;
   }
 };
 
-/* =========================
-   LOGOUT
-========================= */
+/* ================= CSV IMPORT ================= */
+window.importCSVs = async () => {
+  const status = document.getElementById("importStatus");
+  status.innerText = "⏳ Importing...";
+
+  if (!CURRENT_USER || !CURRENT_USER.tenantId) {
+    status.innerText = "❌ Tenant not loaded";
+    return;
+  }
+
+  try {
+    await importFile("contentCSV", "waybills");
+    await importFile("waybillCSV", "waybills");
+    await importFile("trackCSV", "scans");
+
+    status.innerText = "✅ Import completed successfully";
+  } catch (e) {
+    status.innerText = "❌ Import failed: " + e.message;
+  }
+};
+
+async function importFile(inputId, subcollection) {
+  const input = document.getElementById(inputId);
+  if (!input.files.length) return;
+
+  const text = await input.files[0].text();
+  const rows = parseCSV(text);
+
+  for (const row of rows) {
+    await addDoc(
+      collection(db, "tenants", CURRENT_USER.tenantId, subcollection),
+      {
+        ...row,
+        tenantId: CURRENT_USER.tenantId,
+        createdAt: new Date()
+      }
+    );
+  }
+}
+
+/* ================= CSV PARSER ================= */
+function parseCSV(text) {
+  const lines = text.trim().split("\n");
+  const headers = lines.shift().split(",");
+
+  return lines.map(line => {
+    const values = line.split(",");
+    const obj = {};
+    headers.forEach((h, i) => {
+      obj[h.trim()] = values[i]?.trim() || "";
+    });
+    return obj;
+  });
+}
+
+/* ================= LOGOUT ================= */
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
