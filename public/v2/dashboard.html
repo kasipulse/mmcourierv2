@@ -1,187 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MM Courier v2 | Dashboard</title>
-<style>
-  body {
-    background: #c0c0c0;
-    font-family: "Tahoma", "Segoe UI", sans-serif;
-    margin: 0;
-    color: #000;
-    font-size: 13px;
-  }
-  .toolbar {
-    background: #d4d0c8;
-    border-bottom: 2px solid #fff;
-    display: flex;
-    align-items: center;
-    padding: 4px;
-  }
-  .menu-btn {
-    background: #e0e0e0;
-    border: 2px outset #fff;
-    padding: 2px 10px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .menu-btn:active { border: 2px inset #fff; background: #d0d0d0; }
-  #content-panel { padding: 12px; }
-  .panel {
-    background: #d4d0c8;
-    border: 2px outset #fff;
-    padding: 12px;
-    margin-bottom: 12px;
-    box-shadow: inset 1px 1px #fff;
-  }
-  h1 { margin: 4px 0; }
-  .footer {
-    text-align: center;
-    font-size: 11px;
-    color: #333;
-    border-top: 2px solid #fff;
-    padding: 6px;
-    background: #d4d0c8;
-  }
-  input[type="file"] {
-    display: block;
-    margin: 6px 0;
-  }
-  button {
-    border: 2px outset #fff;
-    padding: 4px 8px;
-    cursor: pointer;
-    background: #e0e0e0;
-    font-size: 13px;
-  }
-  button:active { border: 2px inset #fff; background: #d0d0d0; }
-</style>
+  <meta charset="UTF-8" />
+  <title>MM Courier ERP</title>
+  <link rel="stylesheet" href="css/win98.css" />
 </head>
 <body>
 
-<!-- Toolbar -->
+<!-- TOP TOOLBAR -->
 <div class="toolbar">
-  <button class="menu-btn logout" onclick="logout()">Logout</button>
-  <span id="tenantLabel" style="margin-left:12px;"></span>
+
+  <button onclick="loadPanel('edit')">Edit</button>
+  <button onclick="loadPanel('process')">Process</button>
+  <button onclick="loadPanel('view')">View</button>
+  <button onclick="loadPanel('reports')">Reports</button>
+  <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
+  <button onclick="loadPanel('analytics')">Analytics</button>
+
+  <button class="logout" onclick="logout()">Logout</button>
 </div>
 
-<!-- Content -->
-<div id="content-panel">
+<!-- MAIN WINDOW -->
+<div id="window">
   <div class="panel">
-    <h1>CSV Import</h1>
-    <p>Select your CSV files for import. All three are required.</p>
-    <label>Waybill CSV:</label>
-    <input type="file" id="waybillFile" accept=".csv">
-    <label>Content CSV:</label>
-    <input type="file" id="contentFile" accept=".csv">
-    <label>Tracking CSV:</label>
-    <input type="file" id="trackFile" accept=".csv">
-    <button id="processBtn" disabled>Import CSVs</button>
-    <div id="importStatus"></div>
+    <h3>Welcome</h3>
+    <p>Select a function from the toolbar.</p>
   </div>
 </div>
 
-<!-- Footer -->
-<div class="footer">© 2026 MM Courier v2. All rights reserved.</div>
-
-<!-- JS -->
-<script type="module">
-import { db } from "./js/firebase.js";
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-
-const processBtn = document.getElementById("processBtn");
-const statusDiv = document.getElementById("importStatus");
-const tenantLabel = document.getElementById("tenantLabel");
-
-let tenantId = null;
-
-const auth = getAuth();
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    window.location.href = "login.html"; // redirect if not logged in
-    return;
-  }
-
-  try {
-    // Fetch tenantId from Firestore users collection
-    const userDoc = await (await import("https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js")).getDoc(
-      (await import("https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js")).doc(db, "users", user.uid)
-    );
-    if (!userDoc.exists()) throw new Error("Tenant not found");
-    tenantId = userDoc.data().tenantId;
-    tenantLabel.innerText = `Tenant: ${tenantId}`;
-    processBtn.disabled = false;
-  } catch(err) {
-    statusDiv.innerHTML = `<div style="color:red;">❌ ${err.message}</div>`;
-  }
-});
-
-processBtn.addEventListener("click", async () => {
-  if (!tenantId) return;
-
-  const waybillFile = document.getElementById("waybillFile").files[0];
-  const contentFile = document.getElementById("contentFile").files[0];
-  const trackFile = document.getElementById("trackFile").files[0];
-
-  if (!waybillFile || !contentFile || !trackFile) {
-    statusDiv.innerHTML = `<div style="color:red;">⚠️ Please select all three CSV files.</div>`;
-    return;
-  }
-
-  const parseCSV = file => new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const lines = e.target.result.split(/\r?\n/).filter(Boolean);
-      const headers = lines[0].split(",");
-      const rows = lines.slice(1).map(l => {
-        const values = l.split(",");
-        const obj = {};
-        headers.forEach((h,i)=> obj[h.trim()] = values[i]?.trim());
-        return obj;
-      });
-      resolve(rows);
-    };
-    reader.readAsText(file);
-  });
-
-  try {
-    statusDiv.innerHTML = `⏳ Parsing and importing...`;
-    const [waybills, contents, tracking] = await Promise.all([
-      parseCSV(waybillFile),
-      parseCSV(contentFile),
-      parseCSV(trackFile)
-    ]);
-
-    // Import waybills
-    for (const wb of waybills) {
-      wb.tenantId = tenantId;
-      await addDoc(collection(db, "waybills"), wb);
-    }
-
-    // Import contents
-    for (const c of contents) {
-      c.tenantId = tenantId;
-      await addDoc(collection(db, "contents"), c);
-    }
-
-    // Import tracking
-    for (const t of tracking) {
-      t.tenantId = tenantId;
-      await addDoc(collection(db, "tracking"), t);
-    }
-
-    statusDiv.innerHTML = `<div style="color:green;">✅ Imported successfully!</div>`;
-  } catch(err) {
-    statusDiv.innerHTML = `<div style="color:red;">❌ Import failed: ${err.message}</div>`;
-  }
-});
-
-function logout() {
-  auth.signOut();
-  window.location.href = "login.html";
-}
-</script>
+<script src="js/firebase.js" type="module"></script>
+<script src="js/dashboard.js" type="module"></script>
 </body>
 </html>
