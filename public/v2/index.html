@@ -1,7 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MM Courier v2 | Login</title>
+  <style>
+    body {
+      background: #c0c0c0;
+      font-family: "Tahoma", "Segoe UI", sans-serif;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-box {
+      background: #d4d0c8;
+      padding: 20px;
+      border: 2px outset #fff;
+      box-shadow: inset 1px 1px #fff;
+      width: 300px;
+    }
+    h1 { font-size: 20px; text-align: center; margin-bottom: 15px; }
+    input {
+      width: 100%;
+      padding: 5px;
+      margin: 5px 0;
+      font-size: 13px;
+      border: 2px inset #fff;
+    }
+    button {
+      width: 100%;
+      padding: 5px;
+      font-size: 13px;
+      background: #e0e0e0;
+      border: 2px outset #fff;
+      cursor: pointer;
+    }
+    button:active { border: 2px inset #fff; background: #d0d0d0; }
+    #error { color: red; font-size: 12px; margin-top: 5px; }
+  </style>
+</head>
 <body>
+
+<div class="login-box">
   <h1>MM Courier v2</h1>
-  <a href="login.html">Login</a>
+  <form id="loginForm">
+    <input type="email" name="email" placeholder="Email" required />
+    <input type="password" name="password" placeholder="Password" required />
+    <button type="submit">Login / Sign Up</button>
+    <div id="error"></div>
+  </form>
+</div>
+
+<script type="module">
+import { auth, db } from "/v2/js/firebase.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+const form = document.getElementById("loginForm");
+const errorBox = document.getElementById("error");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = form.email.value;
+  const password = form.password.value;
+
+  try {
+    // Try login
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    await ensureTenant(userCred.user);
+    location.href = "dashboard.html";
+  } catch (err) {
+    // If user doesn't exist → create
+    if (err.code === "auth/user-not-found") {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      await createTenant(userCred.user);
+      location.href = "dashboard.html";
+    } else {
+      errorBox.innerText = err.message;
+    }
+  }
+});
+
+async function createTenant(user) {
+  const tenantId = crypto.randomUUID();
+
+  await setDoc(doc(db, "tenants", tenantId), {
+    name: "New Company",
+    owner: user.uid,
+    createdAt: serverTimestamp()
+  });
+
+  await setDoc(doc(db, "users", user.uid), {
+    tenantId,
+    email: user.email,
+    role: "admin"
+  });
+}
+
+async function ensureTenant(user) {
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) await createTenant(user);
+}
+
+// Optional: redirect if already logged in
+onAuthStateChanged(auth, user => {
+  if (user) location.href = "dashboard.html";
+});
+</script>
+
 </body>
 </html>
