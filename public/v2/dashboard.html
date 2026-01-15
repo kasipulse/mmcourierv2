@@ -1,34 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>MM Courier ERP</title>
-  <link rel="stylesheet" href="css/win98.css" />
+<meta charset="UTF-8" />
+<title>MM Courier ERP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<!-- WIN98 STYLE -->
+<style>
+body {
+  background: #c0c0c0;
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 12px;
+  margin: 0;
+  color: #000;
+}
+
+.toolbar {
+  background: #d4d0c8;
+  border-bottom: 2px solid #ffffff;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar button {
+  border: 2px outset #ffffff;
+  background: #e0e0e0;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.toolbar button:active {
+  border: 2px inset #ffffff;
+}
+
+.toolbar .logout {
+  margin-left: auto;
+  background: #f2e5b8;
+}
+
+#app {
+  padding: 10px;
+}
+
+.panel {
+  background: #d4d0c8;
+  border: 2px outset #ffffff;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.panel h3 {
+  margin-top: 0;
+}
+
+.menu {
+  display: flex;
+  gap: 10px;
+}
+
+.menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu li {
+  padding: 3px;
+  cursor: pointer;
+}
+
+.menu li:hover {
+  background: #b0b0b0;
+}
+
+.status {
+  font-size: 11px;
+  color: #333;
+  margin-top: 6px;
+}
+</style>
 </head>
+
 <body>
 
 <!-- TOP TOOLBAR -->
 <div class="toolbar">
-
   <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('process')">Process</button>
   <button onclick="loadPanel('view')">View</button>
   <button onclick="loadPanel('reports')">Reports</button>
   <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
   <button onclick="loadPanel('analytics')">Analytics</button>
-
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <!-- MAIN WINDOW -->
-<div id="window">
+<div id="app">
   <div class="panel">
-    <h3>Welcome</h3>
-    <p>Select a function from the toolbar.</p>
+    <h3>Welcome to MM Courier ERP</h3>
+    <p>Select a module from the toolbar above.</p>
+    <div class="status" id="tenantStatus">Loading tenant...</div>
   </div>
 </div>
 
-<script src="js/firebase.js" type="module"></script>
-<script src="js/dashboard.js" type="module"></script>
+<!-- FIREBASE + LOGIC -->
+<script type="module">
+/* =========================
+   FIREBASE SETUP
+========================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
+  authDomain: "mm-courier-software.firebaseapp.com",
+  projectId: "mm-courier-software",
+  storageBucket: "mm-courier-software.firebasestorage.app",
+  messagingSenderId: "1088997998974",
+  appId: "1:1088997998974:web:7d31deb10940ef2b4af32f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let CURRENT_USER = null;
+
+/* =========================
+   AUTH + TENANT LOAD
+========================= */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) {
+    alert("User profile not found");
+    return;
+  }
+
+  CURRENT_USER = snap.data();
+
+  document.getElementById("tenantStatus").innerText =
+    `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
+
+  if (CURRENT_USER.role !== "admin") {
+    document.getElementById("adminTab").style.display = "none";
+  }
+});
+
+/* =========================
+   PANEL LOADER
+========================= */
+window.loadPanel = (panel) => {
+  const appDiv = document.getElementById("app");
+
+  if (panel === "edit") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Edit</h3>
+        <div class="menu">
+          <ul>
+            <li>Waybills</li>
+            <li>Collections</li>
+            <li>PODs</li>
+            <li>Invoices</li>
+            <li>Tripsheets</li>
+            <li>Agents</li>
+          </ul>
+        </div>
+      </div>`;
+  }
+
+  if (panel === "process") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Process</h3>
+        <ul>
+          <li>Scan IN</li>
+          <li>Scan OUT</li>
+          <li>Assign Driver</li>
+          <li>Upload POD</li>
+          <li>Return to Depot</li>
+        </ul>
+      </div>`;
+  }
+
+  if (panel === "view") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>View</h3>
+        <ul>
+          <li>Waybills</li>
+          <li>Tripsheets</li>
+          <li>PODs</li>
+          <li>Invoices</li>
+        </ul>
+      </div>`;
+  }
+
+  if (panel === "reports") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Reports</h3>
+        <ul>
+          <li>Parcels Out for Delivery</li>
+          <li>Parcels on the Floor</li>
+          <li>Age Analysis</li>
+          <li>Missing PODs</li>
+          <li>Not Invoiced</li>
+        </ul>
+      </div>`;
+  }
+
+  if (panel === "admin") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Admin</h3>
+        <ul>
+          <li>Add User</li>
+          <li>Add Agent</li>
+          <li>Assign Roles</li>
+          <li>Deactivate User</li>
+        </ul>
+      </div>`;
+  }
+
+  if (panel === "analytics") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Analytics</h3>
+        <ul>
+          <li>Daily Deliveries</li>
+          <li>Driver Performance</li>
+          <li>Scan Compliance</li>
+          <li>Failed Deliveries</li>
+        </ul>
+      </div>`;
+  }
+};
+
+/* =========================
+   LOGOUT
+========================= */
+window.logout = async () => {
+  await signOut(auth);
+  location.href = "login.html";
+};
+</script>
+
 </body>
 </html>
