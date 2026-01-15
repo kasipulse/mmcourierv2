@@ -1,1 +1,110 @@
-<script type="module" src="/v2/js/firebase.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MM Courier v2 | Login</title>
+<style>
+body {
+  font-family: "Tahoma", "Segoe UI", sans-serif;
+  background: #c0c0c0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.panel {
+  background: #d4d0c8;
+  border: 2px outset #fff;
+  padding: 20px;
+  width: 300px;
+  box-shadow: inset 1px 1px #fff;
+}
+.panel h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+input {
+  width: 100%;
+  padding: 6px;
+  margin: 6px 0;
+  font-size: 13px;
+  border: 2px inset #fff;
+  background: #fff;
+}
+button {
+  width: 100%;
+  padding: 6px;
+  font-size: 13px;
+  border: 2px outset #fff;
+  cursor: pointer;
+  margin-top: 10px;
+}
+button:active { border: 2px inset #fff; background: #d0d0d0; }
+.status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: red;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h2>MM Courier Login</h2>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button id="loginBtn">Login</button>
+  <div id="status" class="status"></div>
+</div>
+
+<script type="module">
+import { getAuth, signInWithEmailAndPassword } from "./js/firebase-auth.js"; // adjust path if needed
+import { db } from "./js/firebase.js";
+import { doc, getDoc } from "./js/firebase-firestore.js";
+
+const auth = getAuth();
+const loginBtn = document.getElementById("loginBtn");
+const statusDiv = document.getElementById("status");
+
+loginBtn.addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    statusDiv.innerText = "⚠️ Enter both email and password";
+    return;
+  }
+
+  statusDiv.innerText = "⏳ Logging in...";
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // fetch tenant info
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) throw new Error("User not found in system");
+
+    const data = userDoc.data();
+    if (!data.active) throw new Error("User is inactive");
+    
+    // save tenantId locally (optional)
+    localStorage.setItem("tenantId", data.tenantId);
+
+    statusDiv.style.color = "green";
+    statusDiv.innerText = "✅ Login successful! Redirecting...";
+    setTimeout(() => window.location.href = "dashboard.html", 800);
+
+  } catch(err) {
+    statusDiv.style.color = "red";
+    statusDiv.innerText = `❌ Login failed: ${err.message}`;
+  }
+});
+</script>
+
+</body>
+</html>
