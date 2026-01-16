@@ -262,17 +262,66 @@ window.loadProcess = async (type) => {
       status.innerText = "Saving scan...";
 
       try {
-        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
-          waybill,
-          type: type === "in" ? "IN" : "OUT",
-          createdAt: serverTimestamp()
-        });
-        ok.play();
-        status.innerText = `✅ ${waybill} scanned`;
-      } catch {
-        bad.play();
-        status.innerText = "❌ Scan failed";
-      }
+  /* 1️⃣ Check waybill exists */
+  const wbSnap = await getDocs(
+    query(
+      collection(db, "tenants", CURRENT_USER.tenantId, "waybills"),
+      where("Waybill", "==", waybill),
+      limit(1)
+    )
+  );
+
+  if (wbSnap.empty) {
+    bad.play();
+    status.innerText = "❌ Waybill not found";
+    throw "WAYBILL_NOT_FOUND";
+  }
+
+  const wbDoc = wbSnap.docs[0];
+
+  /* 2️⃣ Prevent duplicate scan today */
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const dupSnap = await getDocs(
+    query(
+      collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+      where("waybill", "==", waybill),
+      where("type", "==", type === "in" ? "IN" : "OUT")
+    )
+  );
+
+  const duplicate = dupSnap.docs.some(d =>
+    d.data().createdAt?.toDate() >= startOfToday
+  );
+
+  if (duplicate) {
+    bad.play();
+    status.innerText = "⚠️ Already scanned today";
+    throw "DUPLICATE_SCAN";
+  }
+
+  /* 3️⃣ Save scan */
+  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
+    waybill,
+    type: type === "in" ? "IN" : "OUT",
+    createdAt: serverTimestamp()
+  });
+
+  /* 4️⃣ Update waybill status */
+  await updateDoc(wbDoc.ref, {
+    status: type === "in" ? "On Floor" : "Out for Delivery"
+  });
+
+  ok.play();
+  status.innerText = `✅ ${waybill} scanned`;
+
+} catch (err) {
+  if (err !== "WAYBILL_NOT_FOUND" && err !== "DUPLICATE_SCAN") {
+    bad.play();
+    status.innerText = "❌ Scan failed";
+  }
+}
 
       setTimeout(() => {
         input.disabled = false;
