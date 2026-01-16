@@ -14,7 +14,6 @@ body {
   color: #000;
 }
 
-/* TOP BAR */
 .toolbar {
   background: #d4d0c8;
   border-bottom: 2px solid #ffffff;
@@ -40,7 +39,6 @@ body {
   background: #f2e5b8;
 }
 
-/* MAIN */
 #app {
   padding: 8px;
 }
@@ -52,7 +50,6 @@ body {
   margin-bottom: 8px;
 }
 
-/* EDIT LAYOUT */
 .edit-container {
   display: flex;
   gap: 6px;
@@ -90,7 +87,6 @@ body {
 
 <body>
 
-<!-- TOOLBAR -->
 <div class="toolbar">
   <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('process')">Process</button>
@@ -101,7 +97,6 @@ body {
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="panel">
     <h3>Welcome to MM Courier ERP</h3>
@@ -110,7 +105,6 @@ body {
 </div>
 
 <script type="module">
-/* ============ FIREBASE ============ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import {
@@ -138,21 +132,14 @@ const db = getFirestore(app);
 
 let CURRENT_USER = null;
 
-/* ============ AUTH ============ */
+/* AUTH */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    location.href = "login.html";
-    return;
-  }
+  if (!user) return location.href = "login.html";
 
   const snap = await getDoc(doc(db, "users", user.uid));
-  if (!snap.exists()) {
-    alert("User profile not found");
-    return;
-  }
+  if (!snap.exists()) return alert("User profile not found");
 
   CURRENT_USER = snap.data();
-
   document.getElementById("tenantStatus").innerText =
     `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
 
@@ -161,7 +148,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-/* ============ PANELS ============ */
+/* PANELS */
 window.loadPanel = (panel) => {
   const appDiv = document.getElementById("app");
 
@@ -172,18 +159,35 @@ window.loadPanel = (panel) => {
         <div class="edit-container">
           <div class="sidebar">
             <div onclick="loadEdit('waybills')">Waybills</div>
-            <div onclick="loadEdit('collections')">Collections</div>
-            <div onclick="loadEdit('pods')">PODs</div>
-            <div onclick="loadEdit('agents')">Agents</div>
-            <div onclick="loadEdit('invoices')">Invoices</div>
-            <div onclick="loadEdit('tripsheets')">Tripsheets</div>
+            <div>Collections</div>
+            <div>PODs</div>
+            <div>Agents</div>
+            <div>Invoices</div>
+            <div>Tripsheets</div>
           </div>
           <div class="workspace" id="workspace">
-            <p>Select an item from the left.</p>
+            <p>Select an item.</p>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
+    return;
+  }
+
+  if (panel === "process") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Process</h3>
+        <div class="edit-container">
+          <div class="sidebar">
+            <div onclick="loadProcess('in')">Scan IN</div>
+            <div onclick="loadProcess('out')">Scan OUT</div>
+            <div onclick="loadProcess('today')">Today's Scans</div>
+          </div>
+          <div class="workspace" id="workspace">
+            <p>Select a process.</p>
+          </div>
+        </div>
+      </div>`;
     return;
   }
 
@@ -194,98 +198,102 @@ window.loadPanel = (panel) => {
     </div>`;
 };
 
-/* ============ EDIT MODULES ============ */
+/* WAYBILLS */
 window.loadEdit = async (type) => {
+  if (type !== "waybills") return;
+
   const ws = document.getElementById("workspace");
+  ws.innerHTML = `
+    <h3>Waybills</h3>
+    <button onclick="showAddWaybill()">➕ New Waybill</button>
+    <table border="1" width="100%" cellpadding="4" style="margin-top:8px;">
+      <tr><th>Waybill</th><th>Consignee</th><th>Status</th></tr>
+      <tbody id="wbRows"></tbody>
+    </table>
+  `;
 
-  if (type === "waybills") {
-    ws.innerHTML = `
-      <h3>Waybills</h3>
-      <button onclick="showAddWaybill()">➕ New Waybill</button>
+  const rows = document.getElementById("wbRows");
+  const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
 
-      <table border="1" cellpadding="4" cellspacing="0" width="100%" style="margin-top:8px;">
-        <thead>
-          <tr>
-            <th>Waybill</th>
-            <th>Consignee</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody id="wbRows">
-          <tr><td colspan="4">Loading...</td></tr>
-        </tbody>
-      </table>
-    `;
+  if (snap.empty) rows.innerHTML = "<tr><td colspan='3'>No waybills</td></tr>";
 
-    const rows = document.getElementById("wbRows");
-    rows.innerHTML = "";
-
-    const snap = await getDocs(
-      collection(db, "tenants", CURRENT_USER.tenantId, "waybills")
-    );
-
-    if (snap.empty) {
-      rows.innerHTML = `<tr><td colspan="4">No waybills found</td></tr>`;
-    }
-
-    snap.forEach(d => {
-      const w = d.data();
-      rows.innerHTML += `
-        <tr>
-          <td>${w.waybill}</td>
-          <td>${w.consignee || ""}</td>
-          <td>${w.status || "Created"}</td>
-          <td>${w.createdAt?.toDate().toLocaleDateString() || ""}</td>
-        </tr>
-      `;
-    });
-
-    return;
-  }
-
-  ws.innerHTML = `<p>${type} module coming next.</p>`;
+  snap.forEach(d => {
+    const w = d.data();
+    rows.innerHTML += `<tr><td>${w.waybill}</td><td>${w.consignee}</td><td>${w.status}</td></tr>`;
+  });
 };
 
-/* ============ WAYBILL ADD ============ */
 window.showAddWaybill = () => {
   document.getElementById("workspace").innerHTML = `
     <h3>New Waybill</h3>
-    <label>Waybill Number</label><br>
-    <input id="wbNo"><br><br>
-
-    <label>Consignee</label><br>
-    <input id="wbConsignee"><br><br>
-
+    <input id="wbNo" placeholder="Waybill"><br><br>
+    <input id="wbConsignee" placeholder="Consignee"><br><br>
     <button onclick="saveWaybill()">Save</button>
-    <button onclick="loadEdit('waybills')">Cancel</button>
   `;
 };
 
 window.saveWaybill = async () => {
-  const waybill = document.getElementById("wbNo").value.trim();
-  const consignee = document.getElementById("wbConsignee").value.trim();
-
-  if (!waybill) {
-    alert("Waybill required");
-    return;
-  }
-
-  await addDoc(
-    collection(db, "tenants", CURRENT_USER.tenantId, "waybills"),
-    {
-      waybill,
-      consignee,
-      status: "Created",
-      tenantId: CURRENT_USER.tenantId,
-      createdAt: serverTimestamp()
-    }
-  );
-
+  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"), {
+    waybill: wbNo.value,
+    consignee: wbConsignee.value,
+    status: "Created",
+    createdAt: serverTimestamp()
+  });
   loadEdit("waybills");
 };
 
-/* ============ LOGOUT ============ */
+/* SCANNING */
+window.loadProcess = async (type) => {
+  const ws = document.getElementById("workspace");
+
+  if (type === "in" || type === "out") {
+    ws.innerHTML = `
+      <h3>Scan ${type.toUpperCase()}</h3>
+      <input id="scanWB" placeholder="Waybill"><br><br>
+      <button onclick="saveScan('${type}')">Save Scan</button>
+      <div class="status" id="scanStatus"></div>
+    `;
+    return;
+  }
+
+  if (type === "today") {
+    ws.innerHTML = `
+      <h3>Today's Scans</h3>
+      <table border="1" width="100%" cellpadding="4">
+        <tr><th>Waybill</th><th>Type</th><th>Time</th></tr>
+        <tbody id="scanRows"></tbody>
+      </table>
+    `;
+
+    const rows = document.getElementById("scanRows");
+    const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "scans"));
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    snap.forEach(d => {
+      const s = d.data();
+      if (s.createdAt?.toDate() >= today) {
+        rows.innerHTML += `
+          <tr>
+            <td>${s.waybill}</td>
+            <td>${s.type}</td>
+            <td>${s.createdAt.toDate().toLocaleTimeString()}</td>
+          </tr>`;
+      }
+    });
+  }
+};
+
+window.saveScan = async (type) => {
+  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
+    waybill: scanWB.value,
+    type: type === "in" ? "IN" : "OUT",
+    createdAt: serverTimestamp()
+  });
+  document.getElementById("scanStatus").innerText = "✅ Saved";
+  scanWB.value = "";
+};
+
+/* LOGOUT */
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
