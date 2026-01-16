@@ -13,7 +13,6 @@ body {
   margin: 0;
   color: #000;
 }
-
 .toolbar {
   background: #d4d0c8;
   border-bottom: 2px solid #ffffff;
@@ -22,62 +21,49 @@ body {
   align-items: center;
   gap: 4px;
 }
-
 .toolbar button {
   border: 2px outset #ffffff;
   background: #e0e0e0;
   padding: 3px 10px;
   cursor: pointer;
 }
-
 .toolbar button:active {
   border: 2px inset #ffffff;
 }
-
 .toolbar .logout {
   margin-left: auto;
   background: #f2e5b8;
 }
-
-#app {
-  padding: 8px;
-}
-
+#app { padding: 8px; }
 .panel {
   background: #d4d0c8;
   border: 2px outset #ffffff;
   padding: 8px;
   margin-bottom: 8px;
 }
-
 .edit-container {
   display: flex;
   gap: 6px;
 }
-
 .sidebar {
   width: 200px;
   background: #d4d0c8;
   border: 2px inset #ffffff;
 }
-
 .sidebar div {
   padding: 6px;
   border-bottom: 1px solid #b0b0b0;
   cursor: pointer;
 }
-
 .sidebar div:hover {
   background: #b0b0b0;
 }
-
 .workspace {
   flex: 1;
   background: #ffffff;
   border: 2px inset #ffffff;
   padding: 10px;
 }
-
 .status {
   font-size: 11px;
   margin-top: 6px;
@@ -92,6 +78,7 @@ body {
   <button onclick="loadPanel('process')">Process</button>
   <button onclick="loadPanel('view')">View</button>
   <button onclick="loadPanel('reports')">Reports</button>
+  <button onclick="loadPanel('import')">Import</button>
   <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
   <button onclick="loadPanel('analytics')">Analytics</button>
   <button class="logout" onclick="logout()">Logout</button>
@@ -129,20 +116,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
 let CURRENT_USER = null;
 
 /* AUTH */
 onAuthStateChanged(auth, async (user) => {
   if (!user) return location.href = "login.html";
-
   const snap = await getDoc(doc(db, "users", user.uid));
   if (!snap.exists()) return alert("User profile not found");
-
   CURRENT_USER = snap.data();
   document.getElementById("tenantStatus").innerText =
     `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
-
   if (CURRENT_USER.role !== "admin") {
     document.getElementById("adminTab").style.display = "none";
   }
@@ -191,6 +174,25 @@ window.loadPanel = (panel) => {
     return;
   }
 
+  if (panel === "import") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>Import Manifests</h3>
+        <div class="edit-container">
+          <div class="sidebar"><div>Upload Files</div></div>
+          <div class="workspace" id="workspace">
+            <p>Select CSV files for import:</p>
+            <input type="file" id="waybillFile" accept=".csv"><br><br>
+            <input type="file" id="contentFile" accept=".csv"><br><br>
+            <input type="file" id="trackFile" accept=".csv"><br><br>
+            <button onclick="importCSV()">Import All</button>
+            <div class="status" id="importStatus"></div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
   appDiv.innerHTML = `
     <div class="panel">
       <h3>${panel.toUpperCase()}</h3>
@@ -201,7 +203,6 @@ window.loadPanel = (panel) => {
 /* WAYBILLS */
 window.loadEdit = async (type) => {
   if (type !== "waybills") return;
-
   const ws = document.getElementById("workspace");
   ws.innerHTML = `
     <h3>Waybills</h3>
@@ -209,14 +210,10 @@ window.loadEdit = async (type) => {
     <table border="1" width="100%" cellpadding="4" style="margin-top:8px;">
       <tr><th>Waybill</th><th>Consignee</th><th>Status</th></tr>
       <tbody id="wbRows"></tbody>
-    </table>
-  `;
-
+    </table>`;
   const rows = document.getElementById("wbRows");
   const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
-
   if (snap.empty) rows.innerHTML = "<tr><td colspan='3'>No waybills</td></tr>";
-
   snap.forEach(d => {
     const w = d.data();
     rows.innerHTML += `<tr><td>${w.waybill}</td><td>${w.consignee}</td><td>${w.status}</td></tr>`;
@@ -228,8 +225,7 @@ window.showAddWaybill = () => {
     <h3>New Waybill</h3>
     <input id="wbNo" placeholder="Waybill"><br><br>
     <input id="wbConsignee" placeholder="Consignee"><br><br>
-    <button onclick="saveWaybill()">Save</button>
-  `;
+    <button onclick="saveWaybill()">Save</button>`;
 };
 
 window.saveWaybill = async () => {
@@ -242,11 +238,9 @@ window.saveWaybill = async () => {
   loadEdit("waybills");
 };
 
-/* ========= SCANNING – AUTO WAIT + WORKING BEEP ========= */
+/* SCANNING */
 window.loadProcess = async (type) => {
   const ws = document.getElementById("workspace");
-
-  // Preload beep sounds
   const successBeep = new Audio("https://www.soundjay.com/button/beep-07.wav");
   const failBeep = new Audio("https://www.soundjay.com/button/beep-10.wav");
   successBeep.preload = "auto";
@@ -256,22 +250,16 @@ window.loadProcess = async (type) => {
     ws.innerHTML = `
       <h3>Scan ${type.toUpperCase()}</h3>
       <input id="scanWB" placeholder="Scan waybill" autocomplete="off">
-      <div class="status" id="scanStatus">Waiting for scan…</div>
-    `;
-
+      <div class="status" id="scanStatus">Waiting for scan…</div>`;
     const input = document.getElementById("scanWB");
     const status = document.getElementById("scanStatus");
     input.focus();
-
     input.addEventListener("keydown", async (e) => {
       if (e.key !== "Enter") return;
-
       const waybill = input.value.trim();
       if (!waybill) return;
-
       input.disabled = true;
       status.innerText = "⏳ Saving scan…";
-
       try {
         await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
           waybill,
@@ -281,12 +269,11 @@ window.loadProcess = async (type) => {
         status.innerText = `✅ ${waybill} scanned`;
         successBeep.currentTime = 0;
         successBeep.play();
-      } catch (err) {
+      } catch {
         status.innerText = "❌ Scan failed";
         failBeep.currentTime = 0;
         failBeep.play();
       }
-
       setTimeout(() => {
         input.value = "";
         input.disabled = false;
@@ -294,7 +281,6 @@ window.loadProcess = async (type) => {
         status.innerText = "Waiting for next scan…";
       }, 300);
     });
-
     return;
   }
 
@@ -304,26 +290,62 @@ window.loadProcess = async (type) => {
       <table border="1" width="100%" cellpadding="4">
         <tr><th>Waybill</th><th>Type</th><th>Time</th></tr>
         <tbody id="scanRows"></tbody>
-      </table>
-    `;
-
+      </table>`;
     const rows = document.getElementById("scanRows");
     const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "scans"));
     const today = new Date(); today.setHours(0,0,0,0);
-
     snap.forEach(d => {
       const s = d.data();
       if (s.createdAt?.toDate() >= today) {
-        rows.innerHTML += `
-          <tr>
-            <td>${s.waybill}</td>
-            <td>${s.type}</td>
-            <td>${s.createdAt.toDate().toLocaleTimeString()}</td>
-          </tr>`;
+        rows.innerHTML += `<tr><td>${s.waybill}</td><td>${s.type}</td><td>${s.createdAt.toDate().toLocaleTimeString()}</td></tr>`;
       }
     });
   }
 };
+
+/* ================= CSV IMPORT ================= */
+async function importCSV() {
+  const status = document.getElementById("importStatus");
+  status.innerText = "Processing...";
+  const files = {
+    waybill: document.getElementById("waybillFile").files[0],
+    content: document.getElementById("contentFile").files[0],
+    track: document.getElementById("trackFile").files[0],
+  };
+  const results = { success: 0, fail: 0 };
+
+  const parseCSV = (text) => {
+    const lines = text.trim().split(/\r?\n/);
+    const headers = lines[0].split(",").map(h => h.trim());
+    return lines.slice(1).map(line => {
+      const values = line.split(",").map(v => v.trim());
+      return headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] || "" }), {});
+    });
+  };
+
+  const importFile = async (file, collectionName, requiredFields) => {
+    if (!file) return;
+    const text = await file.text();
+    const rows = parseCSV(text);
+    for (const row of rows) {
+      const missing = requiredFields.filter(f => !row[f]);
+      if (missing.length > 0) { results.fail++; continue; }
+      try {
+        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, collectionName), {
+          ...row,
+          tenantId: CURRENT_USER.tenantId,
+          createdAt: serverTimestamp()
+        });
+        results.success++;
+      } catch { results.fail++; }
+    }
+  };
+
+  await importFile(files.waybill, "waybills", ["waybill","consignee"]);
+  await importFile(files.content, "contents", ["waybill","content"]);
+  await importFile(files.track, "tracking", ["waybill","status"]);
+  status.innerText = `Import complete: ✅ ${results.success} rows, ❌ ${results.fail} failed`;
+}
 
 /* LOGOUT */
 window.logout = async () => {
