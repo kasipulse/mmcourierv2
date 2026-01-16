@@ -242,7 +242,7 @@ window.saveWaybill = async () => {
   loadEdit("waybills");
 };
 
-/* ========= SCANNING – AUTO ENTER + WAIT ========= */
+/* ========= SCANNING – TRUE AUTO WAIT ========= */
 window.loadProcess = async (type) => {
   const ws = document.getElementById("workspace");
 
@@ -255,37 +255,45 @@ window.loadProcess = async (type) => {
 
     const input = document.getElementById("scanWB");
     const status = document.getElementById("scanStatus");
+    let scanTimer = null;
 
     input.focus();
 
-    input.onkeyup = async (e) => {
-      if (e.key !== "Enter") return;
+    input.addEventListener("input", () => {
+      if (scanTimer) clearTimeout(scanTimer);
 
-      const waybill = input.value.trim();
-      if (!waybill) return;
+      scanTimer = setTimeout(async () => {
+        const waybill = input.value.replace(/[\r\n]/g, "").trim();
+        if (!waybill) return;
 
-      input.disabled = true;
-      status.innerText = "⏳ Saving scan…";
+        input.disabled = true;
+        status.innerText = "⏳ Saving scan…";
 
-      try {
-        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
-          waybill,
-          type: type === "in" ? "IN" : "OUT",
-          createdAt: serverTimestamp()
-        });
+        try {
+          await addDoc(
+            collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+            {
+              waybill,
+              type: type === "in" ? "IN" : "OUT",
+              createdAt: serverTimestamp()
+            }
+          );
 
-        status.innerText = `✅ ${waybill} scanned`;
-      } catch (err) {
-        status.innerText = "❌ Scan failed";
-      }
+          status.innerText = `✅ ${waybill} scanned`;
+        } catch (e) {
+          status.innerText = "❌ Scan failed";
+        }
 
-      setTimeout(() => {
-        input.value = "";
-        input.disabled = false;
-        input.focus();
-        status.innerText = "Waiting for next scan…";
-      }, 800);
-    };
+        setTimeout(() => {
+          input.value = "";
+          input.disabled = false;
+          input.focus();
+          status.innerText = "Waiting for next scan…";
+        }, 300);
+
+      }, 120); // scanner finishes typing very fast
+    });
+
     return;
   }
 
