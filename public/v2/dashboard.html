@@ -242,13 +242,15 @@ window.saveWaybill = async () => {
   loadEdit("waybills");
 };
 
-/* ========= SCANNING – TRUE AUTO WAIT + BEEP ========= */
+/* ========= SCANNING – AUTO WAIT + WORKING BEEP ========= */
 window.loadProcess = async (type) => {
   const ws = document.getElementById("workspace");
 
-  // Load scan sounds
+  // Preload beep sounds
   const successBeep = new Audio("https://www.soundjay.com/button/beep-07.wav");
   const failBeep = new Audio("https://www.soundjay.com/button/beep-10.wav");
+  successBeep.preload = "auto";
+  failBeep.preload = "auto";
 
   if (type === "in" || type === "out") {
     ws.innerHTML = `
@@ -259,45 +261,38 @@ window.loadProcess = async (type) => {
 
     const input = document.getElementById("scanWB");
     const status = document.getElementById("scanStatus");
-    let scanTimer = null;
-
     input.focus();
 
-    input.addEventListener("input", () => {
-      if (scanTimer) clearTimeout(scanTimer);
+    input.addEventListener("keydown", async (e) => {
+      if (e.key !== "Enter") return;
 
-      scanTimer = setTimeout(async () => {
-        const waybill = input.value.replace(/[\r\n]/g, "").trim();
-        if (!waybill) return;
+      const waybill = input.value.trim();
+      if (!waybill) return;
 
-        input.disabled = true;
-        status.innerText = "⏳ Saving scan…";
+      input.disabled = true;
+      status.innerText = "⏳ Saving scan…";
 
-        try {
-          await addDoc(
-            collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-            {
-              waybill,
-              type: type === "in" ? "IN" : "OUT",
-              createdAt: serverTimestamp()
-            }
-          );
+      try {
+        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
+          waybill,
+          type: type === "in" ? "IN" : "OUT",
+          createdAt: serverTimestamp()
+        });
+        status.innerText = `✅ ${waybill} scanned`;
+        successBeep.currentTime = 0;
+        successBeep.play();
+      } catch (err) {
+        status.innerText = "❌ Scan failed";
+        failBeep.currentTime = 0;
+        failBeep.play();
+      }
 
-          status.innerText = `✅ ${waybill} scanned`;
-          successBeep.play();
-        } catch (e) {
-          status.innerText = "❌ Scan failed";
-          failBeep.play();
-        }
-
-        setTimeout(() => {
-          input.value = "";
-          input.disabled = false;
-          input.focus();
-          status.innerText = "Waiting for next scan…";
-        }, 300);
-
-      }, 120); // scanner finishes typing very fast
+      setTimeout(() => {
+        input.value = "";
+        input.disabled = false;
+        input.focus();
+        status.innerText = "Waiting for next scan…";
+      }, 300);
     });
 
     return;
