@@ -182,9 +182,16 @@ window.loadPanel = (panel) => {
           <div class="sidebar"><div>Upload Files</div></div>
           <div class="workspace" id="workspace">
             <p>Select CSV files for import:</p>
+            
+            <label for="waybillFile">Waybill CSV:</label><br>
             <input type="file" id="waybillFile" accept=".csv"><br><br>
+            
+            <label for="contentFile">Content CSV:</label><br>
             <input type="file" id="contentFile" accept=".csv"><br><br>
+            
+            <label for="trackFile">Track CSV:</label><br>
             <input type="file" id="trackFile" accept=".csv"><br><br>
+            
             <button onclick="importCSV()">Import All</button>
             <div class="status" id="importStatus"></div>
           </div>
