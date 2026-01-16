@@ -207,70 +207,88 @@ async function importCSV() {
     track: document.getElementById("trackFile").files[0],
   };
 
-  const results = {
-    waybills: { success: 0, fail: 0, errors: [] },
-    contents: { success: 0, fail: 0, errors: [] },
-    tracking: { success: 0, fail: 0, errors: [] }
-  };
+  const results = { success: 0, fail: 0 };
 
+  // CSV parser
   const parseCSV = (text) => {
     const lines = text.trim().split(/\r?\n/);
     const headers = lines[0].split(",").map(h => h.trim());
-    return lines.slice(1).map((line, idx) => {
+    return lines.slice(1).map(line => {
       const values = line.split(",").map(v => v.trim());
-      const row = headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] || "" }), {});
-      row._rowNumber = idx + 2;
-      return row;
+      return headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] || "" }), {});
     });
   };
 
-  const importFile = async (file, collectionName, fieldMap) => {
+  // Generic file importer
+  const importFile = async (file, collectionName, mapRow) => {
     if (!file) return;
     const text = await file.text();
     const rows = parseCSV(text);
 
     for (const row of rows) {
-      const docData = {};
-      const missing = [];
-
-      for (const [csvHeader, firestoreField] of Object.entries(fieldMap)) {
-        if (!row[csvHeader] || row[csvHeader].trim() === "") {
-          missing.push(firestoreField);
-        } else {
-          docData[firestoreField] = row[csvHeader].trim();
-        }
-      }
-
-      if (missing.length > 0) {
-        results[collectionName].fail++;
-        results[collectionName].errors.push(`Row ${row._rowNumber}: missing ${missing.join(", ")}`);
-        continue;
-      }
-
+      if (!row.Waybill) { results.fail++; continue; } // Waybill is required
       try {
+        const docData = mapRow(row);
         await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, collectionName), {
           ...docData,
           tenantId: CURRENT_USER.tenantId,
           createdAt: serverTimestamp()
         });
-        results[collectionName].success++;
-      } catch {
-        results[collectionName].fail++;
-        results[collectionName].errors.push(`Row ${row._rowNumber}: Firestore error`);
+        results.success++;
+      } catch (err) {
+        console.error("Import failed for row:", row, err);
+        results.fail++;
       }
     }
   };
 
-  await importFile(files.waybill, "waybills", { "waybill": "waybill", "consignee": "consignee" });
-  await importFile(files.content, "contents", { "waybill": "waybill", "content": "content" });
-  await importFile(files.track, "tracking", { "waybill": "waybill", "status": "status" });
+  // Mappings
+  const mapWaybillRow = (row) => ({
+    waybill: row.Waybill,
+    consignee: row.Receiver || "",       // Map Receiver to consignee
+    accnum: row.Accnum || "",
+    service: row.Service || "",
+    origPlace: row.OrigPlace || "",
+    destPlace: row.DestPlace || "",
+    sender: row.Sender || "",
+    contents: row.Contents || "",
+    customsValue: row.CustomsValue || "",
+    currency: row.Currency || "",
+    reference: row.Reference || "",
+    pieces: row.Pieces || "",
+    chargeMass: row.ChargeMass || "",
+    dueDate: row["Due Date"] || "",
+  });
 
-  status.innerHTML = `
-    <strong>Waybills:</strong> ✅ ${results.waybills.success}, ❌ ${results.waybills.fail}<br>
-    <strong>Contents:</strong> ✅ ${results.contents.success}, ❌ ${results.contents.fail}<br>
-    <strong>Tracking:</strong> ✅ ${results.tracking.success}, ❌ ${results.tracking.fail}<br>
-    <strong>Errors:</strong><br>${results.waybills.errors.concat(results.contents.errors, results.tracking.errors).join("<br>") || "None"}
-  `;
+  const mapContentRow = (row) => ({
+    waybill: row.Waybill,
+    item: row.Item || "",
+    pieces: row.Pieces || "",
+    content: row.Description || "",
+    dim1: row.Dim1 || "",
+    dim2: row.Dim2 || "",
+    dim3: row.Dim3 || "",
+    actMass: row.ActMass || "",
+    volRate: row.VolRate || "",
+    volCM: row.VolCM || "",
+    volMass: row.VolMass || "",
+    customsValue: row.CustomsValue || "",
+    hCode: row.HCode || "",
+    country: row.Country || "",
+  });
+
+  const mapTrackRow = (row) => ({
+    waybill: row.Waybill,
+    parcelNo: row.ParcelNo || "",
+    trackingNumber: row.TrackNo || "",   // Map TrackNo to trackingNumber
+  });
+
+  // Import each CSV
+  await importFile(files.waybill, "waybills", mapWaybillRow);
+  await importFile(files.content, "contents", mapContentRow);
+  await importFile(files.track, "tracking", mapTrackRow);
+
+  status.innerText = `Import complete: ✅ ${results.success} rows, ❌ ${results.fail} failed`;
 }
 
 /* ===================== LOGOUT ===================== */
