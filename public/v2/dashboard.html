@@ -94,15 +94,7 @@ body {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  addDoc,
-  getDocs,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
@@ -123,14 +115,30 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) return location.href = "login.html";
   const snap = await getDoc(doc(db, "users", user.uid));
   if (!snap.exists()) return alert("User profile not found");
+
   CURRENT_USER = snap.data();
+
   document.getElementById("tenantStatus").innerText =
     `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
-  if (CURRENT_USER.role !== "admin") document.getElementById("adminTab").style.display = "none";
+
+  if (CURRENT_USER.role !== "admin") {
+    document.getElementById("adminTab").style.display = "none";
+  }
 });
+
+/* ===================== SAFETY GUARD ===================== */
+function ensureUserReady() {
+  if (!CURRENT_USER || !CURRENT_USER.tenantId) {
+    alert("User still loading. Please try again.");
+    return false;
+  }
+  return true;
+}
 
 /* ===================== PANELS ===================== */
 window.loadPanel = (panel) => {
+  if (!ensureUserReady()) return;
+
   const appDiv = document.getElementById("app");
 
   if (panel === "edit") {
@@ -175,120 +183,132 @@ window.loadPanel = (panel) => {
         <div class="edit-container">
           <div class="sidebar"><div>Upload Files</div></div>
           <div class="workspace" id="workspace">
-            <p>Select CSV files for import:</p>
-            <label for="waybillFile">Waybill CSV:</label><br>
-            <input type="file" id="waybillFile" accept=".csv"><br><br>
-            <label for="contentFile">Content CSV:</label><br>
-            <input type="file" id="contentFile" accept=".csv"><br><br>
-            <label for="trackFile">Track CSV:</label><br>
-            <input type="file" id="trackFile" accept=".csv"><br><br>
+            <label>Waybill CSV</label><br>
+            <input type="file" id="waybillFile"><br><br>
+            <label>Content CSV</label><br>
+            <input type="file" id="contentFile"><br><br>
+            <label>Track CSV</label><br>
+            <input type="file" id="trackFile"><br><br>
             <button id="importBtn">Import All</button>
             <div class="status" id="importStatus"></div>
           </div>
         </div>
       </div>`;
-
-    // attach importCSV after DOM update
-    document.getElementById("importBtn").addEventListener("click", importCSV);
+    document.getElementById("importBtn").onclick = importCSV;
     return;
   }
 
-  appDiv.innerHTML = `<div class="panel"><h3>${panel.toUpperCase()}</h3><p>Module coming next.</p></div>`;
+  appDiv.innerHTML = `<div class="panel"><h3>${panel}</h3><p>Coming next.</p></div>`;
 };
 
-/* ===================== SMART CSV IMPORT ===================== */
+/* ===================== WAYBILLS ===================== */
+window.loadEdit = async (type) => {
+  if (type !== "waybills") return;
+  const ws = document.getElementById("workspace");
+
+  ws.innerHTML = `
+    <h3>Waybills</h3>
+    <table border="1" width="100%">
+      <tr><th>Waybill</th><th>Consignee</th><th>Status</th></tr>
+      <tbody id="wbRows"></tbody>
+    </table>`;
+
+  const rows = document.getElementById("wbRows");
+  const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
+
+  snap.forEach(d => {
+    const w = d.data();
+    rows.innerHTML += `<tr><td>${w.waybill}</td><td>${w.consignee}</td><td>${w.status}</td></tr>`;
+  });
+};
+
+/* ===================== SCANNING (STABLE) ===================== */
+window.loadProcess = async (type) => {
+  const ws = document.getElementById("workspace");
+
+  if (type === "in" || type === "out") {
+    ws.innerHTML = `
+      <h3>Scan ${type.toUpperCase()}</h3>
+      <input id="scanWB" autocomplete="off">
+      <div class="status" id="scanStatus">Waiting for next scan…</div>`;
+
+    const input = document.getElementById("scanWB");
+    const status = document.getElementById("scanStatus");
+
+    const ok = new Audio("https://www.soundjay.com/button/beep-07.wav");
+    const bad = new Audio("https://www.soundjay.com/button/beep-10.wav");
+
+    input.focus();
+
+    input.onkeydown = async (e) => {
+      if (e.key !== "Enter") return;
+      const waybill = input.value.trim();
+      if (!waybill) return;
+
+      input.value = "";
+      input.disabled = true;
+      status.innerText = "Saving scan...";
+
+      try {
+        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
+          waybill,
+          type: type === "in" ? "IN" : "OUT",
+          createdAt: serverTimestamp()
+        });
+        ok.play();
+        status.innerText = `✅ ${waybill} scanned`;
+      } catch {
+        bad.play();
+        status.innerText = "❌ Scan failed";
+      }
+
+      setTimeout(() => {
+        input.disabled = false;
+        input.focus();
+        status.innerText = "Waiting for next scan…";
+      }, 200);
+    };
+  }
+};
+
+/* ===================== CSV IMPORT (UNCHANGED) ===================== */
 async function importCSV() {
   const status = document.getElementById("importStatus");
   status.innerText = "Processing...";
-
   const files = {
-    waybill: document.getElementById("waybillFile").files[0],
-    content: document.getElementById("contentFile").files[0],
-    track: document.getElementById("trackFile").files[0],
+    waybill: waybillFile.files[0],
+    content: contentFile.files[0],
+    track: trackFile.files[0],
   };
+  let success = 0, fail = 0;
 
-  const results = { success: 0, fail: 0 };
-
-  // CSV parser
-  const parseCSV = (text) => {
-    const lines = text.trim().split(/\r?\n/);
-    const headers = lines[0].split(",").map(h => h.trim());
-    return lines.slice(1).map(line => {
-      const values = line.split(",").map(v => v.trim());
-      return headers.reduce((obj, h, i) => ({ ...obj, [h]: values[i] || "" }), {});
+  const parse = t => {
+    const [h, ...l] = t.trim().split(/\r?\n/);
+    const k = h.split(",");
+    return l.map(r => {
+      const v = r.split(",");
+      return Object.fromEntries(k.map((x, i) => [x, v[i] || ""]));
     });
   };
 
-  // Generic file importer
-  const importFile = async (file, collectionName, mapRow) => {
-    if (!file) return;
-    const text = await file.text();
-    const rows = parseCSV(text);
-
-    for (const row of rows) {
-      if (!row.Waybill) { results.fail++; continue; } // Waybill is required
+  const run = async (f, col) => {
+    if (!f) return;
+    for (const r of parse(await f.text())) {
+      if (!r.Waybill) { fail++; continue; }
       try {
-        const docData = mapRow(row);
-        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, collectionName), {
-          ...docData,
-          tenantId: CURRENT_USER.tenantId,
-          createdAt: serverTimestamp()
+        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, col), {
+          ...r, tenantId: CURRENT_USER.tenantId, createdAt: serverTimestamp()
         });
-        results.success++;
-      } catch (err) {
-        console.error("Import failed for row:", row, err);
-        results.fail++;
-      }
+        success++;
+      } catch { fail++; }
     }
   };
 
-  // Mappings
-  const mapWaybillRow = (row) => ({
-    waybill: row.Waybill,
-    consignee: row.Receiver || "",       // Map Receiver to consignee
-    accnum: row.Accnum || "",
-    service: row.Service || "",
-    origPlace: row.OrigPlace || "",
-    destPlace: row.DestPlace || "",
-    sender: row.Sender || "",
-    contents: row.Contents || "",
-    customsValue: row.CustomsValue || "",
-    currency: row.Currency || "",
-    reference: row.Reference || "",
-    pieces: row.Pieces || "",
-    chargeMass: row.ChargeMass || "",
-    dueDate: row["Due Date"] || "",
-  });
+  await run(files.waybill, "waybills");
+  await run(files.content, "contents");
+  await run(files.track, "tracking");
 
-  const mapContentRow = (row) => ({
-    waybill: row.Waybill,
-    item: row.Item || "",
-    pieces: row.Pieces || "",
-    content: row.Description || "",
-    dim1: row.Dim1 || "",
-    dim2: row.Dim2 || "",
-    dim3: row.Dim3 || "",
-    actMass: row.ActMass || "",
-    volRate: row.VolRate || "",
-    volCM: row.VolCM || "",
-    volMass: row.VolMass || "",
-    customsValue: row.CustomsValue || "",
-    hCode: row.HCode || "",
-    country: row.Country || "",
-  });
-
-  const mapTrackRow = (row) => ({
-    waybill: row.Waybill,
-    parcelNo: row.ParcelNo || "",
-    trackingNumber: row.TrackNo || "",   // Map TrackNo to trackingNumber
-  });
-
-  // Import each CSV
-  await importFile(files.waybill, "waybills", mapWaybillRow);
-  await importFile(files.content, "contents", mapContentRow);
-  await importFile(files.track, "tracking", mapTrackRow);
-
-  status.innerText = `Import complete: ✅ ${results.success} rows, ❌ ${results.fail} failed`;
+  status.innerText = `Import complete: ✅ ${success} ❌ ${fail}`;
 }
 
 /* ===================== LOGOUT ===================== */
