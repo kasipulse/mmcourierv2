@@ -242,25 +242,50 @@ window.saveWaybill = async () => {
   loadEdit("waybills");
 };
 
-/* ========= SCANNING (AUTO NEXT SCAN) ========= */
+/* ========= SCANNING – AUTO ENTER + WAIT ========= */
 window.loadProcess = async (type) => {
   const ws = document.getElementById("workspace");
 
   if (type === "in" || type === "out") {
     ws.innerHTML = `
       <h3>Scan ${type.toUpperCase()}</h3>
-      <input id="scanWB" placeholder="Scan waybill" autofocus>
-      <div class="status" id="scanStatus"></div>
+      <input id="scanWB" placeholder="Scan waybill" autocomplete="off">
+      <div class="status" id="scanStatus">Waiting for scan…</div>
     `;
 
     const input = document.getElementById("scanWB");
+    const status = document.getElementById("scanStatus");
+
     input.focus();
 
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        saveScan(type);
+    input.onkeyup = async (e) => {
+      if (e.key !== "Enter") return;
+
+      const waybill = input.value.trim();
+      if (!waybill) return;
+
+      input.disabled = true;
+      status.innerText = "⏳ Saving scan…";
+
+      try {
+        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
+          waybill,
+          type: type === "in" ? "IN" : "OUT",
+          createdAt: serverTimestamp()
+        });
+
+        status.innerText = `✅ ${waybill} scanned`;
+      } catch (err) {
+        status.innerText = "❌ Scan failed";
       }
-    });
+
+      setTimeout(() => {
+        input.value = "";
+        input.disabled = false;
+        input.focus();
+        status.innerText = "Waiting for next scan…";
+      }, 800);
+    };
     return;
   }
 
@@ -289,23 +314,6 @@ window.loadProcess = async (type) => {
       }
     });
   }
-};
-
-window.saveScan = async (type) => {
-  const input = document.getElementById("scanWB");
-  const status = document.getElementById("scanStatus");
-  const waybill = input.value.trim();
-  if (!waybill) return;
-
-  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
-    waybill,
-    type: type === "in" ? "IN" : "OUT",
-    createdAt: serverTimestamp()
-  });
-
-  status.innerText = `✅ ${waybill} scanned`;
-  input.value = "";
-  input.focus();
 };
 
 /* LOGOUT */
