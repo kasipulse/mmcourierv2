@@ -11,13 +11,16 @@ body {
   font-family: Tahoma, Arial, sans-serif;
   font-size: 12px;
   margin: 0;
+  color: #000;
 }
 
+/* TOP BAR */
 .toolbar {
   background: #d4d0c8;
   border-bottom: 2px solid #ffffff;
   padding: 4px;
   display: flex;
+  align-items: center;
   gap: 4px;
 }
 
@@ -37,36 +40,45 @@ body {
   background: #f2e5b8;
 }
 
+/* MAIN */
 #app {
-  padding: 10px;
+  padding: 8px;
 }
 
 .panel {
   background: #d4d0c8;
   border: 2px outset #ffffff;
-  padding: 10px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+/* EDIT LAYOUT */
+.edit-container {
+  display: flex;
+  gap: 6px;
 }
 
 .sidebar {
   width: 200px;
+  background: #d4d0c8;
   border: 2px inset #ffffff;
-  background: #e0e0e0;
 }
 
 .sidebar div {
-  padding: 5px;
+  padding: 6px;
+  border-bottom: 1px solid #b0b0b0;
   cursor: pointer;
 }
 
 .sidebar div:hover {
-  background: #b5b5b5;
+  background: #b0b0b0;
 }
 
 .workspace {
   flex: 1;
-  border: 2px inset #ffffff;
-  padding: 8px;
   background: #ffffff;
+  border: 2px inset #ffffff;
+  padding: 10px;
 }
 
 .status {
@@ -78,16 +90,18 @@ body {
 
 <body>
 
+<!-- TOOLBAR -->
 <div class="toolbar">
   <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('process')">Process</button>
   <button onclick="loadPanel('view')">View</button>
   <button onclick="loadPanel('reports')">Reports</button>
-  <button onclick="loadPanel('analysis')">Analysis</button>
   <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
+  <button onclick="loadPanel('analytics')">Analytics</button>
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
+<!-- APP -->
 <div id="app">
   <div class="panel">
     <h3>Welcome to MM Courier ERP</h3>
@@ -96,15 +110,26 @@ body {
 </div>
 
 <script type="module">
-/* ================= FIREBASE ================= */
+/* ============ FIREBASE ============ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  getDocs,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
   authDomain: "mm-courier-software.firebaseapp.com",
   projectId: "mm-courier-software",
+  storageBucket: "mm-courier-software.firebasestorage.app",
+  messagingSenderId: "1088997998974",
+  appId: "1:1088997998974:web:7d31deb10940ef2b4af32f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -113,11 +138,19 @@ const db = getFirestore(app);
 
 let CURRENT_USER = null;
 
-/* ================= AUTH ================= */
+/* ============ AUTH ============ */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) location.href = "login.html";
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
 
   const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) {
+    alert("User profile not found");
+    return;
+  }
+
   CURRENT_USER = snap.data();
 
   document.getElementById("tenantStatus").innerText =
@@ -128,102 +161,136 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-/* ================= PANELS ================= */
+/* ============ PANELS ============ */
 window.loadPanel = (panel) => {
   const appDiv = document.getElementById("app");
-
-  if (panel === "process") {
-    appDiv.innerHTML = `
-      <div class="panel" style="display:flex; gap:8px;">
-        <div class="sidebar">
-          <div onclick="showImport()">CSV Import</div>
-          <div>Scan IN</div>
-          <div>Scan OUT</div>
-        </div>
-        <div class="workspace" id="workspace">
-          Select a process.
-        </div>
-      </div>`;
-  }
 
   if (panel === "edit") {
     appDiv.innerHTML = `
       <div class="panel">
         <h3>Edit</h3>
-        <p>Waybills, Agents, PODs, Invoices (next)</p>
-      </div>`;
+        <div class="edit-container">
+          <div class="sidebar">
+            <div onclick="loadEdit('waybills')">Waybills</div>
+            <div onclick="loadEdit('collections')">Collections</div>
+            <div onclick="loadEdit('pods')">PODs</div>
+            <div onclick="loadEdit('agents')">Agents</div>
+            <div onclick="loadEdit('invoices')">Invoices</div>
+            <div onclick="loadEdit('tripsheets')">Tripsheets</div>
+          </div>
+          <div class="workspace" id="workspace">
+            <p>Select an item from the left.</p>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
   }
 
-  if (!["edit","process"].includes(panel)) {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>${panel.toUpperCase()}</h3>
-        <p>Module coming next.</p>
-      </div>`;
-  }
+  appDiv.innerHTML = `
+    <div class="panel">
+      <h3>${panel.toUpperCase()}</h3>
+      <p>Module coming next.</p>
+    </div>`;
 };
 
-/* ================= IMPORT UI ================= */
-window.showImport = () => {
+/* ============ EDIT MODULES ============ */
+window.loadEdit = async (type) => {
+  const ws = document.getElementById("workspace");
+
+  if (type === "waybills") {
+    ws.innerHTML = `
+      <h3>Waybills</h3>
+      <button onclick="showAddWaybill()">➕ New Waybill</button>
+
+      <table border="1" cellpadding="4" cellspacing="0" width="100%" style="margin-top:8px;">
+        <thead>
+          <tr>
+            <th>Waybill</th>
+            <th>Consignee</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="wbRows">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+    `;
+
+    const rows = document.getElementById("wbRows");
+    rows.innerHTML = "";
+
+    const snap = await getDocs(
+      collection(db, "tenants", CURRENT_USER.tenantId, "waybills")
+    );
+
+    if (snap.empty) {
+      rows.innerHTML = `<tr><td colspan="4">No waybills found</td></tr>`;
+    }
+
+    snap.forEach(d => {
+      const w = d.data();
+      rows.innerHTML += `
+        <tr>
+          <td>${w.waybill}</td>
+          <td>${w.consignee || ""}</td>
+          <td>${w.status || "Created"}</td>
+          <td>${w.createdAt?.toDate().toLocaleDateString() || ""}</td>
+        </tr>
+      `;
+    });
+
+    return;
+  }
+
+  ws.innerHTML = `<p>${type} module coming next.</p>`;
+};
+
+/* ============ WAYBILL ADD ============ */
+window.showAddWaybill = () => {
   document.getElementById("workspace").innerHTML = `
-    <h3>CSV Import</h3>
+    <h3>New Waybill</h3>
+    <label>Waybill Number</label><br>
+    <input id="wbNo"><br><br>
 
-    <label>📦 Waybills CSV</label><br>
-    <input type="file" id="waybillCSV"><br><br>
+    <label>Consignee</label><br>
+    <input id="wbConsignee"><br><br>
 
-    <label>📍 Scans CSV</label><br>
-    <input type="file" id="scanCSV"><br><br>
-
-    <button onclick="importCSVs()">Import</button>
-    <div class="status" id="importStatus"></div>
+    <button onclick="saveWaybill()">Save</button>
+    <button onclick="loadEdit('waybills')">Cancel</button>
   `;
 };
 
-/* ================= IMPORT LOGIC ================= */
-window.importCSVs = async () => {
-  const status = document.getElementById("importStatus");
-  status.innerText = "⏳ Importing...";
+window.saveWaybill = async () => {
+  const waybill = document.getElementById("wbNo").value.trim();
+  const consignee = document.getElementById("wbConsignee").value.trim();
 
-  try {
-    await importFile("waybillCSV", "waybills");
-    await importFile("scanCSV", "scans");
-    status.innerText = "✅ Import completed";
-  } catch (e) {
-    status.innerText = "❌ " + e.message;
+  if (!waybill) {
+    alert("Waybill required");
+    return;
   }
+
+  await addDoc(
+    collection(db, "tenants", CURRENT_USER.tenantId, "waybills"),
+    {
+      waybill,
+      consignee,
+      status: "Created",
+      tenantId: CURRENT_USER.tenantId,
+      createdAt: serverTimestamp()
+    }
+  );
+
+  loadEdit("waybills");
 };
 
-async function importFile(inputId, collectionName) {
-  const input = document.getElementById(inputId);
-  if (!input.files.length) return;
-
-  const rows = parseCSV(await input.files[0].text());
-
-  for (const row of rows) {
-    await addDoc(
-      collection(db, "tenants", CURRENT_USER.tenantId, collectionName),
-      { ...row, tenantId: CURRENT_USER.tenantId, createdAt: new Date() }
-    );
-  }
-}
-
-/* ================= CSV PARSER ================= */
-function parseCSV(text) {
-  const [header, ...lines] = text.trim().split("\n");
-  const headers = header.split(",");
-
-  return lines.map(line => {
-    const obj = {};
-    line.split(",").forEach((v,i)=>obj[headers[i]]=v.trim());
-    return obj;
-  });
-}
-
-/* ================= LOGOUT ================= */
+/* ============ LOGOUT ============ */
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
 };
 </script>
+
 </body>
 </html>
