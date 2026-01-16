@@ -11,15 +11,14 @@ body {
   font-family: Tahoma, Arial, sans-serif;
   font-size: 12px;
   margin: 0;
-  color: #000;
 }
 
+/* TOP BAR */
 .toolbar {
   background: #d4d0c8;
   border-bottom: 2px solid #ffffff;
   padding: 4px;
   display: flex;
-  align-items: center;
   gap: 4px;
 }
 
@@ -39,6 +38,7 @@ body {
   background: #f2e5b8;
 }
 
+/* MAIN */
 #app {
   padding: 8px;
 }
@@ -47,40 +47,18 @@ body {
   background: #d4d0c8;
   border: 2px outset #ffffff;
   padding: 8px;
-  margin-bottom: 8px;
-}
-
-.edit-container {
-  display: flex;
-  gap: 6px;
-}
-
-.sidebar {
-  width: 200px;
-  background: #d4d0c8;
-  border: 2px inset #ffffff;
-}
-
-.sidebar div {
-  padding: 6px;
-  border-bottom: 1px solid #b0b0b0;
-  cursor: pointer;
-}
-
-.sidebar div:hover {
-  background: #b0b0b0;
-}
-
-.workspace {
-  flex: 1;
-  background: #ffffff;
-  border: 2px inset #ffffff;
-  padding: 10px;
 }
 
 .status {
   font-size: 11px;
   margin-top: 6px;
+}
+
+/* SCAN */
+.scan-box {
+  font-size: 16px;
+  padding: 6px;
+  width: 100%;
 }
 </style>
 </head>
@@ -88,32 +66,30 @@ body {
 <body>
 
 <div class="toolbar">
-  <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('process')">Process</button>
+  <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('view')">View</button>
   <button onclick="loadPanel('reports')">Reports</button>
-  <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
-  <button onclick="loadPanel('analytics')">Analytics</button>
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <div id="app">
   <div class="panel">
-    <h3>Welcome to MM Courier ERP</h3>
-    <div class="status" id="tenantStatus">Loading tenant...</div>
+    <h3>MM Courier ERP</h3>
+    <div id="tenantStatus">Loading tenant...</div>
   </div>
 </div>
 
 <script type="module">
+/* ========= FIREBASE ========= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import {
   getFirestore,
   doc,
   getDoc,
-  collection,
   addDoc,
-  getDocs,
+  collection,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
@@ -132,168 +108,97 @@ const db = getFirestore(app);
 
 let CURRENT_USER = null;
 
-/* AUTH */
+/* ========= AUTH ========= */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return location.href = "login.html";
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
 
   const snap = await getDoc(doc(db, "users", user.uid));
-  if (!snap.exists()) return alert("User profile not found");
-
   CURRENT_USER = snap.data();
-  document.getElementById("tenantStatus").innerText =
-    `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
 
-  if (CURRENT_USER.role !== "admin") {
-    document.getElementById("adminTab").style.display = "none";
-  }
+  document.getElementById("tenantStatus").innerText =
+    `Tenant: ${CURRENT_USER.tenantId} | ${CURRENT_USER.role}`;
 });
 
-/* PANELS */
+/* ========= PANELS ========= */
 window.loadPanel = (panel) => {
-  const appDiv = document.getElementById("app");
-
-  if (panel === "edit") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Edit</h3>
-        <div class="edit-container">
-          <div class="sidebar">
-            <div onclick="loadEdit('waybills')">Waybills</div>
-            <div>Collections</div>
-            <div>PODs</div>
-            <div>Agents</div>
-            <div>Invoices</div>
-            <div>Tripsheets</div>
-          </div>
-          <div class="workspace" id="workspace">
-            <p>Select an item.</p>
-          </div>
-        </div>
-      </div>`;
-    return;
-  }
+  const app = document.getElementById("app");
 
   if (panel === "process") {
-    appDiv.innerHTML = `
+    app.innerHTML = `
       <div class="panel">
-        <h3>Process</h3>
-        <div class="edit-container">
-          <div class="sidebar">
-            <div onclick="loadProcess('in')">Scan IN</div>
-            <div onclick="loadProcess('out')">Scan OUT</div>
-            <div onclick="loadProcess('today')">Today's Scans</div>
-          </div>
-          <div class="workspace" id="workspace">
-            <p>Select a process.</p>
-          </div>
-        </div>
-      </div>`;
+        <h3>Parcel Scanning</h3>
+
+        <label>Scan Type</label><br>
+        <select id="scanType">
+          <option value="IN">IN (Floor / Hub)</option>
+          <option value="OUT">OUT (Delivery)</option>
+        </select><br><br>
+
+        <label>Scan Waybill</label><br>
+        <input
+          id="scanInput"
+          class="scan-box"
+          autofocus
+          placeholder="Scan waybill..."
+        >
+
+        <div class="status" id="scanStatus"></div>
+      </div>
+    `;
+
+    setTimeout(() => {
+      document.getElementById("scanInput").focus();
+    }, 100);
+
+    document.getElementById("scanInput").addEventListener("keydown", handleScan);
     return;
   }
 
-  appDiv.innerHTML = `
+  app.innerHTML = `
     <div class="panel">
       <h3>${panel.toUpperCase()}</h3>
       <p>Module coming next.</p>
-    </div>`;
-};
-
-/* WAYBILLS */
-window.loadEdit = async (type) => {
-  if (type !== "waybills") return;
-
-  const ws = document.getElementById("workspace");
-  ws.innerHTML = `
-    <h3>Waybills</h3>
-    <button onclick="showAddWaybill()">➕ New Waybill</button>
-    <table border="1" width="100%" cellpadding="4" style="margin-top:8px;">
-      <tr><th>Waybill</th><th>Consignee</th><th>Status</th></tr>
-      <tbody id="wbRows"></tbody>
-    </table>
-  `;
-
-  const rows = document.getElementById("wbRows");
-  const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
-
-  if (snap.empty) rows.innerHTML = "<tr><td colspan='3'>No waybills</td></tr>";
-
-  snap.forEach(d => {
-    const w = d.data();
-    rows.innerHTML += `<tr><td>${w.waybill}</td><td>${w.consignee}</td><td>${w.status}</td></tr>`;
-  });
-};
-
-window.showAddWaybill = () => {
-  document.getElementById("workspace").innerHTML = `
-    <h3>New Waybill</h3>
-    <input id="wbNo" placeholder="Waybill"><br><br>
-    <input id="wbConsignee" placeholder="Consignee"><br><br>
-    <button onclick="saveWaybill()">Save</button>
+    </div>
   `;
 };
 
-window.saveWaybill = async () => {
-  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"), {
-    waybill: wbNo.value,
-    consignee: wbConsignee.value,
-    status: "Created",
-    createdAt: serverTimestamp()
-  });
-  loadEdit("waybills");
-};
+/* ========= SCANNING ========= */
+async function handleScan(e) {
+  if (e.key !== "Enter") return;
 
-/* SCANNING */
-window.loadProcess = async (type) => {
-  const ws = document.getElementById("workspace");
+  const input = e.target;
+  const waybill = input.value.trim();
+  const type = document.getElementById("scanType").value;
+  const status = document.getElementById("scanStatus");
 
-  if (type === "in" || type === "out") {
-    ws.innerHTML = `
-      <h3>Scan ${type.toUpperCase()}</h3>
-      <input id="scanWB" placeholder="Waybill"><br><br>
-      <button onclick="saveScan('${type}')">Save Scan</button>
-      <div class="status" id="scanStatus"></div>
-    `;
-    return;
-  }
+  if (!waybill) return;
 
-  if (type === "today") {
-    ws.innerHTML = `
-      <h3>Today's Scans</h3>
-      <table border="1" width="100%" cellpadding="4">
-        <tr><th>Waybill</th><th>Type</th><th>Time</th></tr>
-        <tbody id="scanRows"></tbody>
-      </table>
-    `;
-
-    const rows = document.getElementById("scanRows");
-    const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "scans"));
-    const today = new Date(); today.setHours(0,0,0,0);
-
-    snap.forEach(d => {
-      const s = d.data();
-      if (s.createdAt?.toDate() >= today) {
-        rows.innerHTML += `
-          <tr>
-            <td>${s.waybill}</td>
-            <td>${s.type}</td>
-            <td>${s.createdAt.toDate().toLocaleTimeString()}</td>
-          </tr>`;
+  try {
+    await addDoc(
+      collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+      {
+        waybill,
+        type,
+        tenantId: CURRENT_USER.tenantId,
+        user: CURRENT_USER.email,
+        scannedAt: serverTimestamp()
       }
-    });
+    );
+
+    status.innerText = `✅ ${waybill} scanned ${type}`;
+  } catch (err) {
+    status.innerText = "❌ Scan failed";
   }
-};
 
-window.saveScan = async (type) => {
-  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
-    waybill: scanWB.value,
-    type: type === "in" ? "IN" : "OUT",
-    createdAt: serverTimestamp()
-  });
-  document.getElementById("scanStatus").innerText = "✅ Saved";
-  scanWB.value = "";
-};
+  /* RESET FOR NEXT SCAN */
+  input.value = "";
+  input.focus();
+}
 
-/* LOGOUT */
+/* ========= LOGOUT ========= */
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
