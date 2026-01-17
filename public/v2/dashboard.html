@@ -218,12 +218,11 @@ window.loadEdit = async (type) => {
   if (type !== "waybills") return;
   const ws = document.getElementById("workspace");
 
-  ws.innerHTML = `
-    <h3>Waybills</h3>
-    <table border="1" width="100%">
-      <tr><th>Waybill</th><th>Consignee</th><th>Status</th></tr>
-      <tbody id="wbRows"></tbody>
-    </table>`;
+  rows.innerHTML += `<tr>
+  <td>${w.waybill}</td>
+  <td>${w.consignee}</td>
+  <td>${w.status}</td>
+</tr>`;
 
   const rows = document.getElementById("wbRows");
   const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
