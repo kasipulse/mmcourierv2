@@ -153,6 +153,25 @@ window.loadPanel = (panel) => {
 
   const appDiv = document.getElementById("app");
 
+  if (panel === "view") {
+  appDiv.innerHTML = `
+    <div class="panel">
+      <h3>View</h3>
+      <div class="edit-container">
+        <div class="sidebar">
+          <div onclick="loadView('waybills')">📦 Waybills</div>
+          <div onclick="loadView('scans')">🔍 Scans</div>
+          <div onclick="loadView('floor')">🚚 On Floor / Out</div>
+        </div>
+        <div class="workspace" id="workspace">
+          <p>Select a view from the left.</p>
+        </div>
+      </div>
+    </div>
+  `;
+  return;
+}
+
   if (panel === "edit") {
     appDiv.innerHTML = `
       <div class="panel">
