@@ -234,23 +234,64 @@ window.loadPanel = (panel) => {
 
 /* ===================== WAYBILLS ===================== */
 window.loadEdit = async (type) => {
-  if (type !== "waybills") return;
-  const ws = document.getElementById("workspace");
+  if (type === "waybills") {
+  ws.innerHTML = `
+    <h3>Waybills</h3>
+    <table border="1" width="100%">
+      <tr>
+        <th>Waybill</th>
+        <th>Consignee</th>
+        <th>Status</th>
+        <th>Last Scan</th>
+      </tr>
+      <tbody id="viewWaybills"></tbody>
+    </table>
+  `;
 
-  rows.innerHTML += `<tr>
-  <td>${w.waybill}</td>
-  <td>${w.consignee}</td>
-  <td>${w.status}</td>
-</tr>`;
+  const tbody = document.getElementById("viewWaybills");
 
-  const rows = document.getElementById("wbRows");
-  const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
+  const wbSnap = await getDocs(
+    collection(db, "tenants", CURRENT_USER.tenantId, "waybills")
+  );
 
-  snap.forEach(d => {
+  tbody.innerHTML = "";
+
+  for (const d of wbSnap.docs) {
     const w = d.data();
-    rows.innerHTML += `<tr><td>${w.waybill}</td><td>${w.consignee}</td><td>${w.status}</td></tr>`;
-  });
-};
+
+    const waybillNo = w.Waybill || w.waybill || "—";
+    const consignee = w.Receiver || w.consignee || "—";
+
+    /* 🔎 Get latest scan */
+    const scanSnap = await getDocs(
+      query(
+        collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+        where("waybill", "==", waybillNo),
+        limit(1)
+      )
+    );
+
+    let status = "Imported";
+    let lastScan = "—";
+
+    if (!scanSnap.empty) {
+      const s = scanSnap.docs[0].data();
+      status = s.type === "OUT" ? "Out for Delivery" : "On Floor";
+      lastScan = s.createdAt?.toDate().toLocaleString() || "—";
+    }
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${waybillNo}</td>
+        <td>${consignee}</td>
+        <td>${status}</td>
+        <td>${lastScan}</td>
+      </tr>
+    `;
+  }
+
+  return;
+}
 
 /* ===================== SCANNING (STABLE) ===================== */
 window.loadProcess = async (type) => {
