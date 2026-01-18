@@ -137,8 +137,11 @@ onAuthStateChanged(auth, async (user) => {
   if (!snap.exists()) return alert("User profile not found");
 
   CURRENT_USER = snap.data();
-  document.getElementById("tenantStatus").innerText =
-    `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
+
+await loadCustomerState();
+
+document.getElementById("tenantStatus").innerText =
+  `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
   
   if (CURRENT_USER.role !== "admin") {
     document.getElementById("adminTab").style.display = "none";
