@@ -130,20 +130,6 @@ async function loadCustomerState() {
   ACTIVE_CUSTOMER = CUSTOMERS[0] || null;
 }
 
-async function loadCustomers() {
-  const snap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "customers")
-  );
-
-  CUSTOMERS = snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-  }));
-
-  // Default to first customer
-  ACTIVE_CUSTOMER = CUSTOMERS[0] || null;
-}
-
 /* ===================== AUTH ===================== */
 onAuthStateChanged(auth, async (user) => {
   if (!user) return location.href = "login.html";
