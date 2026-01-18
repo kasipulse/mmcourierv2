@@ -157,7 +157,30 @@ function ensureUserReady() {
   return true;
 }
 
-/* ===================== CUSTOMER SELECT ===================== */
+/* ===================== CUSTOMER DROPDOWN ===================== */
+function populateCustomerSelect() {
+  const sel = document.getElementById("customerSelect");
+  if (!sel) return;
+
+  sel.innerHTML = "";
+
+  if (!CUSTOMERS.length) {
+    sel.innerHTML = `<option>No customers</option>`;
+    return;
+  }
+
+  CUSTOMERS.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+  });
+
+  if (ACTIVE_CUSTOMER) {
+    sel.value = ACTIVE_CUSTOMER.id;
+  }
+
+  sel.onchange = () => {
+    ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
+  };
+}
   if (!sel) return;
   sel.innerHTML = `<option>Loading...</option>`;
   try {
