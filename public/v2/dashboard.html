@@ -95,17 +95,8 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  addDoc,
-  getDocs,
-  serverTimestamp,
-  query,
-  where,
-  limit,
-  updateDoc
+  getFirestore, doc, getDoc, collection, addDoc, getDocs, serverTimestamp,
+  query, where, limit, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -129,10 +120,9 @@ onAuthStateChanged(auth, async (user) => {
   if (!snap.exists()) return alert("User profile not found");
 
   CURRENT_USER = snap.data();
-
   document.getElementById("tenantStatus").innerText =
     `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
-
+  
   if (CURRENT_USER.role !== "admin") {
     document.getElementById("adminTab").style.display = "none";
   }
@@ -147,107 +137,25 @@ function ensureUserReady() {
   return true;
 }
 
-/* ===================== PANELS ===================== */
-window.loadPanel = (panel) => {
-  if (!ensureUserReady()) return;
-
-  const appDiv = document.getElementById("app");
-
-  if (panel === "edit") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Edit</h3>
-        <div class="edit-container">
-          <div class="sidebar">
-            <div onclick="loadEdit('waybills')">Waybills</div>
-            <div>Collections</div>
-            <div>PODs</div>
-            <div>Agents</div>
-            <div>Invoices</div>
-            <div>Tripsheets</div>
-          </div>
-          <div class="workspace" id="workspace"><p>Select an item.</p></div>
-        </div>
-      </div>`;
-    return;
-  }
-
-  if (panel === "process") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Process</h3>
-        <div class="edit-container">
-          <div class="sidebar">
-            <div onclick="loadProcess('in')">Scan IN</div>
-            <div onclick="loadProcess('out')">Scan OUT</div>
-            <div onclick="loadProcess('today')">Today's Scans</div>
-          </div>
-          <div class="workspace" id="workspace"><p>Select a process.</p></div>
-        </div>
-      </div>`;
-    return;
-  }
-
-  if (panel === "import") {
-    appDiv.innerHTML = `
-      <div class="panel">
-        <h3>Import Manifests</h3>
-        <div class="edit-container">
-          <div class="sidebar"><div>Upload Files</div></div>
-          <div class="workspace" id="workspace">
-            <label>Waybill CSV</label><br>
-            <input type="file" id="waybillFile"><br><br>
-            <label>Content CSV</label><br>
-            <input type="file" id="contentFile"><br><br>
-            <label>Track CSV</label><br>
-            <input type="file" id="trackFile"><br><br>
-            <button id="importBtn">Import All</button>
-            <div class="status" id="importStatus"></div>
-          </div>
-        </div>
-      </div>`;
-    document.getElementById("importBtn").onclick = importCSV;
-    return;
-  }
-
-  if (panel === "view") {
-  // Default to showing waybills in view mode
-  loadView('waybills');
-  return;
-}
-
-appDiv.innerHTML = `<div class="panel"><h3>${panel}</h3><p>Coming next.</p></div>`;
-
-/* ===================== WAYBILLS ===================== */
+/* ===================== LOAD EDIT TAB ===================== */
 window.loadEdit = async (type) => {
+  if (!ensureUserReady()) return;
   if (type !== "waybills") return;
-  const ws = document.getElementById("workspace");
 
+  const ws = document.getElementById("workspace");
   ws.innerHTML = `
     <h3>Waybills</h3>
     <table border="1" width="100%">
-      <tr>
-        <th>Waybill</th>
-        <th>Consignee</th>
-        <th>Status</th>
-        <th>Last Scan</th>
-      </tr>
-      <tbody id="wbRows">
-        <tr><td colspan="4">Loading...</td></tr>
-      </tbody>
+      <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
+      <tbody id="wbRows"><tr><td colspan="4">Loading...</td></tr></tbody>
     </table>
   `;
-
   const rows = document.getElementById("wbRows");
-  rows.innerHTML = ""; // clear "Loading..." row
+  rows.innerHTML = "";
 
   try {
     const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
-
-    if (snap.empty) {
-      rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`;
-      return;
-    }
+    if (snap.empty) { rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`; return; }
 
     for (const d of snap.docs) {
       const w = d.data();
@@ -256,19 +164,11 @@ window.loadEdit = async (type) => {
       const status = w.status || "Imported";
       let lastScan = "—";
 
-      // 🔎 Get latest scan for this waybill
       const scanSnap = await getDocs(
-        query(
-          collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-          where("waybill", "==", waybillNo),
-          limit(1)
-        )
+        query(collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+              where("waybill","==",waybillNo), limit(1))
       );
-
-      if (!scanSnap.empty) {
-        const s = scanSnap.docs[0].data();
-        lastScan = s.createdAt?.toDate().toLocaleString() || "—";
-      }
+      if (!scanSnap.empty) lastScan = scanSnap.docs[0].data().createdAt?.toDate().toLocaleString() || "—";
 
       rows.innerHTML += `<tr>
         <td>${waybillNo}</td>
@@ -277,114 +177,12 @@ window.loadEdit = async (type) => {
         <td>${lastScan}</td>
       </tr>`;
     }
-  } catch (err) {
-    console.error("Error loading waybills:", err);
-    rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`;
-  }
+  } catch(err) { console.error(err); rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`; }
 };
 
-/* ===================== SCANNING (STABLE) ===================== */
-window.loadProcess = async (type) => {
-  const ws = document.getElementById("workspace");
-
-  if (type === "in" || type === "out") {
-    ws.innerHTML = `
-      <h3>Scan ${type.toUpperCase()}</h3>
-      <input id="scanWB" autocomplete="off">
-      <div class="status" id="scanStatus">Waiting for next scan…</div>`;
-
-    const input = document.getElementById("scanWB");
-    const status = document.getElementById("scanStatus");
-
-    const ok = new Audio("https://www.soundjay.com/button/beep-07.wav");
-    const bad = new Audio("https://www.soundjay.com/button/beep-10.wav");
-
-    input.focus();
-
-    input.onkeydown = async (e) => {
-      if (e.key !== "Enter") return;
-      const waybill = input.value.trim();
-      if (!waybill) return;
-
-      input.value = "";
-      input.disabled = true;
-      status.innerText = "Saving scan...";
-
-      try {
-  /* 1️⃣ Check waybill exists */
-  const wbSnap = await getDocs(
-    query(
-      collection(db, "tenants", CURRENT_USER.tenantId, "waybills"),
-      where("Waybill", "==", waybill),
-      limit(1)
-    )
-  );
-
-  if (wbSnap.empty) {
-    bad.play();
-    status.innerText = "❌ Waybill not found";
-    throw "WAYBILL_NOT_FOUND";
-  }
-
-  const wbDoc = wbSnap.docs[0];
-
-  /* 2️⃣ Prevent duplicate scan today */
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const dupSnap = await getDocs(
-    query(
-      collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-      where("waybill", "==", waybill),
-      where("type", "==", type === "in" ? "IN" : "OUT")
-    )
-  );
-
-  const duplicate = dupSnap.docs.some(d =>
-    d.data().createdAt?.toDate() >= startOfToday
-  );
-
-  if (duplicate) {
-    bad.play();
-    status.innerText = "⚠️ Already scanned today";
-    throw "DUPLICATE_SCAN";
-  }
-
-  /* 3️⃣ Save scan */
-  await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, "scans"), {
-    waybill,
-    type: type === "in" ? "IN" : "OUT",
-    createdAt: serverTimestamp()
-  });
-
-  /* 4️⃣ Update waybill status */
-  await updateDoc(wbDoc.ref, {
-    status: type === "in" ? "On Floor" : "Out for Delivery"
-  });
-
-  ok.play();
-  status.innerText = `✅ ${waybill} scanned`;
-
-} catch (err) {
-  if (err !== "WAYBILL_NOT_FOUND" && err !== "DUPLICATE_SCAN") {
-    bad.play();
-    status.innerText = "❌ Scan failed";
-  }
-}
-
-      setTimeout(() => {
-        input.disabled = false;
-        input.focus();
-        status.innerText = "Waiting for next scan…";
-      }, 200);
-    };
-  }
-};
-
-/* ===================== VIEW TAB ===================== */
+/* ===================== LOAD VIEW TAB ===================== */
 window.loadView = async (type) => {
   if (!ensureUserReady()) return;
-
   const appDiv = document.getElementById("app");
 
   if (type === "waybills") {
@@ -392,29 +190,16 @@ window.loadView = async (type) => {
       <div class="panel">
         <h3>View Waybills</h3>
         <table border="1" width="100%">
-          <tr>
-            <th>Waybill</th>
-            <th>Consignee</th>
-            <th>Status</th>
-            <th>Last Scan</th>
-          </tr>
-          <tbody id="viewRows">
-            <tr><td colspan="4">Loading...</td></tr>
-          </tbody>
+          <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
+          <tbody id="viewRows"><tr><td colspan="4">Loading...</td></tr></tbody>
         </table>
       </div>
     `;
-
     const rows = document.getElementById("viewRows");
     rows.innerHTML = "";
-
     try {
       const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
-
-      if (snap.empty) {
-        rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`;
-        return;
-      }
+      if (snap.empty) { rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`; return; }
 
       for (const d of snap.docs) {
         const w = d.data();
@@ -424,17 +209,10 @@ window.loadView = async (type) => {
         let lastScan = "—";
 
         const scanSnap = await getDocs(
-          query(
-            collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-            where("waybill", "==", waybillNo),
-            limit(1)
-          )
+          query(collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+                where("waybill","==",waybillNo), limit(1))
         );
-
-        if (!scanSnap.empty) {
-          const s = scanSnap.docs[0].data();
-          lastScan = s.createdAt?.toDate().toLocaleString() || "—";
-        }
+        if (!scanSnap.empty) lastScan = scanSnap.docs[0].data().createdAt?.toDate().toLocaleString() || "—";
 
         rows.innerHTML += `<tr>
           <td>${waybillNo}</td>
@@ -443,63 +221,124 @@ window.loadView = async (type) => {
           <td>${lastScan}</td>
         </tr>`;
       }
-
-    } catch (err) {
-      console.error("Error loading view waybills:", err);
-      rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`;
-    }
-
+    } catch(err) { console.error(err); rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`; }
     return;
   }
-
-  appDiv.innerHTML = `<div class="panel"><h3>${type}</h3><p>Coming next.</p></div>`;
 };
 
-/* ===================== CSV IMPORT (UNCHANGED) ===================== */
-async function importCSV() {
-  const status = document.getElementById("importStatus");
-  status.innerText = "Processing...";
-  const files = {
-    waybill: waybillFile.files[0],
-    content: contentFile.files[0],
-    track: trackFile.files[0],
-  };
-  let success = 0, fail = 0;
+/* ===================== LOAD PROCESS TAB ===================== */
+window.loadProcess = async (type) => {
+  if (!ensureUserReady()) return;
+  const ws = document.getElementById("workspace");
+  if (type !== "in" && type !== "out") return;
 
-  const parse = t => {
-    const [h, ...l] = t.trim().split(/\r?\n/);
-    const k = h.split(",");
-    return l.map(r => {
-      const v = r.split(",");
-      return Object.fromEntries(k.map((x, i) => [x, v[i] || ""]));
-    });
-  };
+  ws.innerHTML = `<h3>Scan ${type.toUpperCase()}</h3>
+    <input id="scanWB" autocomplete="off">
+    <div class="status" id="scanStatus">Waiting for next scan…</div>`;
+  
+  const input = document.getElementById("scanWB");
+  const status = document.getElementById("scanStatus");
+  const ok = new Audio("https://www.soundjay.com/button/beep-07.wav");
+  const bad = new Audio("https://www.soundjay.com/button/beep-10.wav");
 
-  const run = async (f, col) => {
-    if (!f) return;
-    for (const r of parse(await f.text())) {
-      if (!r.Waybill) { fail++; continue; }
-      try {
-        await addDoc(collection(db, "tenants", CURRENT_USER.tenantId, col), {
-          ...r, tenantId: CURRENT_USER.tenantId, createdAt: serverTimestamp()
-        });
-        success++;
-      } catch { fail++; }
+  input.focus();
+  input.onkeydown = async (e) => {
+    if (e.key !== "Enter") return;
+    const waybill = input.value.trim();
+    if (!waybill) return;
+    input.value=""; input.disabled=true; status.innerText="Saving scan...";
+
+    try {
+      const wbSnap = await getDocs(query(
+        collection(db,"tenants",CURRENT_USER.tenantId,"waybills"),
+        where("Waybill","==",waybill), limit(1)
+      ));
+      if (wbSnap.empty) { bad.play(); status.innerText="❌ Waybill not found"; throw "WAYBILL_NOT_FOUND"; }
+      const wbDoc = wbSnap.docs[0];
+
+      const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+      const dupSnap = await getDocs(query(
+        collection(db,"tenants",CURRENT_USER.tenantId,"scans"),
+        where("waybill","==",waybill),
+        where("type","==",type==="in"?"IN":"OUT")
+      ));
+      const duplicate = dupSnap.docs.some(d=>d.data().createdAt?.toDate()>=startOfToday);
+      if (duplicate) { bad.play(); status.innerText="⚠️ Already scanned today"; throw "DUPLICATE_SCAN"; }
+
+      await addDoc(collection(db,"tenants",CURRENT_USER.tenantId,"scans"),{
+        waybill,type:type==="in"?"IN":"OUT",createdAt:serverTimestamp()
+      });
+      await updateDoc(wbDoc.ref,{status:type==="in"?"On Floor":"Out for Delivery"});
+      ok.play(); status.innerText=`✅ ${waybill} scanned`;
+    } catch(err) {
+      if(err!=="WAYBILL_NOT_FOUND" && err!=="DUPLICATE_SCAN"){bad.play(); status.innerText="❌ Scan failed";}
     }
+
+    setTimeout(()=>{input.disabled=false; input.focus(); status.innerText="Waiting for next scan…";},200);
   };
+};
 
-  await run(files.waybill, "waybills");
-  await run(files.content, "contents");
-  await run(files.track, "tracking");
+/* ===================== LOAD PANEL FUNCTION ===================== */
+window.loadPanel = (panel) => {
+  if (!ensureUserReady()) return;
+  const appDiv = document.getElementById("app");
 
-  status.innerText = `Import complete: ✅ ${success} ❌ ${fail}`;
+  switch(panel){
+    case "edit":
+      appDiv.innerHTML = `<div class="panel"><h3>Edit</h3>
+        <div class="edit-container">
+          <div class="sidebar">
+            <div onclick="loadEdit('waybills')">Waybills</div>
+            <div>Collections</div><div>PODs</div><div>Agents</div>
+            <div>Invoices</div><div>Tripsheets</div>
+          </div>
+          <div class="workspace" id="workspace"><p>Select an item.</p></div>
+        </div>
+      </div>`; break;
+    case "process":
+      appDiv.innerHTML = `<div class="panel"><h3>Process</h3>
+        <div class="edit-container">
+          <div class="sidebar">
+            <div onclick="loadProcess('in')">Scan IN</div>
+            <div onclick="loadProcess('out')">Scan OUT</div>
+          </div>
+          <div class="workspace" id="workspace"><p>Select a process.</p></div>
+        </div>
+      </div>`; break;
+    case "view":
+      loadView('waybills'); break;
+    case "import":
+      appDiv.innerHTML = `<div class="panel"><h3>Import Manifests</h3>
+        <div class="edit-container">
+          <div class="sidebar"><div>Upload Files</div></div>
+          <div class="workspace" id="workspace">
+            <label>Waybill CSV</label><br><input type="file" id="waybillFile"><br><br>
+            <label>Content CSV</label><br><input type="file" id="contentFile"><br><br>
+            <label>Track CSV</label><br><input type="file" id="trackFile"><br><br>
+            <button id="importBtn">Import All</button>
+            <div class="status" id="importStatus"></div>
+          </div>
+        </div>
+      </div>`;
+      document.getElementById("importBtn").onclick=importCSV; break;
+    default: appDiv.innerHTML=`<div class="panel"><h3>${panel}</h3><p>Coming next.</p></div>`;
+  }
+};
+
+/* ===================== CSV IMPORT ===================== */
+async function importCSV(){
+  const status=document.getElementById("importStatus");
+  status.innerText="Processing...";
+  const files={waybill:waybillFile.files[0],content:contentFile.files[0],track:trackFile.files[0]};
+  let success=0,fail=0;
+  const parse=t=>{const [h,...l]=t.trim().split(/\r?\n/);const k=h.split(",");return l.map(r=>{const v=r.split(",");return Object.fromEntries(k.map((x,i)=>[x,v[i]||""]));});};
+  const run=async(f,col)=>{if(!f)return;for(const r of parse(await f.text())){if(!r.Waybill){fail++;continue;}try{await addDoc(collection(db,"tenants",CURRENT_USER.tenantId,col),{...r,tenantId:CURRENT_USER.tenantId,createdAt:serverTimestamp()});success++;}catch{fail++;}}};
+  await run(files.waybill,"waybills"); await run(files.content,"contents"); await run(files.track,"tracking");
+  status.innerText=`Import complete: ✅ ${success} ❌ ${fail}`;
 }
 
 /* ===================== LOGOUT ===================== */
-window.logout = async () => {
-  await signOut(auth);
-  location.href = "login.html";
-};
+window.logout = async()=>{await signOut(auth);location.href="login.html";}
 </script>
 
 </body>
