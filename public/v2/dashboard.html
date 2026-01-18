@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+I am lost on minimal fix this is my dashboard.html: <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -153,25 +153,6 @@ window.loadPanel = (panel) => {
 
   const appDiv = document.getElementById("app");
 
-  if (panel === "view") {
-  appDiv.innerHTML = `
-    <div class="panel">
-      <h3>View</h3>
-      <div class="edit-container">
-        <div class="sidebar">
-          <div onclick="loadView('waybills')">📦 Waybills</div>
-          <div onclick="loadView('scans')">🔍 Scans</div>
-          <div onclick="loadView('floor')">🚚 On Floor / Out</div>
-        </div>
-        <div class="workspace" id="workspace">
-          <p>Select a view from the left.</p>
-        </div>
-      </div>
-    </div>
-  `;
-  return;
-}
-
   if (panel === "edit") {
     appDiv.innerHTML = `
       <div class="panel">
@@ -234,58 +215,24 @@ window.loadPanel = (panel) => {
 
 /* ===================== WAYBILLS ===================== */
 window.loadEdit = async (type) => {
+  if (type !== "waybills") return;
   const ws = document.getElementById("workspace");
 
   ws.innerHTML = `
-    <h3>Edit</h3>
-    <p>Editing ${type} coming soon.</p>
-  `;
-};
+    <h3>Waybills</h3>
+    <table border="1" width="100%">
+      <tr><th>Waybill</th><th>Consignee</th><th>Status</th></tr>
+      <tbody id="wbRows"></tbody>
+    </table>`;
 
-  const tbody = document.getElementById("viewWaybills");
+  const rows = document.getElementById("wbRows");
+  const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
 
-  const wbSnap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "waybills")
-  );
-
-  tbody.innerHTML = "";
-
-  for (const d of wbSnap.docs) {
+  snap.forEach(d => {
     const w = d.data();
-
-    const waybillNo = w.Waybill || w.waybill || "—";
-    const consignee = w.Receiver || w.consignee || "—";
-
-    /* 🔎 Get latest scan */
-    const scanSnap = await getDocs(
-      query(
-        collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-        where("waybill", "==", waybillNo),
-        limit(1)
-      )
-    );
-
-    let status = "Imported";
-    let lastScan = "—";
-
-    if (!scanSnap.empty) {
-      const s = scanSnap.docs[0].data();
-      status = s.type === "OUT" ? "Out for Delivery" : "On Floor";
-      lastScan = s.createdAt?.toDate().toLocaleString() || "—";
-    }
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${waybillNo}</td>
-        <td>${consignee}</td>
-        <td>${status}</td>
-        <td>${lastScan}</td>
-      </tr>
-    `;
-  }
-
-  return;
-}
+    rows.innerHTML += `<tr><td>${w.waybill}</td><td>${w.consignee}</td><td>${w.status}</td></tr>`;
+  });
+};
 
 /* ===================== SCANNING (STABLE) ===================== */
 window.loadProcess = async (type) => {
@@ -382,175 +329,6 @@ window.loadProcess = async (type) => {
         status.innerText = "Waiting for next scan…";
       }, 200);
     };
-  }
-};
-
-/* ===================== VIEW (READ ONLY) ===================== */
-window.loadView = async (type) => {
-  const ws = document.getElementById("workspace");
-
-  /* ================= WAYBILLS ================= */
-  if (type === "waybills") {
-    ws.innerHTML = `
-      <h3>Waybills</h3>
-      <table border="1" width="100%">
-        <thead>
-          <tr>
-            <th>Waybill</th>
-            <th>Consignee</th>
-            <th>Status</th>
-            <th>Last Scan</th>
-          </tr>
-        </thead>
-        <tbody id="viewWaybills">
-          <tr><td colspan="4">Loading...</td></tr>
-        </tbody>
-      </table>
-    `;
-
-    const tbody = document.getElementById("viewWaybills");
-
-    try {
-      const wbSnap = await getDocs(
-        collection(db, "tenants", CURRENT_USER.tenantId, "waybills")
-      );
-
-      tbody.innerHTML = "";
-
-      if (wbSnap.empty) {
-        tbody.innerHTML = `
-          <tr><td colspan="4">No waybills found</td></tr>
-        `;
-        return;
-      }
-
-      for (const d of wbSnap.docs) {
-        const w = d.data();
-
-        const waybillNo = w.Waybill || w.waybill || "—";
-        const consignee = w.Receiver || w.consignee || "—";
-
-        /* 🔎 Latest scan */
-        const scanSnap = await getDocs(
-          query(
-            collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-            where("waybill", "==", waybillNo),
-            limit(1)
-          )
-        );
-
-        let status = w.status || "Imported";
-        let lastScan = "—";
-
-        if (!scanSnap.empty) {
-          const s = scanSnap.docs[0].data();
-          status = s.type === "OUT"
-            ? "Out for Delivery"
-            : "On Floor";
-
-          lastScan = s.createdAt?.toDate().toLocaleString() || "—";
-        }
-
-        tbody.innerHTML += `
-          <tr>
-            <td>${waybillNo}</td>
-            <td>${consignee}</td>
-            <td>${status}</td>
-            <td>${lastScan}</td>
-          </tr>
-        `;
-      }
-    } catch (err) {
-      console.error(err);
-      tbody.innerHTML = `
-        <tr><td colspan="4">Failed to load waybills</td></tr>
-      `;
-    }
-
-    return;
-  }
-
-  /* ================= SCANS ================= */
-  if (type === "scans") {
-    ws.innerHTML = `
-      <h3>Scans</h3>
-      <table border="1" width="100%">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Waybill</th>
-            <th>Type</th>
-          </tr>
-        </thead>
-        <tbody id="viewScans">
-          <tr><td colspan="3">Loading...</td></tr>
-        </tbody>
-      </table>
-    `;
-
-    const tbody = document.getElementById("viewScans");
-
-    const scanSnap = await getDocs(
-      query(
-        collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-        limit(200)
-      )
-    );
-
-    tbody.innerHTML = "";
-
-    for (const d of scanSnap.docs) {
-      const s = d.data();
-      tbody.innerHTML += `
-        <tr>
-          <td>${s.createdAt?.toDate().toLocaleString() || "—"}</td>
-          <td>${s.waybill}</td>
-          <td>${s.type}</td>
-        </tr>
-      `;
-    }
-    return;
-  }
-
-  /* ================= FLOOR / OUT ================= */
-  if (type === "floor") {
-    ws.innerHTML = `
-      <h3>On Floor / Out for Delivery</h3>
-      <table border="1" width="100%">
-        <thead>
-          <tr>
-            <th>Waybill</th>
-            <th>Status</th>
-            <th>Last Scan</th>
-          </tr>
-        </thead>
-        <tbody id="viewFloor">
-          <tr><td colspan="3">Loading...</td></tr>
-        </tbody>
-      </table>
-    `;
-
-    const tbody = document.getElementById("viewFloor");
-
-    const wbSnap = await getDocs(
-      collection(db, "tenants", CURRENT_USER.tenantId, "waybills")
-    );
-
-    tbody.innerHTML = "";
-
-    for (const d of wbSnap.docs) {
-      const w = d.data();
-      if (!w.status) continue;
-
-      tbody.innerHTML += `
-        <tr>
-          <td>${w.Waybill || "—"}</td>
-          <td>${w.status}</td>
-          <td>—</td>
-        </tr>
-      `;
-    }
-    return;
   }
 };
 
