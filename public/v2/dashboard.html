@@ -376,6 +376,80 @@ window.loadProcess = async (type) => {
   }
 };
 
+/* ===================== VIEW TAB ===================== */
+window.loadView = async (type) => {
+  if (!ensureUserReady()) return;
+
+  const appDiv = document.getElementById("app");
+
+  if (type === "waybills") {
+    appDiv.innerHTML = `
+      <div class="panel">
+        <h3>View Waybills</h3>
+        <table border="1" width="100%">
+          <tr>
+            <th>Waybill</th>
+            <th>Consignee</th>
+            <th>Status</th>
+            <th>Last Scan</th>
+          </tr>
+          <tbody id="viewRows">
+            <tr><td colspan="4">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const rows = document.getElementById("viewRows");
+    rows.innerHTML = "";
+
+    try {
+      const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
+
+      if (snap.empty) {
+        rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`;
+        return;
+      }
+
+      for (const d of snap.docs) {
+        const w = d.data();
+        const waybillNo = w.Waybill || w.waybill || "—";
+        const consignee = w.Receiver || w.consignee || "—";
+        const status = w.status || "Imported";
+        let lastScan = "—";
+
+        const scanSnap = await getDocs(
+          query(
+            collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
+            where("waybill", "==", waybillNo),
+            limit(1)
+          )
+        );
+
+        if (!scanSnap.empty) {
+          const s = scanSnap.docs[0].data();
+          lastScan = s.createdAt?.toDate().toLocaleString() || "—";
+        }
+
+        rows.innerHTML += `<tr>
+          <td>${waybillNo}</td>
+          <td>${consignee}</td>
+          <td>${status}</td>
+          <td>${lastScan}</td>
+        </tr>`;
+      }
+
+    } catch (err) {
+      console.error("Error loading view waybills:", err);
+      rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`;
+    }
+
+    return;
+  }
+
+  appDiv.innerHTML = `<div class="panel"><h3>${type}</h3><p>Coming next.</p></div>`;
+};
+
 /* ===================== CSV IMPORT (UNCHANGED) ===================== */
 async function importCSV() {
   const status = document.getElementById("importStatus");
