@@ -158,8 +158,6 @@ function ensureUserReady() {
 }
 
 /* ===================== CUSTOMER SELECT ===================== */
-async function loadCustomers() {
-  const sel = document.getElementById("customerSelect");
   if (!sel) return;
   sel.innerHTML = `<option>Loading...</option>`;
   try {
