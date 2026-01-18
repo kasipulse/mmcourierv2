@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>MM Courier ERP</title>
+<title>MM Courier ERP - Multi-Customer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
@@ -68,6 +68,7 @@ body {
   font-size: 11px;
   margin-top: 6px;
 }
+select { margin-bottom: 6px; }
 </style>
 </head>
 
@@ -137,6 +138,23 @@ function ensureUserReady() {
   return true;
 }
 
+/* ===================== CUSTOMER SELECT ===================== */
+async function loadCustomers() {
+  const sel = document.getElementById("customerSelect");
+  if (!sel) return;
+  sel.innerHTML = `<option>Loading...</option>`;
+  try {
+    const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "customers"));
+    if(snap.empty){ sel.innerHTML=`<option>No customers</option>`; return; }
+    sel.innerHTML = "";
+    snap.forEach(doc=>sel.innerHTML+=`<option value="${doc.id}">${doc.data().name}</option>`);
+  } catch(err){ console.error(err); sel.innerHTML=`<option>Error loading</option>`; }
+}
+
+function getCustomerId() { 
+  return document.getElementById("customerSelect")?.value || null; 
+}
+
 /* ===================== LOAD EDIT TAB ===================== */
 window.loadEdit = async (type) => {
   if (!ensureUserReady()) return;
@@ -144,50 +162,59 @@ window.loadEdit = async (type) => {
 
   const ws = document.getElementById("workspace");
   ws.innerHTML = `
+    <label>Select Customer:</label>
+    <select id="customerSelect" onchange="loadEdit('waybills')"></select><br>
     <h3>Waybills</h3>
     <table border="1" width="100%">
       <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
       <tbody id="wbRows"><tr><td colspan="4">Loading...</td></tr></tbody>
     </table>
   `;
+  await loadCustomers();
+
+  const customerId = getCustomerId();
   const rows = document.getElementById("wbRows");
   rows.innerHTML = "";
 
   try {
-    const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
-    if (snap.empty) { rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`; return; }
+    if(!customerId){ rows.innerHTML=`<tr><td colspan="4">No customer selected</td></tr>`; return; }
 
-    for (const d of snap.docs) {
-      const w = d.data();
-      const waybillNo = w.Waybill || w.waybill || "—";
-      const consignee = w.Receiver || w.consignee || "—";
-      const status = w.status || "Imported";
-      let lastScan = "—";
+    const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills"));
+    if(snap.empty){ rows.innerHTML=`<tr><td colspan="4">No waybills</td></tr>`; return; }
 
-      const scanSnap = await getDocs(
-        query(collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-              where("waybill","==",waybillNo), limit(1))
-      );
-      if (!scanSnap.empty) lastScan = scanSnap.docs[0].data().createdAt?.toDate().toLocaleString() || "—";
+    for(const d of snap.docs){
+      const w=d.data();
+      const waybillNo=w.Waybill||w.waybill||"—";
+      const consignee=w.Receiver||w.consignee||"—";
+      const status=w.status||"Imported";
+      let lastScan="—";
 
-      rows.innerHTML += `<tr>
+      const scanSnap=await getDocs(query(
+        collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,"scans"),
+        where("waybill","==",waybillNo), limit(1)
+      ));
+      if(!scanSnap.empty) lastScan=scanSnap.docs[0].data().createdAt?.toDate().toLocaleString()||"—";
+
+      rows.innerHTML+=`<tr>
         <td>${waybillNo}</td>
         <td>${consignee}</td>
         <td>${status}</td>
         <td>${lastScan}</td>
       </tr>`;
     }
-  } catch(err) { console.error(err); rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`; }
+  } catch(err){ console.error(err); rows.innerHTML=`<tr><td colspan="4">Error loading waybills</td></tr>`; }
 };
 
 /* ===================== LOAD VIEW TAB ===================== */
 window.loadView = async (type) => {
-  if (!ensureUserReady()) return;
+  if(!ensureUserReady()) return;
   const appDiv = document.getElementById("app");
 
-  if (type === "waybills") {
+  if(type==="waybills"){
     appDiv.innerHTML = `
       <div class="panel">
+        <label>Select Customer:</label>
+        <select id="customerSelect" onchange="loadView('waybills')"></select><br>
         <h3>View Waybills</h3>
         <table border="1" width="100%">
           <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
@@ -195,97 +222,104 @@ window.loadView = async (type) => {
         </table>
       </div>
     `;
+    await loadCustomers();
+
+    const customerId = getCustomerId();
     const rows = document.getElementById("viewRows");
-    rows.innerHTML = "";
-    try {
-      const snap = await getDocs(collection(db, "tenants", CURRENT_USER.tenantId, "waybills"));
-      if (snap.empty) { rows.innerHTML = `<tr><td colspan="4">No waybills found.</td></tr>`; return; }
+    rows.innerHTML="";
+    try{
+      if(!customerId){ rows.innerHTML=`<tr><td colspan="4">No customer selected</td></tr>`; return; }
 
-      for (const d of snap.docs) {
-        const w = d.data();
-        const waybillNo = w.Waybill || w.waybill || "—";
-        const consignee = w.Receiver || w.consignee || "—";
-        const status = w.status || "Imported";
-        let lastScan = "—";
+      const snap=await getDocs(collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,"waybills"));
+      if(snap.empty){ rows.innerHTML=`<tr><td colspan="4">No waybills</td></tr>`; return; }
 
-        const scanSnap = await getDocs(
-          query(collection(db, "tenants", CURRENT_USER.tenantId, "scans"),
-                where("waybill","==",waybillNo), limit(1))
-        );
-        if (!scanSnap.empty) lastScan = scanSnap.docs[0].data().createdAt?.toDate().toLocaleString() || "—";
+      for(const d of snap.docs){
+        const w=d.data();
+        const waybillNo=w.Waybill||w.waybill||"—";
+        const consignee=w.Receiver||w.consignee||"—";
+        const status=w.status||"Imported";
+        let lastScan="—";
 
-        rows.innerHTML += `<tr>
+        const scanSnap=await getDocs(query(
+          collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,"scans"),
+          where("waybill","==",waybillNo), limit(1)
+        ));
+        if(!scanSnap.empty) lastScan=scanSnap.docs[0].data().createdAt?.toDate().toLocaleString()||"—";
+
+        rows.innerHTML+=`<tr>
           <td>${waybillNo}</td>
           <td>${consignee}</td>
           <td>${status}</td>
           <td>${lastScan}</td>
         </tr>`;
       }
-    } catch(err) { console.error(err); rows.innerHTML = `<tr><td colspan="4">Error loading waybills.</td></tr>`; }
-    return;
+    }catch(err){ console.error(err); rows.innerHTML=`<tr><td colspan="4">Error loading waybills</td></tr>`; }
   }
 };
 
 /* ===================== LOAD PROCESS TAB ===================== */
-window.loadProcess = async (type) => {
-  if (!ensureUserReady()) return;
-  const ws = document.getElementById("workspace");
-  if (type !== "in" && type !== "out") return;
+window.loadProcess = async(type)=>{
+  if(!ensureUserReady()) return;
+  const ws=document.getElementById("workspace");
+  if(type!=="in" && type!=="out") return;
 
-  ws.innerHTML = `<h3>Scan ${type.toUpperCase()}</h3>
-    <input id="scanWB" autocomplete="off">
-    <div class="status" id="scanStatus">Waiting for next scan…</div>`;
-  
-  const input = document.getElementById("scanWB");
-  const status = document.getElementById("scanStatus");
-  const ok = new Audio("https://www.soundjay.com/button/beep-07.wav");
-  const bad = new Audio("https://www.soundjay.com/button/beep-10.wav");
+  ws.innerHTML=`<label>Select Customer:</label><select id="customerSelect" onchange="loadProcess('${type}')"></select><br>
+  <h3>Scan ${type.toUpperCase()}</h3>
+  <input id="scanWB" autocomplete="off">
+  <div class="status" id="scanStatus">Waiting for next scan…</div>`;
+  await loadCustomers();
+
+  const input=document.getElementById("scanWB");
+  const status=document.getElementById("scanStatus");
+  const ok=new Audio("https://www.soundjay.com/button/beep-07.wav");
+  const bad=new Audio("https://www.soundjay.com/button/beep-10.wav");
 
   input.focus();
-  input.onkeydown = async (e) => {
-    if (e.key !== "Enter") return;
-    const waybill = input.value.trim();
-    if (!waybill) return;
+  input.onkeydown=async(e)=>{
+    if(e.key!=="Enter") return;
+    const waybill=input.value.trim();
+    if(!waybill) return;
+    const customerId=getCustomerId();
+    if(!customerId){ status.innerText="Select customer first"; return; }
+
     input.value=""; input.disabled=true; status.innerText="Saving scan...";
 
-    try {
-      const wbSnap = await getDocs(query(
-        collection(db,"tenants",CURRENT_USER.tenantId,"waybills"),
+    try{
+      const wbSnap=await getDocs(query(
+        collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,"waybills"),
         where("Waybill","==",waybill), limit(1)
       ));
-      if (wbSnap.empty) { bad.play(); status.innerText="❌ Waybill not found"; throw "WAYBILL_NOT_FOUND"; }
-      const wbDoc = wbSnap.docs[0];
+      if(wbSnap.empty){ bad.play(); status.innerText="❌ Waybill not found"; throw "WAYBILL_NOT_FOUND"; }
+      const wbDoc=wbSnap.docs[0];
 
-      const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
-      const dupSnap = await getDocs(query(
-        collection(db,"tenants",CURRENT_USER.tenantId,"scans"),
+      const startOfToday=new Date(); startOfToday.setHours(0,0,0,0);
+      const dupSnap=await getDocs(query(
+        collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,"scans"),
         where("waybill","==",waybill),
         where("type","==",type==="in"?"IN":"OUT")
       ));
-      const duplicate = dupSnap.docs.some(d=>d.data().createdAt?.toDate()>=startOfToday);
-      if (duplicate) { bad.play(); status.innerText="⚠️ Already scanned today"; throw "DUPLICATE_SCAN"; }
+      const duplicate=dupSnap.docs.some(d=>d.data().createdAt?.toDate()>=startOfToday);
+      if(duplicate){ bad.play(); status.innerText="⚠️ Already scanned today"; throw "DUPLICATE_SCAN"; }
 
-      await addDoc(collection(db,"tenants",CURRENT_USER.tenantId,"scans"),{
+      await addDoc(collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,"scans"),{
         waybill,type:type==="in"?"IN":"OUT",createdAt:serverTimestamp()
       });
       await updateDoc(wbDoc.ref,{status:type==="in"?"On Floor":"Out for Delivery"});
       ok.play(); status.innerText=`✅ ${waybill} scanned`;
-    } catch(err) {
-      if(err!=="WAYBILL_NOT_FOUND" && err!=="DUPLICATE_SCAN"){bad.play(); status.innerText="❌ Scan failed";}
-    }
+    }catch(err){ if(err!=="WAYBILL_NOT_FOUND"&&err!=="DUPLICATE_SCAN"){bad.play();status.innerText="❌ Scan failed";} }
 
     setTimeout(()=>{input.disabled=false; input.focus(); status.innerText="Waiting for next scan…";},200);
   };
 };
 
 /* ===================== LOAD PANEL FUNCTION ===================== */
-window.loadPanel = (panel) => {
-  if (!ensureUserReady()) return;
-  const appDiv = document.getElementById("app");
+window.loadPanel=(panel)=>{
+  if(!ensureUserReady()) return;
+  const appDiv=document.getElementById("app");
 
   switch(panel){
     case "edit":
-      appDiv.innerHTML = `<div class="panel"><h3>Edit</h3>
+      appDiv.innerHTML=`<div class="panel"><h3>Edit</h3>
         <div class="edit-container">
           <div class="sidebar">
             <div onclick="loadEdit('waybills')">Waybills</div>
@@ -296,7 +330,7 @@ window.loadPanel = (panel) => {
         </div>
       </div>`; break;
     case "process":
-      appDiv.innerHTML = `<div class="panel"><h3>Process</h3>
+      appDiv.innerHTML=`<div class="panel"><h3>Process</h3>
         <div class="edit-container">
           <div class="sidebar">
             <div onclick="loadProcess('in')">Scan IN</div>
@@ -308,10 +342,11 @@ window.loadPanel = (panel) => {
     case "view":
       loadView('waybills'); break;
     case "import":
-      appDiv.innerHTML = `<div class="panel"><h3>Import Manifests</h3>
+      appDiv.innerHTML=`<div class="panel"><h3>Import Manifests</h3>
         <div class="edit-container">
           <div class="sidebar"><div>Upload Files</div></div>
           <div class="workspace" id="workspace">
+            <label>Select Customer:</label><select id="customerSelect" onchange="loadPanel('import')"></select><br>
             <label>Waybill CSV</label><br><input type="file" id="waybillFile"><br><br>
             <label>Content CSV</label><br><input type="file" id="contentFile"><br><br>
             <label>Track CSV</label><br><input type="file" id="trackFile"><br><br>
@@ -320,6 +355,7 @@ window.loadPanel = (panel) => {
           </div>
         </div>
       </div>`;
+      loadCustomers();
       document.getElementById("importBtn").onclick=importCSV; break;
     default: appDiv.innerHTML=`<div class="panel"><h3>${panel}</h3><p>Coming next.</p></div>`;
   }
@@ -329,17 +365,32 @@ window.loadPanel = (panel) => {
 async function importCSV(){
   const status=document.getElementById("importStatus");
   status.innerText="Processing...";
+  const customerId=getCustomerId();
+  if(!customerId){ status.innerText="Select a customer first"; return; }
+
   const files={waybill:waybillFile.files[0],content:contentFile.files[0],track:trackFile.files[0]};
   let success=0,fail=0;
+
   const parse=t=>{const [h,...l]=t.trim().split(/\r?\n/);const k=h.split(",");return l.map(r=>{const v=r.split(",");return Object.fromEntries(k.map((x,i)=>[x,v[i]||""]));});};
-  const run=async(f,col)=>{if(!f)return;for(const r of parse(await f.text())){if(!r.Waybill){fail++;continue;}try{await addDoc(collection(db,"tenants",CURRENT_USER.tenantId,col),{...r,tenantId:CURRENT_USER.tenantId,createdAt:serverTimestamp()});success++;}catch{fail++;}}};
-  await run(files.waybill,"waybills"); await run(files.content,"contents"); await run(files.track,"tracking");
+
+  const run=async(f,col)=>{if(!f) return;
+    for(const r of parse(await f.text())){
+      if(!r.Waybill){ fail++; continue; }
+      try{ await addDoc(collection(db,"tenants",CURRENT_USER.tenantId,"customers",customerId,col),{...r,tenantId:CURRENT_USER.tenantId,createdAt:serverTimestamp()}); success++; }
+      catch{ fail++; }
+    }
+  };
+
+  await run(files.waybill,"waybills");
+  await run(files.content,"contents");
+  await run(files.track,"tracking");
+
   status.innerText=`Import complete: ✅ ${success} ❌ ${fail}`;
 }
 
 /* ===================== LOGOUT ===================== */
-window.logout = async()=>{await signOut(auth);location.href="login.html";}
-</script>
+window.logout = async()=>{ await signOut(auth); location.href="login.html"; }
 
+</script>
 </body>
 </html>
