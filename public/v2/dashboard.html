@@ -210,8 +210,13 @@ window.loadPanel = (panel) => {
     return;
   }
 
-  appDiv.innerHTML = `<div class="panel"><h3>${panel}</h3><p>Coming next.</p></div>`;
-};
+  if (panel === "view") {
+  // Default to showing waybills in view mode
+  loadView('waybills');
+  return;
+}
+
+appDiv.innerHTML = `<div class="panel"><h3>${panel}</h3><p>Coming next.</p></div>`;
 
 /* ===================== WAYBILLS ===================== */
 window.loadEdit = async (type) => {
