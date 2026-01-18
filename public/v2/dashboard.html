@@ -116,6 +116,20 @@ let CURRENT_USER = null;
 let CUSTOMERS = [];
 let ACTIVE_CUSTOMER = null;
 
+/* ===================== CUSTOMER STATE ===================== */
+async function loadCustomerState() {
+  const snap = await getDocs(
+    collection(db, "tenants", CURRENT_USER.tenantId, "customers")
+  );
+
+  CUSTOMERS = snap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
+
+  ACTIVE_CUSTOMER = CUSTOMERS[0] || null;
+}
+
 async function loadCustomers() {
   const snap = await getDocs(
     collection(db, "tenants", CURRENT_USER.tenantId, "customers")
