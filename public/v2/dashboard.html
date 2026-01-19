@@ -286,17 +286,16 @@ window.loadImport = () => {
 
   document.getElementById("app").innerHTML = `
     <div class="panel">
-      <label>Select Customer:</label>
+      <label for="customerSelect">Select Customer:</label>
       <select id="customerSelect"></select><br><br>
 
-      <label>Import Waybills (CSV):</label><br>
+      <label for="wbFile">Import Waybills (CSV):</label><br>
       <input type="file" id="wbFile" accept=".csv"><br><br>
 
       <button onclick="runImport()">Import</button>
       <div class="status" id="importStatus"></div>
     </div>
   `;
-  if (panel === "import") loadImport();
 
   populateCustomerSelect();
 };
