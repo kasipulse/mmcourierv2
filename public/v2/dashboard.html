@@ -384,8 +384,15 @@ window.loadPanel = (panel) => {
       </div>`;
   }
 
-  if (panel === "view") loadView();
+  if (panel === "view") {
+    loadView();
+  }
+
+  if (panel === "import") {
+    loadImport();
+  }
 };
+
 
 /* ===================== LOGOUT ===================== */
 window.logout = async () => {
