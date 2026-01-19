@@ -104,6 +104,27 @@ let CURRENT_USER = null;
 let CUSTOMERS = [];
 let ACTIVE_CUSTOMER = null;
 
+/* ===================== CSV PARSER ===================== */
+function parseCSV(text) {
+  const [header, ...lines] = text.trim().split(/\r?\n/);
+  const keys = header.split(",").map(h => h.trim());
+
+  return lines.map(line => {
+    const values = line.split(",");
+    const raw = Object.fromEntries(
+      keys.map((k, i) => [k, values[i] || ""])
+    );
+
+    // normalize keys
+    const normalized = {};
+    for (const k in raw) {
+      normalized[k.toLowerCase()] = raw[k].trim();
+    }
+    return normalized;
+  });
+}
+
+  
 /* ===================== CUSTOMER STATE ===================== */
 async function loadCustomerState() {
   const snap = await getDocs(
@@ -203,7 +224,7 @@ window.loadEdit = async (type) => {
     const w = d.data();
     rows.innerHTML += `
       <tr>
-        <td>${w.Waybill || "—"}</td>
+        <td>${w.waybill || "—"}</td>
         <td>${w.Receiver || "—"}</td>
         <td>${w.status || "Imported"}</td>
         <td>—</td>
@@ -259,6 +280,80 @@ window.loadView = async () => {
   populateCustomerSelect();
 };
 
+/* ===================== IMPORT ===================== */
+window.loadImport = () => {
+  if (!ensureUserReady()) return;
+
+  document.getElementById("app").innerHTML = `
+    <div class="panel">
+      <label>Select Customer:</label>
+      <select id="customerSelect"></select><br><br>
+
+      <label>Import Waybills (CSV):</label><br>
+      <input type="file" id="wbFile" accept=".csv"><br><br>
+
+      <button onclick="runImport()">Import</button>
+      <div class="status" id="importStatus"></div>
+    </div>
+  `;
+  if (panel === "import") loadImport();
+
+  populateCustomerSelect();
+};
+
+  window.runImport = async () => {
+  const file = document.getElementById("wbFile")?.files[0];
+  const status = document.getElementById("importStatus");
+  const customerId = getCustomerId();
+
+  if (!file) {
+    status.innerText = "Please select a CSV file";
+    return;
+  }
+
+  if (!customerId) {
+    status.innerText = "Please select a customer";
+    return;
+  }
+
+  const rows = parseCSV(await file.text());
+  let success = 0;
+  let failed = 0;
+
+  for (const r of rows) {
+    if (!r.waybill) {
+      failed++;
+      continue;
+    }
+
+    try {
+      await addDoc(
+        collection(
+          db,
+          "tenants",
+          CURRENT_USER.tenantId,
+          "customers",
+          customerId,
+          "waybills"
+        ),
+        {
+          ...r,
+          waybill: r.waybill,
+          status: "Imported",
+          createdAt: serverTimestamp()
+        }
+      );
+      success++;
+    } catch (e) {
+      console.error(e);
+      failed++;
+    }
+  }
+
+  status.innerText = `Import complete: ${success} imported, ${failed} skipped`;
+};
+
+  
 /* ===================== PANEL ===================== */
 window.loadPanel = (panel) => {
   if (!ensureUserReady()) return;
