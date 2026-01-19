@@ -107,23 +107,25 @@ let ACTIVE_CUSTOMER = null;
 /* ===================== CSV PARSER ===================== */
 function parseCSV(text) {
   const [header, ...lines] = text.trim().split(/\r?\n/);
-  const keys = header.split(",").map(h => h.trim());
+  const keys = header.split(",").map(h => h.trim().toLowerCase());
 
   return lines.map(line => {
     const values = line.split(",");
-    const raw = Object.fromEntries(
-      keys.map((k, i) => [k, values[i] || ""])
-    );
+    const row = {};
 
-    // normalize keys
-    const normalized = {};
-    for (const k in raw) {
-      normalized[k.toLowerCase()] = raw[k].trim();
-    }
-    return normalized;
+    keys.forEach((k, i) => {
+      row[k] = (values[i] || "").trim();
+    });
+
+    // normalize aliases
+    return {
+      waybill: row.waybill || "",
+      trackingNumber: row.tracking || row.track || "",
+      contents: row.contents || row.content || "",
+      consignee: row.consignee || row.receiver || "",
+    };
   });
 }
-
   
 /* ===================== CUSTOMER STATE ===================== */
 async function loadCustomerState() {
