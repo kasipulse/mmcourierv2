@@ -288,11 +288,20 @@ window.loadImport = () => {
 
   document.getElementById("app").innerHTML = `
     <div class="panel">
-      <label for="customerSelect">Select Customer:</label>
+      <h3>Import Manifests</h3>
+
+      <label for="customerSelect">Customer:</label><br>
       <select id="customerSelect"></select><br><br>
 
-      <label for="wbFile">Import Waybills (CSV):</label><br>
-      <input type="file" id="wbFile" accept=".csv"><br><br>
+      <label for="importType">Import Type:</label><br>
+      <select id="importType">
+        <option value="waybills">Waybills</option>
+        <option value="contents">Contents</option>
+        <option value="tracking">Tracking</option>
+      </select><br><br>
+
+      <label for="csvFile">CSV File:</label><br>
+      <input type="file" id="csvFile" accept=".csv"><br><br>
 
       <button onclick="runImport()">Import</button>
       <div class="status" id="importStatus"></div>
