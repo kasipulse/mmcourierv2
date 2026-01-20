@@ -466,6 +466,50 @@ window.loadPanel = (panel) => {
   }
 };
 
+  /* ===================== INIT STRUCTURE ===================== */
+window.initTenantStructure = async () => {
+  if (!ensureUserReady()) return;
+
+  const tenantId = CURRENT_USER.tenantId;
+
+  const baseCollections = [
+    "drivers",
+    "tripsheets",
+    "depots"
+  ];
+
+  for (const col of baseCollections) {
+    await addDoc(
+      collection(db, "tenants", tenantId, col),
+      { _init: true, createdAt: serverTimestamp() }
+    );
+  }
+
+  // Init customer sub-collections
+  const customersSnap = await getDocs(
+    collection(db, "tenants", tenantId, "customers")
+  );
+
+  for (const c of customersSnap.docs) {
+    const cid = c.id;
+
+    const customerCollections = [
+      "waybills",
+      "scans",
+      "contents",
+      "tracking"
+    ];
+
+    for (const sub of customerCollections) {
+      await addDoc(
+        collection(db, "tenants", tenantId, "customers", cid, sub),
+        { _init: true, createdAt: serverTimestamp() }
+      );
+    }
+  }
+
+  alert("✅ Collections created. Refresh Firestore.");
+};
 
 /* ===================== LOGOUT ===================== */
 window.logout = async () => {
