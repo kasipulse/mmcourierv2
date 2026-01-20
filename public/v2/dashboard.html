@@ -367,6 +367,64 @@ window.runImport = async () => {
 
   status.innerText = `Import complete: ${success} imported, ${failed} skipped`;
 };
+
+window.openWaybill = async (customerId, waybill) => {
+  if (!ensureUserReady()) return;
+
+  const ws = document.getElementById("workspace");
+  ws.innerHTML = `<h3>Loading ${waybill}...</h3>`;
+
+  // 1️⃣ Waybill
+  const wbSnap = await getDocs(
+    query(
+      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills"),
+      where("waybill", "==", waybill),
+      limit(1)
+    )
+  );
+
+  if (wbSnap.empty) {
+    ws.innerHTML = "Waybill not found";
+    return;
+  }
+
+  // 2️⃣ Contents
+  const contentsSnap = await getDocs(
+    query(
+      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "contents"),
+      where("waybill", "==", waybill)
+    )
+  );
+
+  // 3️⃣ Tracking
+  const trackingSnap = await getDocs(
+    query(
+      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "tracking"),
+      where("waybill", "==", waybill),
+      limit(50)
+    )
+  );
+
+  // 4️⃣ Render
+  ws.innerHTML = `
+    <h3>Waybill ${waybill}</h3>
+
+    <h4>Contents</h4>
+    ${contentsSnap.empty ? "No contents" :
+      `<ul>${contentsSnap.docs.map(d =>
+        `<li>${d.data().item || d.data().description}</li>`
+      ).join("")}</ul>`
+    }
+
+    <h4>Tracking</h4>
+    ${trackingSnap.empty ? "No tracking" :
+      `<ul>${trackingSnap.docs.map(d =>
+        `<li>${d.data().status || d.data().event}</li>`
+      ).join("")}</ul>`
+    }
+  `;
+};
+
   
 /* ===================== PANEL ===================== */
 window.loadPanel = (panel) => {
