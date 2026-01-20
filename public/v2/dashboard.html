@@ -311,10 +311,11 @@ window.loadImport = () => {
   populateCustomerSelect();
 };
 
- window.runImport = async () => {
-  const file = document.getElementById("wbFile")?.files[0];
+window.runImport = async () => {
+  const file = document.getElementById("csvFile")?.files[0];
   const status = document.getElementById("importStatus");
   const customerId = getCustomerId();
+  const importType = document.getElementById("importType").value;
 
   if (!file) {
     status.innerText = "Please select a CSV file";
@@ -336,17 +337,6 @@ window.loadImport = () => {
       continue;
     }
 
-    // 🔍 Detect target collection
-    let target = "waybills";
-
-    if (r.item || r.description || r.qty) {
-      target = "contents";
-    }
-
-    if (r.status || r.location || r.event || r.scan) {
-      target = "tracking";
-    }
-
     try {
       await addDoc(
         collection(
@@ -355,7 +345,7 @@ window.loadImport = () => {
           CURRENT_USER.tenantId,
           "customers",
           customerId,
-          target
+          importType
         ),
         {
           ...r,
@@ -364,7 +354,6 @@ window.loadImport = () => {
           createdAt: serverTimestamp()
         }
       );
-
       success++;
     } catch (e) {
       console.error(e);
