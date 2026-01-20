@@ -302,7 +302,7 @@ window.loadImport = () => {
   populateCustomerSelect();
 };
 
-  window.runImport = async () => {
+ window.runImport = async () => {
   const file = document.getElementById("wbFile")?.files[0];
   const status = document.getElementById("importStatus");
   const customerId = getCustomerId();
@@ -327,6 +327,17 @@ window.loadImport = () => {
       continue;
     }
 
+    // 🔍 Detect target collection
+    let target = "waybills";
+
+    if (r.item || r.description || r.qty) {
+      target = "contents";
+    }
+
+    if (r.status || r.location || r.event || r.scan) {
+      target = "tracking";
+    }
+
     try {
       await addDoc(
         collection(
@@ -335,15 +346,16 @@ window.loadImport = () => {
           CURRENT_USER.tenantId,
           "customers",
           customerId,
-          "waybills"
+          target
         ),
         {
           ...r,
           waybill: r.waybill,
-          status: "Imported",
+          source: "import",
           createdAt: serverTimestamp()
         }
       );
+
       success++;
     } catch (e) {
       console.error(e);
@@ -353,7 +365,6 @@ window.loadImport = () => {
 
   status.innerText = `Import complete: ${success} imported, ${failed} skipped`;
 };
-
   
 /* ===================== PANEL ===================== */
 window.loadPanel = (panel) => {
