@@ -226,7 +226,11 @@ window.loadEdit = async (type) => {
     const w = d.data();
     rows.innerHTML += `
       <tr>
-        <td>${w.waybill || "—"}</td>
+        <td>
+  <a href="#" onclick="openWaybill('${customerId}', '${w.waybill}')">
+    ${w.waybill}
+  </a>
+</td>
         <td>${w.Receiver || "—"}</td>
         <td>${w.status || "Imported"}</td>
         <td>—</td>
