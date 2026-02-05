@@ -194,14 +194,18 @@ window.loadEdit = async (type) => {
 
   const ws = document.getElementById("workspace");
   ws.innerHTML = `
+  <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
     <label>Select Customer:</label>
-    <select id="customerSelect" onchange="loadEdit('waybills')"></select><br>
-    <h3>Waybills</h3>
-    <table border="1" width="100%">
-      <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
-      <tbody id="wbRows"></tbody>
-    </table>
-  `;
+    <select id="customerSelect"></select>
+    <button title="Refresh waybills" onclick="refreshWaybills()">🔄</button>
+  </div>
+
+  <h3>Waybills</h3>
+  <table border="1" width="100%">
+    <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
+    <tbody id="wbRows"></tbody>
+  </table>
+`;
   populateCustomerSelect();
 
   const customerId = getCustomerId();
@@ -311,7 +315,32 @@ window.loadImport = () => {
     </div>
   `;
 
-  populateCustomerSelect();
+function populateCustomerSelect() {
+  const sel = document.getElementById("customerSelect");
+  if (!sel) return;
+
+  sel.innerHTML = "";
+
+  if (!CUSTOMERS.length) {
+    sel.innerHTML = `<option>No customers</option>`;
+    return;
+  }
+
+  CUSTOMERS.forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+  });
+
+  // default selection
+  if (ACTIVE_CUSTOMER) {
+    sel.value = ACTIVE_CUSTOMER.id;
+  }
+
+  sel.onchange = () => {
+    ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
+    refreshWaybills(); // ✅ refresh only
+  };
+}
+
 };
 
 window.runImport = async () => {
