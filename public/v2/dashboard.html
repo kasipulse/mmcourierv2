@@ -152,11 +152,10 @@ function populateCustomerSelect() {
     sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
 
-  sel.value = ACTIVE_CUSTOMER?.id || "";
-  sel.onchange = () => {
-    ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
-  };
-}
+sel.onchange = () => {
+  ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
+  loadEdit("waybills"); // 🔥 reload data immediately
+};
 
 function getCustomerId() {
   return document.getElementById("customerSelect")?.value || null;
