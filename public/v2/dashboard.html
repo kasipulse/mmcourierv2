@@ -33,7 +33,6 @@ body {
   background: #d4d0c8;
   border: 2px outset #ffffff;
   padding: 8px;
-  margin-bottom: 8px;
 }
 .edit-container { display: flex; gap: 6px; }
 .sidebar {
@@ -63,18 +62,14 @@ select { margin-bottom: 6px; }
 <div class="toolbar">
   <button onclick="loadPanel('edit')">Edit</button>
   <button onclick="loadPanel('process')">Process</button>
-  <button onclick="loadPanel('view')">View</button>
-  <button onclick="loadPanel('reports')">Reports</button>
   <button onclick="loadPanel('import')">Import</button>
-  <button id="adminTab" onclick="loadPanel('admin')">Admin</button>
-  <button onclick="loadPanel('analytics')">Analytics</button>
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <div id="app">
   <div class="panel">
     <h3>Welcome to MM Courier ERP</h3>
-    <div class="status" id="tenantStatus">Loading tenant...</div>
+    <div class="status" id="tenantStatus">Loading...</div>
   </div>
 </div>
 
@@ -83,10 +78,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/fireba
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, collection, addDoc, getDocs,
-  serverTimestamp, query, where, limit, updateDoc
+  serverTimestamp, query, where, limit
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-/* ===================== FIREBASE ===================== */
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDVn4lqyV-I9Z1tQNKnrbHEZCvdNY1FDY4",
   authDomain: "mm-courier-software.firebaseapp.com",
@@ -96,39 +91,33 @@ const firebaseConfig = {
   appId: "1:1088997998974:web:7d31deb10940ef2b4af32f"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const appFB = initializeApp(firebaseConfig);
+const auth = getAuth(appFB);
+const db = getFirestore(appFB);
 
 let CURRENT_USER = null;
 let CUSTOMERS = [];
 let ACTIVE_CUSTOMER = null;
 
-/* ===================== CSV PARSER ===================== */
-function parseCSV(text) {
-  const [header, ...lines] = text.trim().split(/\r?\n/);
-  const keys = header.split(",").map(h => h.trim().toLowerCase());
+/* ================= AUTH ================= */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return location.href = "login.html";
 
-  return lines.map(line => {
-    const values = line.split(",");
-    const row = {};
+  const snap = await getDoc(doc(db, "users", user.uid));
+  CURRENT_USER = snap.data();
 
-    keys.forEach((k, i) => {
-      row[k] = (values[i] || "").trim();
-    });
+  await loadCustomers();
 
-    // normalize aliases
-    return {
-      waybill: row.waybill || "",
-      trackingNumber: row.tracking || row.track || "",
-      contents: row.contents || row.content || "",
-      consignee: row.consignee || row.receiver || "",
-    };
-  });
+  document.getElementById("tenantStatus").innerText =
+    `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
+});
+
+/* ================= HELPERS ================= */
+function ensureUserReady() {
+  return CURRENT_USER?.tenantId;
 }
-  
-/* ===================== CUSTOMER STATE ===================== */
-async function loadCustomerState() {
+
+async function loadCustomers() {
   const snap = await getDocs(
     collection(db, "tenants", CURRENT_USER.tenantId, "customers")
   );
@@ -136,72 +125,52 @@ async function loadCustomerState() {
   ACTIVE_CUSTOMER = CUSTOMERS[0] || null;
 }
 
-/* ===================== CUSTOMER UI ===================== */
 function populateCustomerSelect() {
   const sel = document.getElementById("customerSelect");
   if (!sel) return;
 
   sel.innerHTML = "";
 
-  if (!CUSTOMERS.length) {
-    sel.innerHTML = `<option>No customers</option>`;
-    return;
-  }
-
   CUSTOMERS.forEach(c => {
     sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
 
-sel.onchange = () => {
-  ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
-  loadEdit("waybills"); // 🔥 reload data immediately
-};
+  if (ACTIVE_CUSTOMER) sel.value = ACTIVE_CUSTOMER.id;
+
+  sel.onchange = () => {
+    ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
+    refreshWaybills();
+  };
+}
 
 function getCustomerId() {
-  return document.getElementById("customerSelect")?.value || null;
+  return document.getElementById("customerSelect")?.value;
 }
 
-/* ===================== AUTH ===================== */
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return location.href = "login.html";
-
-  const snap = await getDoc(doc(db, "users", user.uid));
-  if (!snap.exists()) return alert("User profile not found");
-
-  CURRENT_USER = snap.data();
-  await loadCustomerState();
-
-  document.getElementById("tenantStatus").innerText =
-    `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
-
-  if (CURRENT_USER.role !== "admin") {
-    document.getElementById("adminTab").style.display = "none";
-  }
-});
-
-/* ===================== SAFETY ===================== */
-function ensureUserReady() {
-  if (!CURRENT_USER?.tenantId) {
-    alert("User still loading");
-    return false;
-  }
-  return true;
-}
-
-/* ===================== EDIT ===================== */
+/* ================= EDIT ================= */
 window.loadEdit = async () => {
   if (!ensureUserReady()) return;
 
+  document.getElementById("app").innerHTML = `
+    <div class="panel">
+      <div class="edit-container">
+        <div class="sidebar">
+          <div onclick="loadEdit()">Waybills</div>
+        </div>
+        <div class="workspace" id="workspace"></div>
+      </div>
+    </div>
+  `;
+
   const ws = document.getElementById("workspace");
   ws.innerHTML = `
-    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-      <label>Select Customer:</label>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <label>Customer:</label>
       <select id="customerSelect"></select>
-      <button title="Refresh waybills" onclick="refreshWaybills()">🔄</button>
+      <button onclick="refreshWaybills()">🔄</button>
     </div>
 
-    <h3>Waybills</h3>
-    <table border="1" width="100%">
+    <table border="1" width="100%" style="margin-top:6px;">
       <tr>
         <th>Waybill</th>
         <th>Consignee</th>
@@ -209,57 +178,44 @@ window.loadEdit = async () => {
         <th>Last Scan</th>
       </tr>
       <tbody id="wbRows">
-        <tr><td colspan="4">Select a customer</td></tr>
+        <tr><td colspan="4">Loading...</td></tr>
       </tbody>
     </table>
   `;
 
   populateCustomerSelect();
-  refreshWaybills(); // ✅ first load
+  refreshWaybills();
 };
 
 window.refreshWaybills = async () => {
   const customerId = getCustomerId();
   const rows = document.getElementById("wbRows");
 
-  if (!customerId || !rows) {
-    rows.innerHTML = `<tr><td colspan="4">No customer selected</td></tr>`;
+  if (!customerId) {
+    rows.innerHTML = `<tr><td colspan="4">Select customer</td></tr>`;
     return;
   }
 
   rows.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
 
   const snap = await getDocs(
-    collection(
-      db,
-      "tenants",
-      CURRENT_USER.tenantId,
-      "customers",
-      customerId,
-      "waybills"
-    )
+    collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills")
   );
+
+  rows.innerHTML = "";
 
   if (snap.empty) {
     rows.innerHTML = `<tr><td colspan="4">No waybills</td></tr>`;
     return;
   }
 
-  rows.innerHTML = "";
-
-  snap.docs.forEach(d => {
+  snap.forEach(d => {
     const w = d.data();
-
-    // ⛔ skip init / broken docs
     if (!w.waybill) return;
 
     rows.innerHTML += `
       <tr>
-        <td>
-          <a href="#" onclick="openWaybill('${customerId}', '${w.waybill}')">
-            ${w.waybill}
-          </a>
-        </td>
+        <td>${w.waybill}</td>
         <td>${w.Receiver || "—"}</td>
         <td>${w.status || "Imported"}</td>
         <td>—</td>
@@ -268,305 +224,53 @@ window.refreshWaybills = async () => {
   });
 };
 
-/* ===================== PROCESS ===================== */
+/* ================= PROCESS ================= */
 window.loadProcess = async (type) => {
-  if (!ensureUserReady()) return;
-
-  const ws = document.getElementById("workspace");
-  ws.innerHTML = `
-    <label>Select Customer:</label>
-    <select id="customerSelect"></select><br>
-    <h3>Scan ${type.toUpperCase()}</h3>
-    <input id="scanWB" autofocus>
-    <div class="status" id="scanStatus"></div>
+  document.getElementById("app").innerHTML = `
+    <div class="panel">
+      <label>Customer:</label>
+      <select id="customerSelect"></select><br>
+      <input id="scanWB" placeholder="Scan waybill">
+      <div class="status" id="scanStatus"></div>
+    </div>
   `;
+
   populateCustomerSelect();
 
-  const input = document.getElementById("scanWB");
-  const status = document.getElementById("scanStatus");
-
-  input.onkeydown = async (e) => {
+  document.getElementById("scanWB").onkeydown = async (e) => {
     if (e.key !== "Enter") return;
 
-    const waybill = input.value.trim();
-    const customerId = getCustomerId();
-    if (!waybill || !customerId) return;
-
     await addDoc(
-      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "scans"),
-      { waybill, type: type.toUpperCase(), createdAt: serverTimestamp() }
+      collection(
+        db,
+        "tenants",
+        CURRENT_USER.tenantId,
+        "customers",
+        getCustomerId(),
+        "scans"
+      ),
+      { waybill: e.target.value, createdAt: serverTimestamp() }
     );
 
-    status.innerText = `Scanned ${waybill}`;
-    input.value = "";
+    document.getElementById("scanStatus").innerText = "Scanned";
+    e.target.value = "";
   };
 };
 
-/* ===================== VIEW ===================== */
-window.loadView = async () => {
-  if (!ensureUserReady()) return;
-
+/* ================= IMPORT ================= */
+window.loadImport = () => {
   document.getElementById("app").innerHTML = `
     <div class="panel">
-      <label>Select Customer:</label>
-      <select id="customerSelect"></select>
-      <div class="workspace" id="workspace"></div>
+      <h3>Import</h3>
+      <select id="customerSelect"></select><br>
+      <input type="file"><br>
+      <button>Import</button>
     </div>
   `;
   populateCustomerSelect();
 };
 
-/* ===================== IMPORT ===================== */
-window.loadImport = () => {
-  if (!ensureUserReady()) return;
-
-  document.getElementById("app").innerHTML = `
-    <div class="panel">
-      <h3>Import Manifests</h3>
-
-      <label for="customerSelect">Customer:</label><br>
-      <select id="customerSelect"></select><br><br>
-
-      <label for="importType">Import Type:</label><br>
-      <select id="importType">
-        <option value="waybills">Waybills</option>
-        <option value="contents">Contents</option>
-        <option value="tracking">Tracking</option>
-      </select><br><br>
-
-      <label for="csvFile">CSV File:</label><br>
-      <input type="file" id="csvFile" accept=".csv"><br><br>
-
-      <button onclick="runImport()">Import</button>
-      <div class="status" id="importStatus"></div>
-    </div>
-  `;
-
-function populateCustomerSelect() {
-  const sel = document.getElementById("customerSelect");
-  if (!sel) return;
-
-  sel.innerHTML = "";
-
-  if (!CUSTOMERS.length) {
-    sel.innerHTML = `<option>No customers</option>`;
-    return;
-  }
-
-  CUSTOMERS.forEach(c => {
-    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-  });
-
-  // default selection
-  if (ACTIVE_CUSTOMER) {
-    sel.value = ACTIVE_CUSTOMER.id;
-  }
-
-  sel.onchange = () => {
-    ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
-    refreshWaybills(); // ✅ refresh only
-  };
-}
-
-};
-
-window.runImport = async () => {
-  const file = document.getElementById("csvFile")?.files[0];
-  const status = document.getElementById("importStatus");
-  const customerId = getCustomerId();
-  const importType = document.getElementById("importType").value;
-
-  if (!file) {
-    status.innerText = "Please select a CSV file";
-    return;
-  }
-
-  if (!customerId) {
-    status.innerText = "Please select a customer";
-    return;
-  }
-
-  const rows = parseCSV(await file.text());
-  let success = 0;
-  let failed = 0;
-
-  for (const r of rows) {
-    if (!r.waybill) {
-      failed++;
-      continue;
-    }
-
-    try {
-      await addDoc(
-        collection(
-          db,
-          "tenants",
-          CURRENT_USER.tenantId,
-          "customers",
-          customerId,
-          importType
-        ),
-        {
-          ...r,
-          waybill: r.waybill,
-          source: "import",
-          createdAt: serverTimestamp()
-        }
-      );
-      success++;
-    } catch (e) {
-      console.error(e);
-      failed++;
-    }
-  }
-
-  status.innerText = `Import complete: ${success} imported, ${failed} skipped`;
-};
-
-window.openWaybill = async (customerId, waybill) => {
-  if (!ensureUserReady()) return;
-
-  const ws = document.getElementById("workspace");
-  ws.innerHTML = `<h3>Loading ${waybill}...</h3>`;
-
-  // 1️⃣ Waybill
-  const wbSnap = await getDocs(
-    query(
-      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills"),
-      where("waybill", "==", waybill),
-      limit(1)
-    )
-  );
-
-  if (wbSnap.empty) {
-    ws.innerHTML = "Waybill not found";
-    return;
-  }
-
-  // 2️⃣ Contents
-  const contentsSnap = await getDocs(
-    query(
-      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "contents"),
-      where("waybill", "==", waybill)
-    )
-  );
-
-  // 3️⃣ Tracking
-  const trackingSnap = await getDocs(
-    query(
-      collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "tracking"),
-      where("waybill", "==", waybill),
-      limit(50)
-    )
-  );
-
-  // 4️⃣ Render
-  ws.innerHTML = `
-    <h3>Waybill ${waybill}</h3>
-
-    <h4>Contents</h4>
-    ${contentsSnap.empty ? "No contents" :
-      `<ul>${contentsSnap.docs.map(d =>
-        `<li>${d.data().item || d.data().description}</li>`
-      ).join("")}</ul>`
-    }
-
-    <h4>Tracking</h4>
-    ${trackingSnap.empty ? "No tracking" :
-      `<ul>${trackingSnap.docs.map(d =>
-        `<li>${d.data().status || d.data().event}</li>`
-      ).join("")}</ul>`
-    }
-  `;
-};
-
-  
-/* ===================== PANEL ===================== */
-window.loadPanel = (panel) => {
-  if (!ensureUserReady()) return;
-
-  const app = document.getElementById("app");
-
-  if (panel === "edit") {
-    app.innerHTML = `
-      <div class="panel">
-        <div class="edit-container">
-          <div class="sidebar">
-            <div onclick="loadEdit('waybills')">Waybills</div>
-          </div>
-          <div class="workspace" id="workspace"></div>
-        </div>
-      </div>`;
-  }
-
-  if (panel === "process") {
-    app.innerHTML = `
-      <div class="panel">
-        <div class="edit-container">
-          <div class="sidebar">
-            <div onclick="loadProcess('in')">Scan IN</div>
-            <div onclick="loadProcess('out')">Scan OUT</div>
-          </div>
-          <div class="workspace" id="workspace"></div>
-        </div>
-      </div>`;
-  }
-
-  if (panel === "view") {
-    loadView();
-  }
-
-  if (panel === "import") {
-    loadImport();
-  }
-};
-
-  /* ===================== INIT STRUCTURE ===================== */
-window.initTenantStructure = async () => {
-  if (!ensureUserReady()) return;
-
-  const tenantId = CURRENT_USER.tenantId;
-
-  const baseCollections = [
-    "drivers",
-    "tripsheets",
-    "depots"
-  ];
-
-  for (const col of baseCollections) {
-    await addDoc(
-      collection(db, "tenants", tenantId, col),
-      { _init: true, createdAt: serverTimestamp() }
-    );
-  }
-
-  // Init customer sub-collections
-  const customersSnap = await getDocs(
-    collection(db, "tenants", tenantId, "customers")
-  );
-
-  for (const c of customersSnap.docs) {
-    const cid = c.id;
-
-    const customerCollections = [
-      "waybills",
-      "scans",
-      "contents",
-      "tracking"
-    ];
-
-    for (const sub of customerCollections) {
-      await addDoc(
-        collection(db, "tenants", tenantId, "customers", cid, sub),
-        { _init: true, createdAt: serverTimestamp() }
-      );
-    }
-  }
-
-  alert("✅ Collections created. Refresh Firestore.");
-};
-
-/* ===================== LOGOUT ===================== */
+/* ================= LOGOUT ================= */
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
