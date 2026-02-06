@@ -125,21 +125,25 @@ async function loadCustomers() {
   ACTIVE_CUSTOMER = CUSTOMERS[0] || null;
 }
 
-function populateCustomerSelect() {
+function populateCustomerSelect(onChangeCallback) {
   const sel = document.getElementById("customerSelect");
   if (!sel) return;
 
   sel.innerHTML = "";
 
+  if (!CUSTOMERS.length) {
+    sel.innerHTML = `<option>No customers</option>`;
+    return;
+  }
+
   CUSTOMERS.forEach(c => {
     sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
 
-  if (ACTIVE_CUSTOMER) sel.value = ACTIVE_CUSTOMER.id;
-
+  // force change reload
   sel.onchange = () => {
     ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
-    refreshWaybills();
+    if (onChangeCallback) onChangeCallback();
   };
 }
 
