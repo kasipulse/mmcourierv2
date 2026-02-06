@@ -189,35 +189,55 @@ function ensureUserReady() {
 }
 
 /* ===================== EDIT ===================== */
-window.loadEdit = async (type) => {
+window.loadEdit = async () => {
   if (!ensureUserReady()) return;
 
   const ws = document.getElementById("workspace");
   ws.innerHTML = `
-  <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-    <label>Select Customer:</label>
-    <select id="customerSelect"></select>
-    <button title="Refresh waybills" onclick="refreshWaybills()">🔄</button>
-  </div>
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+      <label>Select Customer:</label>
+      <select id="customerSelect"></select>
+      <button title="Refresh waybills" onclick="refreshWaybills()">🔄</button>
+    </div>
 
-  <h3>Waybills</h3>
-  <table border="1" width="100%">
-    <tr><th>Waybill</th><th>Consignee</th><th>Status</th><th>Last Scan</th></tr>
-    <tbody id="wbRows"></tbody>
-  </table>
-`;
+    <h3>Waybills</h3>
+    <table border="1" width="100%">
+      <tr>
+        <th>Waybill</th>
+        <th>Consignee</th>
+        <th>Status</th>
+        <th>Last Scan</th>
+      </tr>
+      <tbody id="wbRows">
+        <tr><td colspan="4">Select a customer</td></tr>
+      </tbody>
+    </table>
+  `;
+
   populateCustomerSelect();
+  refreshWaybills(); // ✅ first load
+};
 
+window.refreshWaybills = async () => {
   const customerId = getCustomerId();
   const rows = document.getElementById("wbRows");
 
-  if (!customerId) {
+  if (!customerId || !rows) {
     rows.innerHTML = `<tr><td colspan="4">No customer selected</td></tr>`;
     return;
   }
 
+  rows.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+
   const snap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills")
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      customerId,
+      "waybills"
+    )
   );
 
   if (snap.empty) {
@@ -225,20 +245,27 @@ window.loadEdit = async (type) => {
     return;
   }
 
-  for (const d of snap.docs) {
+  rows.innerHTML = "";
+
+  snap.docs.forEach(d => {
     const w = d.data();
+
+    // ⛔ skip init / broken docs
+    if (!w.waybill) return;
+
     rows.innerHTML += `
       <tr>
         <td>
-  <a href="#" onclick="openWaybill('${customerId}', '${w.waybill}')">
-    ${w.waybill}
-  </a>
-</td>
+          <a href="#" onclick="openWaybill('${customerId}', '${w.waybill}')">
+            ${w.waybill}
+          </a>
+        </td>
         <td>${w.Receiver || "—"}</td>
         <td>${w.status || "Imported"}</td>
         <td>—</td>
-      </tr>`;
-  }
+      </tr>
+    `;
+  });
 };
 
 /* ===================== PROCESS ===================== */
