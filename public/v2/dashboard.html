@@ -147,36 +147,29 @@ function getCustomerId() {
   return document.getElementById("customerSelect")?.value;
 }
 
-/* ================= EDIT ================= */
+<!-- ===================== EDIT ===================== -->
+<script>
 window.loadEdit = async () => {
   if (!ensureUserReady()) return;
 
-  document.getElementById("app").innerHTML = `
-    <div class="panel">
-      <div class="edit-container">
-        <div class="sidebar">
-          <div onclick="loadEdit()">Waybills</div>
-        </div>
-        <div class="workspace" id="workspace"></div>
-      </div>
-    </div>
-  `;
-
   const ws = document.getElementById("workspace");
   ws.innerHTML = `
-    <div style="display:flex; gap:6px; align-items:center;">
-      <label>Customer:</label>
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+      <label>Select Customer:</label>
       <select id="customerSelect"></select>
-      <button onclick="refreshWaybills()">🔄</button>
+      <button id="refreshBtn" title="Refresh waybills">🔄</button>
     </div>
 
-    <table border="1" width="100%" style="margin-top:6px;">
-      <tr>
-        <th>Waybill</th>
-        <th>Consignee</th>
-        <th>Status</th>
-        <th>Last Scan</th>
-      </tr>
+    <h3>Waybills</h3>
+    <table border="1" width="100%">
+      <thead>
+        <tr>
+          <th>Waybill</th>
+          <th>Consignee</th>
+          <th>Status</th>
+          <th>Last Scan</th>
+        </tr>
+      </thead>
       <tbody id="wbRows">
         <tr><td colspan="4">Loading...</td></tr>
       </tbody>
@@ -184,22 +177,36 @@ window.loadEdit = async () => {
   `;
 
   populateCustomerSelect();
-  refreshWaybills();
+
+  // attach refresh click AFTER html exists
+  document.getElementById("refreshBtn").onclick = refreshWaybills;
+
+  // initial load
+  await refreshWaybills();
 };
 
+/* ===================== REFRESH WAYBILLS ===================== */
 window.refreshWaybills = async () => {
-  const customerId = getCustomerId();
+  const customerId = document.getElementById("customerSelect")?.value;
   const rows = document.getElementById("wbRows");
 
   if (!customerId) {
-    rows.innerHTML = `<tr><td colspan="4">Select customer</td></tr>`;
+    rows.innerHTML = `<tr><td colspan="4">No customer selected</td></tr>`;
     return;
   }
 
-  rows.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+  // clear before reload
+  rows.innerHTML = `<tr><td colspan="4">Refreshing...</td></tr>`;
 
   const snap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills")
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      customerId,
+      "waybills"
+    )
   );
 
   rows.innerHTML = "";
@@ -209,13 +216,19 @@ window.refreshWaybills = async () => {
     return;
   }
 
-  snap.forEach(d => {
-    const w = d.data();
+  snap.forEach(docSnap => {
+    const w = docSnap.data();
+
+    // safety guard
     if (!w.waybill) return;
 
     rows.innerHTML += `
       <tr>
-        <td>${w.waybill}</td>
+        <td>
+          <a href="#" onclick="openWaybill('${customerId}', '${w.waybill}')">
+            ${w.waybill}
+          </a>
+        </td>
         <td>${w.Receiver || "—"}</td>
         <td>${w.status || "Imported"}</td>
         <td>—</td>
@@ -223,6 +236,7 @@ window.refreshWaybills = async () => {
     `;
   });
 };
+</script>
 
 /* ================= PROCESS ================= */
 window.loadProcess = async (type) => {
