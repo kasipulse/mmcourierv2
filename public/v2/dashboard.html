@@ -78,7 +78,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/fireba
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, collection, addDoc, getDocs,
-  serverTimestamp, query, where, limit
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 /* ================= FIREBASE ================= */
@@ -91,9 +91,9 @@ const firebaseConfig = {
   appId: "1:1088997998974:web:7d31deb10940ef2b4af32f"
 };
 
-const appFB = initializeApp(firebaseConfig);
-const auth = getAuth(appFB);
-const db = getFirestore(appFB);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 let CURRENT_USER = null;
 let CUSTOMERS = [];
@@ -109,14 +109,10 @@ onAuthStateChanged(auth, async (user) => {
   await loadCustomers();
 
   document.getElementById("tenantStatus").innerText =
-    `Tenant: ${CURRENT_USER.tenantId} | Role: ${CURRENT_USER.role}`;
+    `Tenant: ${CURRENT_USER.tenantId}`;
 });
 
-/* ================= HELPERS ================= */
-function ensureUserReady() {
-  return CURRENT_USER?.tenantId;
-}
-
+/* ================= DATA ================= */
 async function loadCustomers() {
   const snap = await getDocs(
     collection(db, "tenants", CURRENT_USER.tenantId, "customers")
@@ -125,82 +121,54 @@ async function loadCustomers() {
   ACTIVE_CUSTOMER = CUSTOMERS[0] || null;
 }
 
-function populateCustomerSelect(onChangeCallback) {
+function populateCustomerSelect(onChange) {
   const sel = document.getElementById("customerSelect");
   if (!sel) return;
 
   sel.innerHTML = "";
+  CUSTOMERS.forEach(c =>
+    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`
+  );
 
-  if (!CUSTOMERS.length) {
-    sel.innerHTML = `<option>No customers</option>`;
-    return;
-  }
+  if (ACTIVE_CUSTOMER) sel.value = ACTIVE_CUSTOMER.id;
 
-  CUSTOMERS.forEach(c => {
-    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-  });
-
-  // force change reload
   sel.onchange = () => {
     ACTIVE_CUSTOMER = CUSTOMERS.find(c => c.id === sel.value);
-    if (onChangeCallback) onChangeCallback();
+    if (onChange) onChange();
   };
 }
 
-function getCustomerId() {
-  return document.getElementById("customerSelect")?.value;
-}
-
-<!-- ===================== EDIT ===================== -->
-<script>
+/* ================= EDIT ================= */
 window.loadEdit = async () => {
-  if (!ensureUserReady()) return;
+  const app = document.getElementById("app");
 
-  const ws = document.getElementById("workspace");
-  ws.innerHTML = `
-    <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-      <label>Select Customer:</label>
+  app.innerHTML = `
+    <div class="panel">
+      <label>Customer:</label>
       <select id="customerSelect"></select>
-      <button id="refreshBtn" title="Refresh waybills">🔄</button>
-    </div>
+      <button id="refreshBtn">🔄</button>
 
-    <h3>Waybills</h3>
-    <table border="1" width="100%">
-      <thead>
-        <tr>
-          <th>Waybill</th>
-          <th>Consignee</th>
-          <th>Status</th>
-          <th>Last Scan</th>
-        </tr>
-      </thead>
-      <tbody id="wbRows">
-        <tr><td colspan="4">Loading...</td></tr>
-      </tbody>
-    </table>
+      <h3>Waybills</h3>
+      <table border="1" width="100%">
+        <tbody id="wbRows"></tbody>
+      </table>
+    </div>
   `;
 
-  populateCustomerSelect();
-
-  // attach refresh click AFTER html exists
-  document.getElementById("refreshBtn").onclick = refreshWaybills;
-
-  // initial load
-  await refreshWaybills();
+  populateCustomerSelect(loadWaybills);
+  document.getElementById("refreshBtn").onclick = loadWaybills;
+  loadWaybills();
 };
 
-/* ===================== REFRESH WAYBILLS ===================== */
-window.refreshWaybills = async () => {
-  const customerId = document.getElementById("customerSelect")?.value;
+async function loadWaybills() {
   const rows = document.getElementById("wbRows");
 
-  if (!customerId) {
-    rows.innerHTML = `<tr><td colspan="4">No customer selected</td></tr>`;
+  if (!ACTIVE_CUSTOMER) {
+    rows.innerHTML = `<tr><td>No customer</td></tr>`;
     return;
   }
 
-  // clear before reload
-  rows.innerHTML = `<tr><td colspan="4">Refreshing...</td></tr>`;
+  rows.innerHTML = `<tr><td>Loading...</td></tr>`;
 
   const snap = await getDocs(
     collection(
@@ -208,87 +176,25 @@ window.refreshWaybills = async () => {
       "tenants",
       CURRENT_USER.tenantId,
       "customers",
-      customerId,
+      ACTIVE_CUSTOMER.id,
       "waybills"
     )
   );
 
   rows.innerHTML = "";
-
-  if (snap.empty) {
-    rows.innerHTML = `<tr><td colspan="4">No waybills</td></tr>`;
-    return;
-  }
-
-  snap.forEach(docSnap => {
-    const w = docSnap.data();
-
-    // safety guard
+  snap.forEach(d => {
+    const w = d.data();
     if (!w.waybill) return;
 
-    rows.innerHTML += `
-      <tr>
-        <td>
-          <a href="#" onclick="openWaybill('${customerId}', '${w.waybill}')">
-            ${w.waybill}
-          </a>
-        </td>
-        <td>${w.Receiver || "—"}</td>
-        <td>${w.status || "Imported"}</td>
-        <td>—</td>
-      </tr>
-    `;
+    rows.innerHTML += `<tr><td>${w.waybill}</td></tr>`;
   });
-};
-</script>
+}
 
-/* ================= PROCESS ================= */
-window.loadProcess = async (type) => {
-  document.getElementById("app").innerHTML = `
-    <div class="panel">
-      <label>Customer:</label>
-      <select id="customerSelect"></select><br>
-      <input id="scanWB" placeholder="Scan waybill">
-      <div class="status" id="scanStatus"></div>
-    </div>
-  `;
-
-  populateCustomerSelect();
-
-  document.getElementById("scanWB").onkeydown = async (e) => {
-    if (e.key !== "Enter") return;
-
-    await addDoc(
-      collection(
-        db,
-        "tenants",
-        CURRENT_USER.tenantId,
-        "customers",
-        getCustomerId(),
-        "scans"
-      ),
-      { waybill: e.target.value, createdAt: serverTimestamp() }
-    );
-
-    document.getElementById("scanStatus").innerText = "Scanned";
-    e.target.value = "";
-  };
+/* ================= PANELS ================= */
+window.loadPanel = (panel) => {
+  if (panel === "edit") loadEdit();
 };
 
-/* ================= IMPORT ================= */
-window.loadImport = () => {
-  document.getElementById("app").innerHTML = `
-    <div class="panel">
-      <h3>Import</h3>
-      <select id="customerSelect"></select><br>
-      <input type="file"><br>
-      <button>Import</button>
-    </div>
-  `;
-  populateCustomerSelect();
-};
-
-/* ================= LOGOUT ================= */
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
