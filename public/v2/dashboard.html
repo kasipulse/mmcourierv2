@@ -164,13 +164,14 @@ async function loadWaybills() {
   const rows = document.getElementById("wbRows");
 
   if (!ACTIVE_CUSTOMER) {
-    rows.innerHTML = `<tr><td>No customer</td></tr>`;
+    rows.innerHTML = `<tr><td colspan="4">No customer</td></tr>`;
     return;
   }
 
-  rows.innerHTML = `<tr><td>Loading...</td></tr>`;
+  rows.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
 
-  const snap = await getDocs(
+  // 1️⃣ Load waybills
+  const wbSnap = await getDocs(
     collection(
       db,
       "tenants",
@@ -182,11 +183,57 @@ async function loadWaybills() {
   );
 
   rows.innerHTML = "";
-  snap.forEach(d => {
-    const w = d.data();
+
+  if (wbSnap.empty) {
+    rows.innerHTML = `<tr><td colspan="4">No waybills</td></tr>`;
+    return;
+  }
+
+  // 2️⃣ Load scans ONCE
+  const scanSnap = await getDocs(
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      ACTIVE_CUSTOMER.id,
+      "scans"
+    )
+  );
+
+  // index scans by waybill
+  const lastScanByWB = {};
+  scanSnap.forEach(s => {
+    const d = s.data();
+    if (!d.waybill || !d.createdAt) return;
+
+    const time = d.createdAt.toDate();
+    if (!lastScanByWB[d.waybill] || time > lastScanByWB[d.waybill].time) {
+      lastScanByWB[d.waybill] = {
+        type: d.type,
+        time
+      };
+    }
+  });
+
+  // 3️⃣ Render table
+  wbSnap.forEach(doc => {
+    const w = doc.data();
     if (!w.waybill) return;
 
-    rows.innerHTML += `<tr><td>${w.waybill}</td></tr>`;
+    const scan = lastScanByWB[w.waybill];
+    const lastScanText = scan
+      ? `${scan.type} · ${scan.time.toLocaleString()}`
+      : "—";
+
+    rows.innerHTML += `
+      <tr>
+        <td>${w.waybill}</td>
+        <td>${w.Receiver || "—"}</td>
+        <td>${w.status || "Imported"}</td>
+        <td>${lastScanText}</td>
+      </tr>
+    `;
   });
 }
 
