@@ -139,6 +139,9 @@ function populateCustomerSelect(onChange) {
 }
 
 /* ================= EDIT ================= */
+import { getDocs, collection, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+// 🔹 Update waybill status & create a scan
 async function updateWaybillStatus(customerId, waybill, scanType) {
   const statusMap = {
     IN: "Received",
@@ -148,28 +151,16 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
   const newStatus = statusMap[scanType];
   if (!newStatus) return;
 
+  // 1️⃣ Find the waybill
   const wbSnap = await getDocs(
-    collection(
-      db,
-      "tenants",
-      CURRENT_USER.tenantId,
-      "customers",
-      customerId,
-      "waybills"
-    )
+    collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills")
   );
 
   wbSnap.forEach(async (docSnap) => {
     if (docSnap.data().waybill === waybill) {
+      // 2️⃣ Add a scan
       await addDoc(
-        collection(
-          db,
-          "tenants",
-          CURRENT_USER.tenantId,
-          "customers",
-          customerId,
-          "scans"
-        ),
+        collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "scans"),
         {
           waybill,
           type: scanType,
@@ -177,6 +168,7 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
         }
       );
 
+      // 3️⃣ Update waybill status
       await updateDoc(docSnap.ref, {
         status: newStatus,
         lastUpdated: serverTimestamp()
@@ -185,6 +177,7 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
   });
 }
 
+// 🔹 Load the Edit panel
 window.loadEdit = async () => {
   const app = document.getElementById("app");
 
@@ -194,6 +187,16 @@ window.loadEdit = async () => {
       <select id="customerSelect"></select>
       <button id="refreshBtn">🔄</button>
 
+      <!-- SCAN AREA -->
+      <div style="margin:6px 0;">
+        <input id="scanWB" placeholder="Scan waybill & press Enter">
+        <select id="scanType">
+          <option value="IN">IN</option>
+          <option value="OUT">OUT</option>
+        </select>
+        <span class="status" id="scanStatus"></span>
+      </div>
+
       <h3>Waybills</h3>
       <table border="1" width="100%">
         <tbody id="wbRows"></tbody>
@@ -201,11 +204,33 @@ window.loadEdit = async () => {
     </div>
   `;
 
+  // populate customer select and refresh table on change
   populateCustomerSelect(loadWaybills);
   document.getElementById("refreshBtn").onclick = loadWaybills;
+
+  // 🔹 Scan input
+  document.getElementById("scanWB").onkeydown = async (e) => {
+    if (e.key !== "Enter") return;
+
+    const waybill = e.target.value.trim();
+    const scanType = document.getElementById("scanType").value;
+
+    if (!waybill || !ACTIVE_CUSTOMER) return;
+
+    document.getElementById("scanStatus").innerText = "Scanning...";
+
+    await updateWaybillStatus(ACTIVE_CUSTOMER.id, waybill, scanType);
+
+    document.getElementById("scanStatus").innerText = "Scanned ✔";
+    e.target.value = "";
+
+    loadWaybills(); // refresh table after scan
+  };
+
   loadWaybills();
 };
 
+// 🔹 Load waybills + last scans
 async function loadWaybills() {
   const rows = document.getElementById("wbRows");
 
@@ -218,14 +243,7 @@ async function loadWaybills() {
 
   // 1️⃣ Load waybills
   const wbSnap = await getDocs(
-    collection(
-      db,
-      "tenants",
-      CURRENT_USER.tenantId,
-      "customers",
-      ACTIVE_CUSTOMER.id,
-      "waybills"
-    )
+    collection(db, "tenants", CURRENT_USER.tenantId, "customers", ACTIVE_CUSTOMER.id, "waybills")
   );
 
   rows.innerHTML = "";
@@ -237,14 +255,7 @@ async function loadWaybills() {
 
   // 2️⃣ Load scans ONCE
   const scanSnap = await getDocs(
-    collection(
-      db,
-      "tenants",
-      CURRENT_USER.tenantId,
-      "customers",
-      ACTIVE_CUSTOMER.id,
-      "scans"
-    )
+    collection(db, "tenants", CURRENT_USER.tenantId, "customers", ACTIVE_CUSTOMER.id, "scans")
   );
 
   // index scans by waybill
@@ -255,10 +266,7 @@ async function loadWaybills() {
 
     const time = d.createdAt.toDate();
     if (!lastScanByWB[d.waybill] || time > lastScanByWB[d.waybill].time) {
-      lastScanByWB[d.waybill] = {
-        type: d.type,
-        time
-      };
+      lastScanByWB[d.waybill] = { type: d.type, time };
     }
   });
 
@@ -268,9 +276,7 @@ async function loadWaybills() {
     if (!w.waybill) return;
 
     const scan = lastScanByWB[w.waybill];
-    const lastScanText = scan
-      ? `${scan.type} · ${scan.time.toLocaleString()}`
-      : "—";
+    const lastScanText = scan ? `${scan.type} · ${scan.time.toLocaleString()}` : "—";
 
     rows.innerHTML += `
       <tr>
