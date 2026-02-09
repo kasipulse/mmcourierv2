@@ -139,6 +139,52 @@ function populateCustomerSelect(onChange) {
 }
 
 /* ================= EDIT ================= */
+async function updateWaybillStatus(customerId, waybill, scanType) {
+  const statusMap = {
+    IN: "Received",
+    OUT: "Dispatched"
+  };
+
+  const newStatus = statusMap[scanType];
+  if (!newStatus) return;
+
+  const wbSnap = await getDocs(
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      customerId,
+      "waybills"
+    )
+  );
+
+  wbSnap.forEach(async (docSnap) => {
+    if (docSnap.data().waybill === waybill) {
+      await addDoc(
+        collection(
+          db,
+          "tenants",
+          CURRENT_USER.tenantId,
+          "customers",
+          customerId,
+          "scans"
+        ),
+        {
+          waybill,
+          type: scanType,
+          createdAt: serverTimestamp()
+        }
+      );
+
+      await updateDoc(docSnap.ref, {
+        status: newStatus,
+        lastUpdated: serverTimestamp()
+      });
+    }
+  });
+}
+
 window.loadEdit = async () => {
   const app = document.getElementById("app");
 
