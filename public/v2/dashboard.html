@@ -139,9 +139,18 @@ function populateCustomerSelect(onChange) {
 }
 
 /* ================= EDIT ================= */
-import { getDocs, collection, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+import {
+  getDocs,
+  collection,
+  addDoc,
+  updateDoc,
+  serverTimestamp,
+  query,
+  where,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-// 🔹 Update waybill status & create a scan
+/* ========= UPDATE WAYBILL STATUS (SAFE) ========= */
 async function updateWaybillStatus(customerId, waybill, scanType) {
   const statusMap = {
     IN: "Received",
@@ -151,33 +160,74 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
   const newStatus = statusMap[scanType];
   if (!newStatus) return;
 
-  // 1️⃣ Find the waybill
+  // 1️⃣ Get the waybill document DIRECTLY
   const wbSnap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "waybills")
+    query(
+      collection(
+        db,
+        "tenants",
+        CURRENT_USER.tenantId,
+        "customers",
+        customerId,
+        "waybills"
+      ),
+      where("waybill", "==", waybill),
+      limit(1)
+    )
   );
 
-  wbSnap.forEach(async (docSnap) => {
-    if (docSnap.data().waybill === waybill) {
-      // 2️⃣ Add a scan
-      await addDoc(
-        collection(db, "tenants", CURRENT_USER.tenantId, "customers", customerId, "scans"),
-        {
-          waybill,
-          type: scanType,
-          createdAt: serverTimestamp()
-        }
-      );
+  if (wbSnap.empty) return alert("Waybill not found");
 
-      // 3️⃣ Update waybill status
-      await updateDoc(docSnap.ref, {
-        status: newStatus,
-        lastUpdated: serverTimestamp()
-      });
+  const wbRef = wbSnap.docs[0].ref;
+
+  // 2️⃣ Get last scan to prevent duplicates
+  const lastScanSnap = await getDocs(
+    query(
+      collection(
+        db,
+        "tenants",
+        CURRENT_USER.tenantId,
+        "customers",
+        customerId,
+        "scans"
+      ),
+      where("waybill", "==", waybill),
+      limit(1)
+    )
+  );
+
+  if (!lastScanSnap.empty) {
+    const lastType = lastScanSnap.docs[0].data().type;
+    if (lastType === scanType) {
+      return alert(`Already scanned ${scanType}`);
     }
+  }
+
+  // 3️⃣ Add scan
+  await addDoc(
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      customerId,
+      "scans"
+    ),
+    {
+      waybill,
+      type: scanType,
+      createdAt: serverTimestamp()
+    }
+  );
+
+  // 4️⃣ Update waybill
+  await updateDoc(wbRef, {
+    status: newStatus,
+    lastUpdated: serverTimestamp()
   });
 }
 
-// 🔹 Load the Edit panel
+/* ========= LOAD EDIT PANEL ========= */
 window.loadEdit = async () => {
   const app = document.getElementById("app");
 
@@ -187,9 +237,8 @@ window.loadEdit = async () => {
       <select id="customerSelect"></select>
       <button id="refreshBtn">🔄</button>
 
-      <!-- SCAN AREA -->
       <div style="margin:6px 0;">
-        <input id="scanWB" placeholder="Scan waybill & press Enter">
+        <input id="scanWB" placeholder="Scan waybill & press Enter" autofocus>
         <select id="scanType">
           <option value="IN">IN</option>
           <option value="OUT">OUT</option>
@@ -199,16 +248,22 @@ window.loadEdit = async () => {
 
       <h3>Waybills</h3>
       <table border="1" width="100%">
+        <thead>
+          <tr>
+            <th>Waybill</th>
+            <th>Consignee</th>
+            <th>Status</th>
+            <th>Last Scan</th>
+          </tr>
+        </thead>
         <tbody id="wbRows"></tbody>
       </table>
     </div>
   `;
 
-  // populate customer select and refresh table on change
   populateCustomerSelect(loadWaybills);
   document.getElementById("refreshBtn").onclick = loadWaybills;
 
-  // 🔹 Scan input
   document.getElementById("scanWB").onkeydown = async (e) => {
     if (e.key !== "Enter") return;
 
@@ -221,44 +276,48 @@ window.loadEdit = async () => {
 
     await updateWaybillStatus(ACTIVE_CUSTOMER.id, waybill, scanType);
 
-    document.getElementById("scanStatus").innerText = "Scanned ✔";
+    document.getElementById("scanStatus").innerText = "✔ Scanned";
     e.target.value = "";
 
-    loadWaybills(); // refresh table after scan
+    loadWaybills();
   };
 
   loadWaybills();
 };
 
-// 🔹 Load waybills + last scans
+/* ========= LOAD WAYBILLS + LAST SCAN ========= */
 async function loadWaybills() {
   const rows = document.getElementById("wbRows");
 
   if (!ACTIVE_CUSTOMER) {
-    rows.innerHTML = `<tr><td colspan="4">No customer</td></tr>`;
+    rows.innerHTML = `<tr><td colspan="4">No customer selected</td></tr>`;
     return;
   }
 
   rows.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
 
-  // 1️⃣ Load waybills
   const wbSnap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "customers", ACTIVE_CUSTOMER.id, "waybills")
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      ACTIVE_CUSTOMER.id,
+      "waybills"
+    )
   );
 
-  rows.innerHTML = "";
-
-  if (wbSnap.empty) {
-    rows.innerHTML = `<tr><td colspan="4">No waybills</td></tr>`;
-    return;
-  }
-
-  // 2️⃣ Load scans ONCE
   const scanSnap = await getDocs(
-    collection(db, "tenants", CURRENT_USER.tenantId, "customers", ACTIVE_CUSTOMER.id, "scans")
+    collection(
+      db,
+      "tenants",
+      CURRENT_USER.tenantId,
+      "customers",
+      ACTIVE_CUSTOMER.id,
+      "scans"
+    )
   );
 
-  // index scans by waybill
   const lastScanByWB = {};
   scanSnap.forEach(s => {
     const d = s.data();
@@ -270,20 +329,23 @@ async function loadWaybills() {
     }
   });
 
-  // 3️⃣ Render table
+  rows.innerHTML = "";
+
+  if (wbSnap.empty) {
+    rows.innerHTML = `<tr><td colspan="4">No waybills</td></tr>`;
+    return;
+  }
+
   wbSnap.forEach(doc => {
     const w = doc.data();
-    if (!w.waybill) return;
-
     const scan = lastScanByWB[w.waybill];
-    const lastScanText = scan ? `${scan.type} · ${scan.time.toLocaleString()}` : "—";
 
     rows.innerHTML += `
       <tr>
         <td>${w.waybill}</td>
         <td>${w.Receiver || "—"}</td>
         <td>${w.status || "Imported"}</td>
-        <td>${lastScanText}</td>
+        <td>${scan ? `${scan.type} · ${scan.time.toLocaleString()}` : "—"}</td>
       </tr>
     `;
   });
