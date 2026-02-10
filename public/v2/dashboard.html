@@ -140,14 +140,19 @@ function populateCustomerSelect(onChange) {
 
 /* ================= EDIT ================= */
 import {
-  getDocs,
+  getFirestore,
+  doc,
+  getDoc,
   collection,
   addDoc,
+  getDocs,
   updateDoc,
   serverTimestamp,
   query,
   where,
-  limit
+  orderBy,
+  limit,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
 /* ========= UPDATE WAYBILL STATUS (SAFE) ========= */
