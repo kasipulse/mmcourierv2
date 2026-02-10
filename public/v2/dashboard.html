@@ -298,6 +298,79 @@ async function loadWaybills() {
   });
 }
 
+/* ========= LOAD EDIT PANEL ========= */
+window.loadEdit = async () => {
+  const app = document.getElementById("app");
+
+  app.innerHTML = `
+    <div class="panel">
+      <label>Customer:</label>
+      <select id="customerSelect"></select>
+      <button id="refreshBtn">🔄</button>
+
+      <div style="margin:6px 0;">
+        <input id="scanWB" placeholder="Scan waybill & press Enter">
+        <select id="scanType">
+          <option value="IN">IN</option>
+          <option value="OUT">OUT</option>
+        </select>
+        <span class="status" id="scanStatus"></span>
+      </div>
+
+      <h3>Waybills</h3>
+      <table border="1" width="100%">
+        <thead>
+          <tr>
+            <th>Waybill</th>
+            <th>Consignee</th>
+            <th>Status</th>
+            <th>Last Scan</th>
+          </tr>
+        </thead>
+        <tbody id="wbRows"></tbody>
+      </table>
+    </div>
+  `;
+
+  populateCustomerSelect(loadWaybills);
+  document.getElementById("refreshBtn").onclick = loadWaybills;
+
+  const input = document.getElementById("scanWB");
+  const statusEl = document.getElementById("scanStatus");
+
+  input.focus();
+
+  input.onkeydown = async (e) => {
+    if (e.key !== "Enter") return;
+
+    const waybill = input.value.trim();
+    const scanType = document.getElementById("scanType").value;
+
+    if (!waybill || !ACTIVE_CUSTOMER) return;
+
+    statusEl.innerText = "Scanning...";
+
+    const result = await updateWaybillStatus(
+      ACTIVE_CUSTOMER.id,
+      waybill,
+      scanType
+    );
+
+    if (!result.ok) {
+      statusEl.innerText = "❌ " + result.msg;
+      return;
+    }
+
+    statusEl.innerText = "✔ Scanned";
+    input.value = "";
+    input.focus();
+
+    loadWaybills();
+  };
+
+  loadWaybills();
+};
+  
 /* ================= PANELS ================= */
 window.loadPanel = (panel) => {
   if (panel === "edit") loadEdit();
