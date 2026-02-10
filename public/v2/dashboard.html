@@ -158,9 +158,9 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
   };
 
   const newStatus = statusMap[scanType];
-  if (!newStatus) return;
+  if (!newStatus) return { ok: false, msg: "Invalid scan type" };
 
-  // 1️⃣ Get the waybill document DIRECTLY
+  /* 1️⃣ Get waybill doc */
   const wbSnap = await getDocs(
     query(
       collection(
@@ -176,11 +176,13 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
     )
   );
 
-  if (wbSnap.empty) return alert("Waybill not found");
+  if (wbSnap.empty) {
+    return { ok: false, msg: "Waybill not found" };
+  }
 
   const wbRef = wbSnap.docs[0].ref;
 
-  // 2️⃣ Get last scan to prevent duplicates
+  /* 2️⃣ Get LAST scan correctly */
   const lastScanSnap = await getDocs(
     query(
       collection(
@@ -192,6 +194,7 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
         "scans"
       ),
       where("waybill", "==", waybill),
+      orderBy("createdAt", "desc"),
       limit(1)
     )
   );
@@ -199,11 +202,11 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
   if (!lastScanSnap.empty) {
     const lastType = lastScanSnap.docs[0].data().type;
     if (lastType === scanType) {
-      return alert(`Already scanned ${scanType}`);
+      return { ok: false, msg: `Already scanned ${scanType}` };
     }
   }
 
-  // 3️⃣ Add scan
+  /* 3️⃣ Save scan */
   await addDoc(
     collection(
       db,
@@ -220,70 +223,14 @@ async function updateWaybillStatus(customerId, waybill, scanType) {
     }
   );
 
-  // 4️⃣ Update waybill
+  /* 4️⃣ Update waybill */
   await updateDoc(wbRef, {
     status: newStatus,
     lastUpdated: serverTimestamp()
   });
+
+  return { ok: true };
 }
-
-/* ========= LOAD EDIT PANEL ========= */
-window.loadEdit = async () => {
-  const app = document.getElementById("app");
-
-  app.innerHTML = `
-    <div class="panel">
-      <label>Customer:</label>
-      <select id="customerSelect"></select>
-      <button id="refreshBtn">🔄</button>
-
-      <div style="margin:6px 0;">
-        <input id="scanWB" placeholder="Scan waybill & press Enter" autofocus>
-        <select id="scanType">
-          <option value="IN">IN</option>
-          <option value="OUT">OUT</option>
-        </select>
-        <span class="status" id="scanStatus"></span>
-      </div>
-
-      <h3>Waybills</h3>
-      <table border="1" width="100%">
-        <thead>
-          <tr>
-            <th>Waybill</th>
-            <th>Consignee</th>
-            <th>Status</th>
-            <th>Last Scan</th>
-          </tr>
-        </thead>
-        <tbody id="wbRows"></tbody>
-      </table>
-    </div>
-  `;
-
-  populateCustomerSelect(loadWaybills);
-  document.getElementById("refreshBtn").onclick = loadWaybills;
-
-  document.getElementById("scanWB").onkeydown = async (e) => {
-    if (e.key !== "Enter") return;
-
-    const waybill = e.target.value.trim();
-    const scanType = document.getElementById("scanType").value;
-
-    if (!waybill || !ACTIVE_CUSTOMER) return;
-
-    document.getElementById("scanStatus").innerText = "Scanning...";
-
-    await updateWaybillStatus(ACTIVE_CUSTOMER.id, waybill, scanType);
-
-    document.getElementById("scanStatus").innerText = "✔ Scanned";
-    e.target.value = "";
-
-    loadWaybills();
-  };
-
-  loadWaybills();
-};
 
 /* ========= LOAD WAYBILLS + LAST SCAN ========= */
 async function loadWaybills() {
